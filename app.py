@@ -264,63 +264,91 @@ def inject_css():
         box-shadow: 0 0 16px rgba(57,255,20,0.3); color:#fff;
     }
 
-    /* כפתורי מסך הבית הגדולים */
+    /* כפתורי מסך הבית — כדורים גדולים */
+    .home-btn-green,
+    .home-btn-pink {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    .home-btn-green .stButton,
+    .home-btn-pink .stButton {
+        display: flex !important;
+        justify-content: center !important;
+    }
     .home-btn-green .stButton > button {
-        width: 220px !important;
-        height: 220px !important;
+        width: 200px !important;
+        height: 200px !important;
+        min-width: 200px !important;
+        min-height: 200px !important;
+        max-width: 200px !important;
         border-radius: 50% !important;
-        background: radial-gradient(circle at 35% 35%,
-            rgba(57,255,20,0.30), rgba(20,80,10,0.85)) !important;
-        border: 2.5px solid rgba(57,255,20,0.7) !important;
-        box-shadow: 0 0 36px rgba(57,255,20,0.45),
-                    inset 0 0 20px rgba(57,255,20,0.12) !important;
-        color: #eafff0 !important;
+        background: radial-gradient(circle at 36% 30%,
+            rgba(200,255,160,0.55) 0%,
+            rgba(57,255,20,0.65) 28%,
+            rgba(8,50,3,0.95) 78%) !important;
+        border: 3px solid rgba(57,255,20,0.8) !important;
+        box-shadow: 0 0 0 3px rgba(57,255,20,0.4),
+                    0 0 50px rgba(57,255,20,0.55),
+                    0 10px 40px rgba(0,0,0,0.65),
+                    inset 0 -10px 24px rgba(0,0,0,0.4),
+                    inset 5px 5px 18px rgba(255,255,255,0.12) !important;
+        color: #e2ffe0 !important;
         font-family: 'Heebo', sans-serif !important;
-        font-size: 1.45rem !important;
-        font-weight: 800 !important;
+        font-size: 1.3rem !important;
+        font-weight: 900 !important;
         white-space: pre-wrap !important;
-        line-height: 1.35 !important;
+        line-height: 1.4 !important;
         padding: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        margin: 0 auto !important;
-        transition: all .2s ease !important;
+        transition: transform .18s ease, box-shadow .18s ease !important;
     }
     .home-btn-green .stButton > button:hover {
-        box-shadow: 0 0 56px rgba(57,255,20,0.70),
-                    inset 0 0 28px rgba(57,255,20,0.22) !important;
-        border-color: #39FF14 !important;
-        transform: scale(1.04);
+        transform: scale(1.06) !important;
+        box-shadow: 0 0 0 3px #39FF14,
+                    0 0 72px rgba(57,255,20,0.8),
+                    0 10px 40px rgba(0,0,0,0.65),
+                    inset 0 -10px 24px rgba(0,0,0,0.4),
+                    inset 5px 5px 18px rgba(255,255,255,0.18) !important;
     }
-
     .home-btn-pink .stButton > button {
-        width: 220px !important;
-        height: 220px !important;
+        width: 200px !important;
+        height: 200px !important;
+        min-width: 200px !important;
+        min-height: 200px !important;
+        max-width: 200px !important;
         border-radius: 50% !important;
-        background: radial-gradient(circle at 35% 35%,
-            rgba(255,45,149,0.30), rgba(80,10,45,0.85)) !important;
-        border: 2.5px solid rgba(255,45,149,0.7) !important;
-        box-shadow: 0 0 36px rgba(255,45,149,0.45),
-                    inset 0 0 20px rgba(255,45,149,0.12) !important;
-        color: #ffe0ef !important;
+        background: radial-gradient(circle at 36% 30%,
+            rgba(255,190,225,0.55) 0%,
+            rgba(255,45,149,0.65) 28%,
+            rgba(55,3,28,0.95) 78%) !important;
+        border: 3px solid rgba(255,45,149,0.8) !important;
+        box-shadow: 0 0 0 3px rgba(255,45,149,0.4),
+                    0 0 50px rgba(255,45,149,0.55),
+                    0 10px 40px rgba(0,0,0,0.65),
+                    inset 0 -10px 24px rgba(0,0,0,0.4),
+                    inset 5px 5px 18px rgba(255,255,255,0.12) !important;
+        color: #ffe4f3 !important;
         font-family: 'Heebo', sans-serif !important;
-        font-size: 1.45rem !important;
-        font-weight: 800 !important;
+        font-size: 1.3rem !important;
+        font-weight: 900 !important;
         white-space: pre-wrap !important;
-        line-height: 1.35 !important;
+        line-height: 1.4 !important;
         padding: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        margin: 0 auto !important;
-        transition: all .2s ease !important;
+        transition: transform .18s ease, box-shadow .18s ease !important;
     }
     .home-btn-pink .stButton > button:hover {
-        box-shadow: 0 0 56px rgba(255,45,149,0.70),
-                    inset 0 0 28px rgba(255,45,149,0.22) !important;
-        border-color: #FF2D95 !important;
-        transform: scale(1.04);
+        transform: scale(1.06) !important;
+        box-shadow: 0 0 0 3px #FF2D95,
+                    0 0 72px rgba(255,45,149,0.8),
+                    0 10px 40px rgba(0,0,0,0.65),
+                    inset 0 -10px 24px rgba(0,0,0,0.4),
+                    inset 5px 5px 18px rgba(255,255,255,0.18) !important;
     }
 
     /* כפתור הוספת צ'ק — עגול אדום */
@@ -439,125 +467,32 @@ def fmt_ils(x):
 # מסך ראשי — שני כדורים
 # ----------------------------------------------------------------------------
 def render_home_screen():
-    # בדיקת query param מהכדורים
-    qp = st.query_params.get("nav", None)
-    if qp == "calc":
-        st.query_params.clear()
-        st.session_state.screen = "calc"
-        st.rerun()
-    elif qp == "mgmt":
-        st.query_params.clear()
-        st.session_state.screen = "mgmt"
-        st.rerun()
-
     st.markdown(
-        "<div style='height: 55px;'></div>"
+        "<div style='height:55px'></div>"
         "<h1 style='text-align:center;font-family:Orbitron;font-weight:800;font-size:2.2rem;"
         "background:linear-gradient(90deg,#39FF14,#FF2D95,#FF9F1C);"
         "-webkit-background-clip:text;-webkit-text-fill-color:transparent;"
         "margin-bottom:6px;'>CHECKFLOW</h1>"
-        "<p style='text-align:center;color:#9aa3b2;font-size:1rem;margin-bottom:40px;'>"
+        "<p style='text-align:center;color:#9aa3b2;font-size:1rem;margin-bottom:30px;'>"
         "ניהול צ׳קים ופריטה</p>",
         unsafe_allow_html=True,
     )
 
-    # בנה URL עם query param לכל כפתור
-    import urllib.parse
-    base_url = "?"
+    # כדור עליון — מחשבון פריטה (ירוק)
+    st.markdown('<div class="home-btn-green">', unsafe_allow_html=True)
+    if st.button("🧮\nמחשבון פריטה", key="go_calc"):
+        st.session_state.screen = "calc"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.components.v1.html(f"""
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@800;900&display=swap');
-      * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-      body {{ background: transparent; direction: rtl; }}
-      .wrap {{
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 36px;
-        padding: 10px 0 20px;
-      }}
-      a {{ text-decoration: none; }}
-      .ball {{
-        width: 148px;
-        height: 148px;
-        border-radius: 50%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-family: 'Heebo', sans-serif;
-        font-weight: 900;
-        text-align: center;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
-        -webkit-tap-highlight-color: transparent;
-        user-select: none;
-      }}
-      .ball:active {{ transform: scale(0.93) !important; }}
-      .green {{
-        background: radial-gradient(circle at 36% 30%,
-          rgba(200,255,160,0.6) 0%,
-          rgba(57,255,20,0.7) 28%,
-          rgba(8,50,3,0.95) 78%);
-        box-shadow:
-          0 0 0 3.5px rgba(57,255,20,0.75),
-          0 0 50px rgba(57,255,20,0.6),
-          0 10px 40px rgba(0,0,0,0.65),
-          inset 0 -10px 24px rgba(0,0,0,0.45),
-          inset 5px 5px 18px rgba(255,255,255,0.14);
-        color: #e2ffe0;
-      }}
-      .green:hover {{
-        transform: scale(1.07);
-        box-shadow:
-          0 0 0 3.5px #39FF14,
-          0 0 75px rgba(57,255,20,0.8),
-          0 10px 40px rgba(0,0,0,0.65),
-          inset 0 -10px 24px rgba(0,0,0,0.45),
-          inset 5px 5px 18px rgba(255,255,255,0.18);
-      }}
-      .pink {{
-        background: radial-gradient(circle at 36% 30%,
-          rgba(255,190,225,0.6) 0%,
-          rgba(255,45,149,0.7) 28%,
-          rgba(55,3,28,0.95) 78%);
-        box-shadow:
-          0 0 0 3.5px rgba(255,45,149,0.75),
-          0 0 50px rgba(255,45,149,0.6),
-          0 10px 40px rgba(0,0,0,0.65),
-          inset 0 -10px 24px rgba(0,0,0,0.45),
-          inset 5px 5px 18px rgba(255,255,255,0.14);
-        color: #ffe4f3;
-      }}
-      .pink:hover {{
-        transform: scale(1.07);
-        box-shadow:
-          0 0 0 3.5px #FF2D95,
-          0 0 75px rgba(255,45,149,0.8),
-          0 10px 40px rgba(0,0,0,0.65),
-          inset 0 -10px 24px rgba(0,0,0,0.45),
-          inset 5px 5px 18px rgba(255,255,255,0.18);
-      }}
-      .ico {{ font-size: 2.4rem; line-height: 1; margin-bottom: 6px; }}
-      .lbl {{ font-size: 1.05rem; line-height: 1.35; }}
-    </style>
-    <div class="wrap">
-      <a href="?nav=mgmt" target="_self">
-        <div class="ball pink">
-          <div class="ico">📋</div>
-          <div class="lbl">ניהול<br>צ׳קים</div>
-        </div>
-      </a>
-      <a href="?nav=calc" target="_self">
-        <div class="ball green">
-          <div class="ico">🧮</div>
-          <div class="lbl">מחשבון<br>פריטה</div>
-        </div>
-      </a>
-    </div>
-    """, height=380)
+    st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+
+    # כדור תחתון — ניהול צ'קים (ורוד)
+    st.markdown('<div class="home-btn-pink">', unsafe_allow_html=True)
+    if st.button("📋\nניהול צ׳קים", key="go_mgmt"):
+        st.session_state.screen = "mgmt"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------------------------------------------------------------------
 # רכיבי ניהול
