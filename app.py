@@ -439,33 +439,124 @@ def fmt_ils(x):
 # מסך ראשי — שני כדורים
 # ----------------------------------------------------------------------------
 def render_home_screen():
+    # בדיקת query param מהכדורים
+    qp = st.query_params.get("nav", None)
+    if qp == "calc":
+        st.query_params.clear()
+        st.session_state.screen = "calc"
+        st.rerun()
+    elif qp == "mgmt":
+        st.query_params.clear()
+        st.session_state.screen = "mgmt"
+        st.rerun()
+
     st.markdown(
-        "<div style='height: 60px;'></div>"
+        "<div style='height: 55px;'></div>"
         "<h1 style='text-align:center;font-family:Orbitron;font-weight:800;font-size:2.2rem;"
         "background:linear-gradient(90deg,#39FF14,#FF2D95,#FF9F1C);"
         "-webkit-background-clip:text;-webkit-text-fill-color:transparent;"
         "margin-bottom:6px;'>CHECKFLOW</h1>"
-        "<p style='text-align:center;color:#9aa3b2;font-size:1rem;margin-bottom:60px;'>"
+        "<p style='text-align:center;color:#9aa3b2;font-size:1rem;margin-bottom:40px;'>"
         "ניהול צ׳קים ופריטה</p>",
         unsafe_allow_html=True,
     )
 
-    col1, col2 = st.columns(2)
+    # בנה URL עם query param לכל כפתור
+    import urllib.parse
+    base_url = "?"
 
-    with col1:
-        st.markdown('<div class="home-btn-green">', unsafe_allow_html=True)
-        if st.button("🧮\nמחשבון\nפריטה", key="go_calc", use_container_width=False):
-            st.session_state.screen = "calc"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with col2:
-        st.markdown('<div class="home-btn-pink">', unsafe_allow_html=True)
-        if st.button("📋\nניהול\nצ׳קים", key="go_mgmt", use_container_width=False):
-            st.session_state.screen = "mgmt"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
+    st.components.v1.html(f"""
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@800;900&display=swap');
+      * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+      body {{ background: transparent; direction: rtl; }}
+      .wrap {{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 36px;
+        padding: 10px 0 20px;
+      }}
+      a {{ text-decoration: none; }}
+      .ball {{
+        width: 148px;
+        height: 148px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-family: 'Heebo', sans-serif;
+        font-weight: 900;
+        text-align: center;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+      }}
+      .ball:active {{ transform: scale(0.93) !important; }}
+      .green {{
+        background: radial-gradient(circle at 36% 30%,
+          rgba(200,255,160,0.6) 0%,
+          rgba(57,255,20,0.7) 28%,
+          rgba(8,50,3,0.95) 78%);
+        box-shadow:
+          0 0 0 3.5px rgba(57,255,20,0.75),
+          0 0 50px rgba(57,255,20,0.6),
+          0 10px 40px rgba(0,0,0,0.65),
+          inset 0 -10px 24px rgba(0,0,0,0.45),
+          inset 5px 5px 18px rgba(255,255,255,0.14);
+        color: #e2ffe0;
+      }}
+      .green:hover {{
+        transform: scale(1.07);
+        box-shadow:
+          0 0 0 3.5px #39FF14,
+          0 0 75px rgba(57,255,20,0.8),
+          0 10px 40px rgba(0,0,0,0.65),
+          inset 0 -10px 24px rgba(0,0,0,0.45),
+          inset 5px 5px 18px rgba(255,255,255,0.18);
+      }}
+      .pink {{
+        background: radial-gradient(circle at 36% 30%,
+          rgba(255,190,225,0.6) 0%,
+          rgba(255,45,149,0.7) 28%,
+          rgba(55,3,28,0.95) 78%);
+        box-shadow:
+          0 0 0 3.5px rgba(255,45,149,0.75),
+          0 0 50px rgba(255,45,149,0.6),
+          0 10px 40px rgba(0,0,0,0.65),
+          inset 0 -10px 24px rgba(0,0,0,0.45),
+          inset 5px 5px 18px rgba(255,255,255,0.14);
+        color: #ffe4f3;
+      }}
+      .pink:hover {{
+        transform: scale(1.07);
+        box-shadow:
+          0 0 0 3.5px #FF2D95,
+          0 0 75px rgba(255,45,149,0.8),
+          0 10px 40px rgba(0,0,0,0.65),
+          inset 0 -10px 24px rgba(0,0,0,0.45),
+          inset 5px 5px 18px rgba(255,255,255,0.18);
+      }}
+      .ico {{ font-size: 2.4rem; line-height: 1; margin-bottom: 6px; }}
+      .lbl {{ font-size: 1.05rem; line-height: 1.35; }}
+    </style>
+    <div class="wrap">
+      <a href="?nav=mgmt" target="_self">
+        <div class="ball pink">
+          <div class="ico">📋</div>
+          <div class="lbl">ניהול<br>צ׳קים</div>
+        </div>
+      </a>
+      <a href="?nav=calc" target="_self">
+        <div class="ball green">
+          <div class="ico">🧮</div>
+          <div class="lbl">מחשבון<br>פריטה</div>
+        </div>
+      </a>
+    </div>
+    """, height=200)
 
 # ----------------------------------------------------------------------------
 # רכיבי ניהול
