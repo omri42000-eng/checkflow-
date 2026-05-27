@@ -168,7 +168,7 @@ def inject_css():
         margin-bottom: 14px;
     }
 
-    /* KPI — תוכן ממורכז */
+    /* KPI */
     .kpi {
         position: relative;
         background: linear-gradient(145deg, rgba(57,255,20,0.06), rgba(255,45,149,0.05));
@@ -197,16 +197,32 @@ def inject_css():
         font-size: 0.78rem; font-weight: 600; margin-inline-start: 6px;
     }
 
+    /* כותרת סקשן — ממורכזת */
     .section-title {
         font-weight: 800; font-size: 1.15rem; margin: 8px 2px 10px;
         color: #f3f5fa;
+        text-align: center;
+    }
+    /* כותרת מחשבון — ימינה */
+    .section-title-right {
+        font-weight: 800; font-size: 1.15rem; margin: 8px 2px 10px;
+        color: #f3f5fa;
+        text-align: right;
     }
     .neon-bar {
         height: 3px; width: 46px; border-radius: 3px;
         background: linear-gradient(90deg, #39FF14, #FF2D95, #FF9F1C);
         box-shadow: 0 0 12px rgba(255,45,149,0.6); margin-bottom: 14px;
+        margin-right: auto; margin-left: auto;
+    }
+    .neon-bar-right {
+        height: 3px; width: 46px; border-radius: 3px;
+        background: linear-gradient(90deg, #39FF14, #FF2D95, #FF9F1C);
+        box-shadow: 0 0 12px rgba(255,45,149,0.6); margin-bottom: 14px;
+        margin-right: 0; margin-left: auto;
     }
 
+    /* כרטיס לקוח */
     .client-card {
         display:flex; justify-content:space-between; align-items:center;
         background: rgba(255,255,255,0.035);
@@ -219,6 +235,7 @@ def inject_css():
         color:#FF9F1C; text-shadow: 0 0 12px rgba(255,159,28,0.5); direction:ltr;
     }
 
+    /* פלט מחשבון */
     .calc-out {
         border-radius: 22px; padding: 18px 20px; margin-top: 8px; text-align:center;
     }
@@ -251,7 +268,26 @@ def inject_css():
         box-shadow: 0 0 16px rgba(57,255,20,0.3); color:#fff;
     }
 
-    /* טאבים — כפתורים גדולים יותר + כתב גלוי */
+    /* כפתור הוספת צ'ק — עגול + אדום */
+    div[data-testid="stButton"] button[kind="secondary"].add-check-btn,
+    .add-check-wrapper .stButton > button {
+        border-radius: 50px !important;
+        background: linear-gradient(145deg, #e8003a, #c0002e) !important;
+        border: none !important;
+        color: #fff !important;
+        font-size: 1.15rem !important;
+        font-weight: 800 !important;
+        padding: 14px 0 !important;
+        box-shadow: 0 0 22px rgba(232,0,58,0.5) !important;
+        letter-spacing: 0.5px;
+    }
+    .add-check-wrapper .stButton > button:hover {
+        box-shadow: 0 0 32px rgba(232,0,58,0.75) !important;
+        background: linear-gradient(145deg, #ff1a50, #e0003a) !important;
+        border-color: transparent !important;
+    }
+
+    /* טאבים */
     .stTabs [data-baseweb="tab-list"] { gap: 8px; justify-content:center; }
     .stTabs [data-baseweb="tab"] {
         background: rgba(255,255,255,0.07);
@@ -311,7 +347,7 @@ def inject_css():
     ul[role="listbox"] li { color: #eef1f7 !important; }
     label { color: #c6ccd8 !important; font-weight:600 !important; }
 
-    /* רדיו ריבית — גדול יותר + ירוק */
+    /* רדיו ריבית — גדול + ירוק */
     div[data-testid="stRadio"] > div {
         gap: 16px !important;
         justify-content: center !important;
@@ -332,14 +368,6 @@ def inject_css():
         border-color: rgba(57,255,20,0.7) !important;
         box-shadow: 0 0 14px rgba(57,255,20,0.35);
     }
-    div[data-testid="stRadio"] label[data-checked="true"],
-    div[data-testid="stRadio"] [aria-checked="true"] ~ label,
-    div[data-testid="stRadio"] input:checked + div {
-        background: rgba(57,255,20,0.20) !important;
-        border-color: #39FF14 !important;
-        box-shadow: 0 0 18px rgba(57,255,20,0.45);
-    }
-    /* הסתרת עיגול הרדיו המקורי */
     div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
     div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
     </style>
@@ -366,7 +394,17 @@ def render_kpi():
 
 def render_add_check_form():
     clients = get_clients()
-    with st.expander("➕  הוספת צ'ק חדש", expanded=(len(clients) == 0)):
+
+    # כפתור עגול אדום לפתיחת הטופס
+    st.markdown('<div class="add-check-wrapper">', unsafe_allow_html=True)
+    if st.button("➕  הוספת צ'ק חדש", use_container_width=True, key="open_add_form"):
+        st.session_state.add_form_open = not st.session_state.get("add_form_open", False)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if not st.session_state.get("add_form_open", False):
+        return
+
+    with st.container():
         names = [c["name"] for c in clients]
         col_a, col_b = st.columns([2, 1])
         with col_a:
@@ -384,7 +422,6 @@ def render_add_check_form():
         with c1:
             due = st.date_input("תאריך פירעון", value=date.today(), key="add_due")
         with c2:
-            # תזכורת — אופציונלית
             use_remind = st.checkbox("הוסף תזכורת", value=False, key="add_use_remind")
 
         remind = None
@@ -405,10 +442,12 @@ def render_add_check_form():
             else:
                 add_check(cid, amount, due, status, remind)
                 st.success("הצ'ק נשמר ✅")
+                st.session_state.add_form_open = False
                 st.rerun()
 
 
 def render_clients():
+    # כותרת ממורכזת
     st.markdown('<div class="section-title">הלקוחות שלי</div>', unsafe_allow_html=True)
     st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
 
@@ -469,9 +508,10 @@ def render_clients():
 # מחשבון פריטה
 # ----------------------------------------------------------------------------
 def render_calculator():
-    st.markdown('<div class="section-title">מחשבון פריטה (ניכיון)</div>',
+    # כותרת ימינה
+    st.markdown('<div class="section-title-right">מחשבון פריטה (ניכיון)</div>',
                 unsafe_allow_html=True)
-    st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="neon-bar-right"></div>', unsafe_allow_html=True)
 
     if "fixed_rate" not in st.session_state:
         st.session_state.fixed_rate = 12.0
@@ -511,40 +551,16 @@ def render_calculator():
     )
 
     # +1: לא סופרים היום, כן סופרים את יום הפירעון
-    base_days = max((due_date - date.today()).days + 1, 0)
-
-    if "days_adjust" not in st.session_state:
-        st.session_state.days_adjust = 0
-    if st.session_state.get("_last_due") != due_date:
-        st.session_state.days_adjust = 0
-        st.session_state._last_due = due_date
-
-    days = max(0, base_days + st.session_state.days_adjust)
+    days = max((due_date - date.today()).days + 1, 0)
 
     st.markdown(
-        f"<div style='text-align:center;margin:4px 0 2px;'>"
+        f"<div style='text-align:center;margin:4px 0 12px;'>"
         f"<span style='font-size:.85rem;color:#9aa3b2;'>ימי זיכוי שחושבו</span><br>"
         f"<span style='font-family:Orbitron;font-size:2rem;font-weight:800;"
         f"color:#39FF14;text-shadow:0 0 14px rgba(57,255,20,.5);'>{days}</span>"
         f"<span style='font-size:.9rem;color:#9aa3b2;'> ימים</span></div>",
         unsafe_allow_html=True,
     )
-
-    a1, a2, a3, a4 = st.columns(4)
-    with a1:
-        if st.button("−10 ימים", use_container_width=True, key="m10"):
-            st.session_state.days_adjust -= 10
-    with a2:
-        if st.button("−1 יום", use_container_width=True, key="m1"):
-            st.session_state.days_adjust -= 1
-    with a3:
-        if st.button("+1 יום", use_container_width=True, key="p1"):
-            st.session_state.days_adjust += 1
-    with a4:
-        if st.button("+10 ימים", use_container_width=True, key="p10"):
-            st.session_state.days_adjust += 10
-
-    st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
 
     # סוג ריבית
     st.markdown(
@@ -559,7 +575,7 @@ def render_calculator():
     )
     st.session_state.rate_basis = basis
 
-    # ריבית קבועה
+    # ריבית — הזנה ידנית
     rate_val = st.session_state.fixed_rate
 
     r1, r2 = st.columns([2, 1])
@@ -579,12 +595,14 @@ def render_calculator():
             st.session_state.rate_edit_open = not st.session_state.rate_edit_open
 
     if st.session_state.rate_edit_open:
-        max_r = 10.0 if basis == "חודשית" else 40.0
-        new_rate = st.slider(
-            f"גרור לקביעת אחוז ריבית {basis} (%)",
-            min_value=0.0, max_value=max_r,
-            value=min(st.session_state.fixed_rate, max_r), step=0.05,
-            key="rate_slider",
+        new_rate = st.number_input(
+            "הזן ריבית (%)",
+            min_value=0.0,
+            max_value=100.0,
+            value=float(st.session_state.fixed_rate),
+            step=0.1,
+            format="%.2f",
+            key="rate_input_manual",
         )
         if st.button("💾 שמירת הריבית", use_container_width=True, key="save_rate"):
             st.session_state.fixed_rate = new_rate
