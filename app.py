@@ -712,10 +712,38 @@ def main():
     init_db()
     inject_css()
 
+    # קריאת hash מה-URL כדי לתמוך בכפתור "חזור" של הדפדפן
+    qp = st.query_params.get("s", None)
+    if qp in ("calc", "mgmt", "home"):
+        st.session_state.screen = qp
+
     if "screen" not in st.session_state:
         st.session_state.screen = "home"
 
     screen = st.session_state.screen
+
+    # pushState — מוסיף רשומה להיסטוריה של הדפדפן
+    push_js = f"""
+    <script>
+    (function() {{
+        var s = "{screen}";
+        var cur = new URLSearchParams(window.location.search).get("s");
+        if (cur !== s) {{
+            var url = window.location.pathname + "?s=" + s;
+            window.history.pushState({{screen: s}}, "", url);
+        }}
+        // כשלוחצים "חזור" בדפדפן — עדכן Streamlit
+        window.addEventListener("popstate", function(e) {{
+            var prev = new URLSearchParams(window.location.search).get("s") || "home";
+            var url = window.location.pathname + "?s=home";
+            window.history.replaceState({{screen: "home"}}, "", url);
+            // מרענן את Streamlit עם ה-query param החדש
+            window.location.search = "?s=" + prev;
+        }});
+    }})();
+    </script>
+    """
+    st.components.v1.html(push_js, height=0)
 
     if screen == "home":
         render_home_screen()
