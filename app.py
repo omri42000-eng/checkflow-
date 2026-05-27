@@ -266,8 +266,8 @@ def inject_css():
 
     /* כפתורי מסך הבית הגדולים */
     .home-btn-green .stButton > button {
-        width: 160px !important;
-        height: 160px !important;
+        width: 220px !important;
+        height: 220px !important;
         border-radius: 50% !important;
         background: radial-gradient(circle at 35% 35%,
             rgba(57,255,20,0.30), rgba(20,80,10,0.85)) !important;
@@ -276,7 +276,7 @@ def inject_css():
                     inset 0 0 20px rgba(57,255,20,0.12) !important;
         color: #eafff0 !important;
         font-family: 'Heebo', sans-serif !important;
-        font-size: 1.2rem !important;
+        font-size: 1.45rem !important;
         font-weight: 800 !important;
         white-space: pre-wrap !important;
         line-height: 1.35 !important;
@@ -295,8 +295,8 @@ def inject_css():
     }
 
     .home-btn-pink .stButton > button {
-        width: 160px !important;
-        height: 160px !important;
+        width: 220px !important;
+        height: 220px !important;
         border-radius: 50% !important;
         background: radial-gradient(circle at 35% 35%,
             rgba(255,45,149,0.30), rgba(80,10,45,0.85)) !important;
@@ -305,7 +305,7 @@ def inject_css():
                     inset 0 0 20px rgba(255,45,149,0.12) !important;
         color: #ffe0ef !important;
         font-family: 'Heebo', sans-serif !important;
-        font-size: 1.2rem !important;
+        font-size: 1.45rem !important;
         font-weight: 800 !important;
         white-space: pre-wrap !important;
         line-height: 1.35 !important;
