@@ -472,6 +472,7 @@ def render_home_screen():
       body {{ background: transparent; direction: rtl; }}
       .wrap {{
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         gap: 36px;
@@ -556,7 +557,7 @@ def render_home_screen():
         </div>
       </a>
     </div>
-    """, height=200)
+    """, height=380)
 
 # ----------------------------------------------------------------------------
 # רכיבי ניהול
