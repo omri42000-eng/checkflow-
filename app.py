@@ -267,10 +267,36 @@ def inject_css():
         border-color: rgba(57,255,20,0.5);
     }
 
-    /* שדות קלט */
-    input, .stNumberInput input, .stDateInput input, .stSelectbox div {
-        color: #eef1f7 !important;
+    /* שדות קלט — רקע כהה + טקסט בהיר שתמיד נראה */
+    .stTextInput input,
+    .stNumberInput input,
+    .stDateInput input,
+    [data-baseweb="input"] input,
+    [data-baseweb="base-input"] input {
+        color: #ffffff !important;
+        background-color: rgba(20,22,30,0.92) !important;
+        -webkit-text-fill-color: #ffffff !important;
+        caret-color: #39FF14 !important;
+        border-radius: 12px !important;
     }
+    /* מיכל השדה עצמו */
+    .stTextInput div[data-baseweb="input"],
+    .stNumberInput div[data-baseweb="input"],
+    .stDateInput div[data-baseweb="input"],
+    div[data-baseweb="select"] > div {
+        background-color: rgba(20,22,30,0.92) !important;
+        border: 1px solid rgba(255,255,255,0.18) !important;
+        border-radius: 12px !important;
+    }
+    /* תפריט בחירה (selectbox) — טקסט בהיר */
+    div[data-baseweb="select"] div { color: #ffffff !important; }
+    /* placeholder אפור בהיר */
+    input::placeholder { color: #8b93a3 !important; opacity: 1 !important; }
+    /* תפריט נפתח */
+    ul[role="listbox"], div[data-baseweb="popover"] {
+        background-color: #14161e !important;
+    }
+    ul[role="listbox"] li { color: #eef1f7 !important; }
     label { color: #c6ccd8 !important; font-weight:600 !important; }
     </style>
     """, unsafe_allow_html=True)
@@ -399,9 +425,9 @@ def render_calculator():
 
     # --- ערכי ברירת מחדל קבועים (נשמרים ב-session) ---
     if "fixed_rate" not in st.session_state:
-        st.session_state.fixed_rate = 12.0      # ריבית קבועה שמוגדרת מראש
+        st.session_state.fixed_rate = 12.0
     if "rate_basis" not in st.session_state:
-        st.session_state.rate_basis = "שנתית"   # שנתית / חודשית
+        st.session_state.rate_basis = "שנתית"
     if "rate_edit_open" not in st.session_state:
         st.session_state.rate_edit_open = False
 
@@ -428,21 +454,24 @@ def render_calculator():
                              value=default_amount, format="%.0f", key="calc_amount")
 
     # -----------------------------------------------------------------
-    # 1) תאריך פירעון -> חישוב ימים אוטומטי
+    # תאריך פירעון -> חישוב ימים אוטומטי
+    # החישוב: מתחיל ממחר (לא כולל היום) וכולל את יום הפירעון עצמו
+    # נוסחה: (due_date - today).days + 1
+    # דוגמה: פירעון מחר = 1 + 1 = 2 ימים
     # -----------------------------------------------------------------
-    # סנכרון תאריך הפירעון כשמשנים את הצ'ק הנבחר
     if st.session_state.get("_last_pick") != pick:
         st.session_state.calc_due = default_due
         st.session_state._last_pick = pick
 
     due_date = st.date_input(
         "תאריך פירעון הצ'ק", key="calc_due",
-        help="המערכת מחשבת אוטומטית את הימים מהיום ועד התאריך",
+        help="החישוב מתחיל ממחר וכולל את יום הפירעון עצמו",
     )
 
-    base_days = max((due_date - date.today()).days, 0)
+    # +1 כי: לא סופרים את היום, כן סופרים את יום הפירעון
+    base_days = max((due_date - date.today()).days + 1, 0)
 
-    # כוונון עדין של ימים מעל החישוב האוטומטי (אופציונלי)
+    # כוונון עדין של ימים (אופציונלי)
     if "days_adjust" not in st.session_state:
         st.session_state.days_adjust = 0
     if st.session_state.get("_last_due") != due_date:
@@ -475,51 +504,56 @@ def render_calculator():
         if st.button("+10 ימים", use_container_width=True, key="p10"):
             st.session_state.days_adjust += 10
 
-    st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
-    # 2) ריבית קבועה + כפתור שינוי  |  3) מתג חודשית/שנתית
+    # מתג חודשית/שנתית
     # -----------------------------------------------------------------
-    basis = st.session_state.rate_basis
+    st.markdown(
+        "<div style='text-align:center;font-weight:800;font-size:1.05rem;"
+        "color:#f3f5fa;margin-bottom:6px;'>סוג הריבית</div>",
+        unsafe_allow_html=True,
+    )
+    basis = st.radio(
+        "סוג הריבית", ["חודשית", "שנתית"],
+        index=["חודשית", "שנתית"].index(st.session_state.rate_basis),
+        horizontal=True, key="basis_radio", label_visibility="collapsed",
+    )
+    st.session_state.rate_basis = basis
+
+    # -----------------------------------------------------------------
+    # ריבית קבועה + כפתור שינוי
+    # -----------------------------------------------------------------
     rate_val = st.session_state.fixed_rate
 
-    r1, r2 = st.columns([3, 1])
+    r1, r2 = st.columns([2, 1])
     with r1:
         st.markdown(
-            f"<div class='glass' style='margin-bottom:0;padding:12px 16px;'>"
-            f"<span style='font-size:.82rem;color:#9aa3b2;'>ריבית קבועה</span><br>"
-            f"<span style='font-family:Orbitron;font-size:1.4rem;font-weight:800;"
+            f"<div class='glass' style='margin-bottom:0;padding:14px 16px;text-align:center;'>"
+            f"<span style='font-size:.82rem;color:#9aa3b2;'>ריבית קבועה ({basis})</span><br>"
+            f"<span style='font-family:Orbitron;font-size:1.8rem;font-weight:800;"
             f"color:#FF9F1C;text-shadow:0 0 12px rgba(255,159,28,.5);'>"
-            f"{rate_val:.1f}%</span> "
-            f"<span style='font-size:.9rem;color:#c6ccd8;'>({basis})</span></div>",
+            f"{rate_val:.2f}%</span></div>",
             unsafe_allow_html=True,
         )
     with r2:
         st.write("")
-        if st.button("✏️ שינוי", use_container_width=True, key="edit_rate"):
+        st.write("")
+        if st.button("✏️ שינוי ריבית", use_container_width=True, key="edit_rate"):
             st.session_state.rate_edit_open = not st.session_state.rate_edit_open
 
     if st.session_state.rate_edit_open:
-        with st.container():
-            # מתג גרירה בין חודשית לשנתית
-            new_basis = st.select_slider(
-                "בסיס הריבית (גרור)",
-                options=["חודשית", "שנתית"],
-                value=st.session_state.rate_basis,
-                key="basis_slider",
-            )
-            max_r = 10.0 if new_basis == "חודשית" else 40.0
-            new_rate = st.slider(
-                f"אחוז ריבית {new_basis} (%)",
-                min_value=0.0, max_value=max_r,
-                value=min(st.session_state.fixed_rate, max_r), step=0.1,
-                key="rate_slider",
-            )
-            if st.button("💾 שמירת הריבית", use_container_width=True, key="save_rate"):
-                st.session_state.fixed_rate = new_rate
-                st.session_state.rate_basis = new_basis
-                st.session_state.rate_edit_open = False
-                st.rerun()
+        max_r = 10.0 if basis == "חודשית" else 40.0
+        new_rate = st.slider(
+            f"גרור לקביעת אחוז ריבית {basis} (%)",
+            min_value=0.0, max_value=max_r,
+            value=min(st.session_state.fixed_rate, max_r), step=0.05,
+            key="rate_slider",
+        )
+        if st.button("💾 שמירת הריבית", use_container_width=True, key="save_rate"):
+            st.session_state.fixed_rate = new_rate
+            st.session_state.rate_edit_open = False
+            st.rerun()
 
     # -----------------------------------------------------------------
     # חישוב לפי בסיס הריבית
@@ -529,6 +563,15 @@ def render_calculator():
     else:  # שנתית
         fee = amount * (rate_val / 100.0) * (days / 365.0)
     net = amount - fee
+
+    # התרעה כשאין ימי זיכוי
+    if days <= 0:
+        st.markdown(
+            "<div style='text-align:center;color:#FF9F1C;font-size:.9rem;"
+            "margin:10px 0 0;'>⚠️ תאריך הפירעון עבר — אין ימי זיכוי. "
+            "בחר תאריך עתידי כדי לראות עמלה.</div>",
+            unsafe_allow_html=True,
+        )
 
     st.markdown(f"""
     <div class="calc-out fee">
