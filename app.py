@@ -264,94 +264,44 @@ def inject_css():
         box-shadow: 0 0 16px rgba(57,255,20,0.3); color:#fff;
     }
 
-    /* כפתורי מסך הבית — כדורים גדולים */
-    .home-btn-green,
-    .home-btn-pink {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-    }
-    .home-btn-green .stButton,
-    .home-btn-pink .stButton {
-        display: flex !important;
-        justify-content: center !important;
-    }
-    .home-btn-green .stButton > button {
-        width: 200px !important;
-        height: 200px !important;
-        min-width: 200px !important;
-        min-height: 200px !important;
-        max-width: 200px !important;
-        border-radius: 50% !important;
-        background: radial-gradient(circle at 36% 30%,
-            rgba(200,255,160,0.55) 0%,
-            rgba(57,255,20,0.65) 28%,
-            rgba(8,50,3,0.95) 78%) !important;
-        border: 3px solid rgba(57,255,20,0.8) !important;
-        box-shadow: 0 0 0 3px rgba(57,255,20,0.4),
-                    0 0 50px rgba(57,255,20,0.55),
-                    0 10px 40px rgba(0,0,0,0.65),
-                    inset 0 -10px 24px rgba(0,0,0,0.4),
-                    inset 5px 5px 18px rgba(255,255,255,0.12) !important;
-        color: #e2ffe0 !important;
-        font-family: 'Heebo', sans-serif !important;
+    /* כפתורי ניווט מסך הבית — סגנון KPI */
+    .home-nav-btn .stButton > button {
+        border-radius: 22px !important;
+        padding: 22px 24px !important;
         font-size: 1.3rem !important;
-        font-weight: 900 !important;
-        white-space: pre-wrap !important;
-        line-height: 1.4 !important;
-        padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        transition: transform .18s ease, box-shadow .18s ease !important;
+        font-weight: 800 !important;
+        height: auto !important;
+        min-height: 80px !important;
+        transition: transform .15s ease, box-shadow .15s ease !important;
+        letter-spacing: 0.3px !important;
     }
-    .home-btn-green .stButton > button:hover {
-        transform: scale(1.06) !important;
-        box-shadow: 0 0 0 3px #39FF14,
-                    0 0 72px rgba(57,255,20,0.8),
-                    0 10px 40px rgba(0,0,0,0.65),
-                    inset 0 -10px 24px rgba(0,0,0,0.4),
-                    inset 5px 5px 18px rgba(255,255,255,0.18) !important;
+    .home-nav-btn .stButton > button:hover {
+        transform: scale(1.02) !important;
     }
-    .home-btn-pink .stButton > button {
-        width: 200px !important;
-        height: 200px !important;
-        min-width: 200px !important;
-        min-height: 200px !important;
-        max-width: 200px !important;
-        border-radius: 50% !important;
-        background: radial-gradient(circle at 36% 30%,
-            rgba(255,190,225,0.55) 0%,
-            rgba(255,45,149,0.65) 28%,
-            rgba(55,3,28,0.95) 78%) !important;
-        border: 3px solid rgba(255,45,149,0.8) !important;
-        box-shadow: 0 0 0 3px rgba(255,45,149,0.4),
-                    0 0 50px rgba(255,45,149,0.55),
-                    0 10px 40px rgba(0,0,0,0.65),
-                    inset 0 -10px 24px rgba(0,0,0,0.4),
-                    inset 5px 5px 18px rgba(255,255,255,0.12) !important;
+    .home-nav-green .stButton > button {
+        background: linear-gradient(145deg, rgba(57,255,20,0.06), rgba(255,45,149,0.05)) !important;
+        border: 1.5px solid rgba(57,255,20,0.55) !important;
+        box-shadow: 0 0 24px rgba(57,255,20,0.3), inset 0 0 24px rgba(57,255,20,0.06) !important;
+        color: #eafff0 !important;
+        text-shadow: 0 0 14px rgba(57,255,20,0.4) !important;
+    }
+    .home-nav-green .stButton > button:hover {
+        border-color: rgba(57,255,20,0.85) !important;
+        box-shadow: 0 0 38px rgba(57,255,20,0.5), inset 0 0 28px rgba(57,255,20,0.10) !important;
+    }
+    .home-nav-pink .stButton > button {
+        background: linear-gradient(145deg, rgba(255,45,149,0.07), rgba(57,255,20,0.04)) !important;
+        border: 1.5px solid rgba(255,45,149,0.55) !important;
+        box-shadow: 0 0 24px rgba(255,45,149,0.3), inset 0 0 24px rgba(255,45,149,0.06) !important;
         color: #ffe4f3 !important;
-        font-family: 'Heebo', sans-serif !important;
-        font-size: 1.3rem !important;
-        font-weight: 900 !important;
-        white-space: pre-wrap !important;
-        line-height: 1.4 !important;
-        padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        transition: transform .18s ease, box-shadow .18s ease !important;
+        text-shadow: 0 0 14px rgba(255,45,149,0.4) !important;
     }
-    .home-btn-pink .stButton > button:hover {
-        transform: scale(1.06) !important;
-        box-shadow: 0 0 0 3px #FF2D95,
-                    0 0 72px rgba(255,45,149,0.8),
-                    0 10px 40px rgba(0,0,0,0.65),
-                    inset 0 -10px 24px rgba(0,0,0,0.4),
-                    inset 5px 5px 18px rgba(255,255,255,0.18) !important;
+    .home-nav-pink .stButton > button:hover {
+        border-color: rgba(255,45,149,0.85) !important;
+        box-shadow: 0 0 38px rgba(255,45,149,0.5), inset 0 0 28px rgba(255,45,149,0.10) !important;
     }
 
-    /* כפתור הוספת צ'ק — עגול אדום */
+        /* כפתור הוספת צ'ק — עגול אדום */
     .add-check-wrapper .stButton > button {
         border-radius: 50px !important;
         background: linear-gradient(145deg, #e8003a, #c0002e) !important;
@@ -478,18 +428,18 @@ def render_home_screen():
         unsafe_allow_html=True,
     )
 
-    # כדור עליון — מחשבון פריטה (ירוק)
-    st.markdown('<div class="home-btn-green">', unsafe_allow_html=True)
-    if st.button("🧮\nמחשבון פריטה", key="go_calc"):
+    render_kpi()
+
+    st.markdown('<div class="home-nav-btn home-nav-green">', unsafe_allow_html=True)
+    if st.button("🧮  מחשבון פריטה", key="go_calc", use_container_width=True):
         st.session_state.screen = "calc"
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 
-    # כדור תחתון — ניהול צ'קים (ורוד)
-    st.markdown('<div class="home-btn-pink">', unsafe_allow_html=True)
-    if st.button("📋\nניהול צ׳קים", key="go_mgmt"):
+    st.markdown('<div class="home-nav-btn home-nav-pink">', unsafe_allow_html=True)
+    if st.button("📋  ניהול צ׳קים", key="go_mgmt", use_container_width=True):
         st.session_state.screen = "mgmt"
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
