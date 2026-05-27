@@ -197,17 +197,13 @@ def inject_css():
         font-size: 0.78rem; font-weight: 600; margin-inline-start: 6px;
     }
 
-    /* כותרת סקשן — ממורכזת */
     .section-title {
         font-weight: 800; font-size: 1.15rem; margin: 8px 2px 10px;
-        color: #f3f5fa;
-        text-align: center;
+        color: #f3f5fa; text-align: center;
     }
-    /* כותרת מחשבון — ימינה */
     .section-title-right {
         font-weight: 800; font-size: 1.15rem; margin: 8px 2px 10px;
-        color: #f3f5fa;
-        text-align: right;
+        color: #f3f5fa; text-align: right;
     }
     .neon-bar {
         height: 3px; width: 46px; border-radius: 3px;
@@ -268,8 +264,66 @@ def inject_css():
         box-shadow: 0 0 16px rgba(57,255,20,0.3); color:#fff;
     }
 
-    /* כפתור הוספת צ'ק — עגול + אדום */
-    div[data-testid="stButton"] button[kind="secondary"].add-check-btn,
+    /* כפתורי מסך הבית הגדולים */
+    .home-btn-green .stButton > button {
+        width: 160px !important;
+        height: 160px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle at 35% 35%,
+            rgba(57,255,20,0.30), rgba(20,80,10,0.85)) !important;
+        border: 2.5px solid rgba(57,255,20,0.7) !important;
+        box-shadow: 0 0 36px rgba(57,255,20,0.45),
+                    inset 0 0 20px rgba(57,255,20,0.12) !important;
+        color: #eafff0 !important;
+        font-family: 'Heebo', sans-serif !important;
+        font-size: 1.2rem !important;
+        font-weight: 800 !important;
+        white-space: pre-wrap !important;
+        line-height: 1.35 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 auto !important;
+        transition: all .2s ease !important;
+    }
+    .home-btn-green .stButton > button:hover {
+        box-shadow: 0 0 56px rgba(57,255,20,0.70),
+                    inset 0 0 28px rgba(57,255,20,0.22) !important;
+        border-color: #39FF14 !important;
+        transform: scale(1.04);
+    }
+
+    .home-btn-pink .stButton > button {
+        width: 160px !important;
+        height: 160px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle at 35% 35%,
+            rgba(255,45,149,0.30), rgba(80,10,45,0.85)) !important;
+        border: 2.5px solid rgba(255,45,149,0.7) !important;
+        box-shadow: 0 0 36px rgba(255,45,149,0.45),
+                    inset 0 0 20px rgba(255,45,149,0.12) !important;
+        color: #ffe0ef !important;
+        font-family: 'Heebo', sans-serif !important;
+        font-size: 1.2rem !important;
+        font-weight: 800 !important;
+        white-space: pre-wrap !important;
+        line-height: 1.35 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 auto !important;
+        transition: all .2s ease !important;
+    }
+    .home-btn-pink .stButton > button:hover {
+        box-shadow: 0 0 56px rgba(255,45,149,0.70),
+                    inset 0 0 28px rgba(255,45,149,0.22) !important;
+        border-color: #FF2D95 !important;
+        transform: scale(1.04);
+    }
+
+    /* כפתור הוספת צ'ק — עגול אדום */
     .add-check-wrapper .stButton > button {
         border-radius: 50px !important;
         background: linear-gradient(145deg, #e8003a, #c0002e) !important;
@@ -279,12 +333,25 @@ def inject_css():
         font-weight: 800 !important;
         padding: 14px 0 !important;
         box-shadow: 0 0 22px rgba(232,0,58,0.5) !important;
-        letter-spacing: 0.5px;
     }
     .add-check-wrapper .stButton > button:hover {
         box-shadow: 0 0 32px rgba(232,0,58,0.75) !important;
         background: linear-gradient(145deg, #ff1a50, #e0003a) !important;
         border-color: transparent !important;
+    }
+
+    /* כפתור חזרה */
+    .back-btn .stButton > button {
+        border-radius: 50px !important;
+        background: rgba(255,255,255,0.07) !important;
+        border: 1px solid rgba(255,255,255,0.18) !important;
+        color: #c6ccd8 !important;
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+    }
+    .back-btn .stButton > button:hover {
+        background: rgba(255,255,255,0.12) !important;
+        color: #fff !important;
     }
 
     /* טאבים */
@@ -302,10 +369,7 @@ def inject_css():
     }
     .stTabs [data-baseweb="tab"] p,
     .stTabs [data-baseweb="tab"] span,
-    .stTabs [data-baseweb="tab"] div {
-        color: #d0d6e2 !important;
-        opacity: 1 !important;
-    }
+    .stTabs [data-baseweb="tab"] div { color: #d0d6e2 !important; opacity: 1 !important; }
     .stTabs [aria-selected="true"] {
         background: linear-gradient(145deg, rgba(57,255,20,0.18), rgba(255,45,149,0.14));
         border-color: rgba(57,255,20,0.6);
@@ -313,9 +377,7 @@ def inject_css():
     }
     .stTabs [aria-selected="true"] p,
     .stTabs [aria-selected="true"] span,
-    .stTabs [aria-selected="true"] div {
-        color: #ffffff !important;
-    }
+    .stTabs [aria-selected="true"] div { color: #ffffff !important; }
 
     /* שדות קלט */
     .stTextInput input,
@@ -341,17 +403,12 @@ def inject_css():
     }
     div[data-baseweb="select"] div { color: #ffffff !important; }
     input::placeholder { color: #8b93a3 !important; opacity: 1 !important; }
-    ul[role="listbox"], div[data-baseweb="popover"] {
-        background-color: #14161e !important;
-    }
+    ul[role="listbox"], div[data-baseweb="popover"] { background-color: #14161e !important; }
     ul[role="listbox"] li { color: #eef1f7 !important; }
     label { color: #c6ccd8 !important; font-weight:600 !important; }
 
-    /* רדיו ריבית — גדול + ירוק */
-    div[data-testid="stRadio"] > div {
-        gap: 16px !important;
-        justify-content: center !important;
-    }
+    /* רדיו ריבית */
+    div[data-testid="stRadio"] > div { gap: 16px !important; justify-content: center !important; }
     div[data-testid="stRadio"] label {
         background: rgba(57,255,20,0.07) !important;
         border: 1.5px solid rgba(57,255,20,0.35) !important;
@@ -379,7 +436,39 @@ def fmt_ils(x):
 
 
 # ----------------------------------------------------------------------------
-# רכיבים
+# מסך ראשי — שני כדורים
+# ----------------------------------------------------------------------------
+def render_home_screen():
+    st.markdown(
+        "<div style='height: 60px;'></div>"
+        "<h1 style='text-align:center;font-family:Orbitron;font-weight:800;font-size:2.2rem;"
+        "background:linear-gradient(90deg,#39FF14,#FF2D95,#FF9F1C);"
+        "-webkit-background-clip:text;-webkit-text-fill-color:transparent;"
+        "margin-bottom:6px;'>CHECKFLOW</h1>"
+        "<p style='text-align:center;color:#9aa3b2;font-size:1rem;margin-bottom:60px;'>"
+        "ניהול צ׳קים ופריטה</p>",
+        unsafe_allow_html=True,
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown('<div class="home-btn-green">', unsafe_allow_html=True)
+        if st.button("🧮\nמחשבון\nפריטה", key="go_calc", use_container_width=False):
+            st.session_state.screen = "calc"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with col2:
+        st.markdown('<div class="home-btn-pink">', unsafe_allow_html=True)
+        if st.button("📋\nניהול\nצ׳קים", key="go_mgmt", use_container_width=False):
+            st.session_state.screen = "mgmt"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+
+# ----------------------------------------------------------------------------
+# רכיבי ניהול
 # ----------------------------------------------------------------------------
 def render_kpi():
     total, cnt = get_totals()
@@ -395,7 +484,6 @@ def render_kpi():
 def render_add_check_form():
     clients = get_clients()
 
-    # כפתור עגול אדום לפתיחת הטופס
     st.markdown('<div class="add-check-wrapper">', unsafe_allow_html=True)
     if st.button("➕  הוספת צ'ק חדש", use_container_width=True, key="open_add_form"):
         st.session_state.add_form_open = not st.session_state.get("add_form_open", False)
@@ -447,7 +535,6 @@ def render_add_check_form():
 
 
 def render_clients():
-    # כותרת ממורכזת
     st.markdown('<div class="section-title">הלקוחות שלי</div>', unsafe_allow_html=True)
     st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
 
@@ -508,7 +595,6 @@ def render_clients():
 # מחשבון פריטה
 # ----------------------------------------------------------------------------
 def render_calculator():
-    # כותרת ימינה
     st.markdown('<div class="section-title-right">מחשבון פריטה (ניכיון)</div>',
                 unsafe_allow_html=True)
     st.markdown('<div class="neon-bar-right"></div>', unsafe_allow_html=True)
@@ -550,7 +636,6 @@ def render_calculator():
         help="החישוב מתחיל ממחר וכולל את יום הפירעון עצמו",
     )
 
-    # +1: לא סופרים היום, כן סופרים את יום הפירעון
     days = max((due_date - date.today()).days + 1, 0)
 
     st.markdown(
@@ -562,7 +647,6 @@ def render_calculator():
         unsafe_allow_html=True,
     )
 
-    # סוג ריבית
     st.markdown(
         "<div style='text-align:center;font-weight:800;font-size:1.05rem;"
         "color:#f3f5fa;margin-bottom:6px;'>סוג הריבית</div>",
@@ -575,7 +659,6 @@ def render_calculator():
     )
     st.session_state.rate_basis = basis
 
-    # ריבית — הזנה ידנית
     rate_val = st.session_state.fixed_rate
 
     r1, r2 = st.columns([2, 1])
@@ -597,11 +680,9 @@ def render_calculator():
     if st.session_state.rate_edit_open:
         new_rate = st.number_input(
             "הזן ריבית (%)",
-            min_value=0.0,
-            max_value=100.0,
+            min_value=0.0, max_value=100.0,
             value=float(st.session_state.fixed_rate),
-            step=0.1,
-            format="%.2f",
+            step=0.1, format="%.2f",
             key="rate_input_manual",
         )
         if st.button("💾 שמירת הריבית", use_container_width=True, key="save_rate"):
@@ -609,7 +690,6 @@ def render_calculator():
             st.session_state.rate_edit_open = False
             st.rerun()
 
-    # חישוב
     if basis == "חודשית":
         fee = amount * (rate_val / 100.0) * (days / 30.0)
     else:
@@ -619,8 +699,7 @@ def render_calculator():
     if days <= 0:
         st.markdown(
             "<div style='text-align:center;color:#FF9F1C;font-size:.9rem;"
-            "margin:10px 0 0;'>⚠️ תאריך הפירעון עבר — אין ימי זיכוי. "
-            "בחר תאריך עתידי כדי לראות עמלה.</div>",
+            "margin:10px 0 0;'>⚠️ תאריך הפירעון עבר — אין ימי זיכוי.</div>",
             unsafe_allow_html=True,
         )
 
@@ -637,31 +716,42 @@ def render_calculator():
 
 
 # ----------------------------------------------------------------------------
+# כפתור חזרה
+# ----------------------------------------------------------------------------
+def render_back_button():
+    st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="back-btn">', unsafe_allow_html=True)
+    if st.button("← חזרה למסך הראשי", key="back_home", use_container_width=False):
+        st.session_state.screen = "home"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+
+
+# ----------------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------------
 def main():
     init_db()
     inject_css()
 
-    st.markdown(
-        "<h2 style='text-align:center;font-family:Orbitron;font-weight:800;"
-        "background:linear-gradient(90deg,#39FF14,#FF2D95,#FF9F1C);"
-        "-webkit-background-clip:text;-webkit-text-fill-color:transparent;'>"
-        "CHECKFLOW</h2>"
-        "<p style='text-align:center;color:#9aa3b2;margin-top:-12px;'>"
-        "ניהול אובליגו ופריטת צ'קים</p>",
-        unsafe_allow_html=True,
-    )
+    if "screen" not in st.session_state:
+        st.session_state.screen = "home"
 
-    tab_home, tab_calc = st.tabs(["🏠  מסך הבית", "🧮  מחשבון פריטה"])
+    screen = st.session_state.screen
 
-    with tab_home:
+    if screen == "home":
+        render_home_screen()
+
+    elif screen == "calc":
+        render_back_button()
+        render_calculator()
+
+    elif screen == "mgmt":
+        render_back_button()
         render_kpi()
         render_add_check_form()
         render_clients()
-
-    with tab_calc:
-        render_calculator()
 
 
 if __name__ == "__main__":
