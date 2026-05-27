@@ -6,7 +6,7 @@ Streamlit Web App (Mobile-first)
 """
 
 import sqlite3
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from contextlib import closing
 
 import streamlit as st
@@ -485,13 +485,13 @@ def render_add_check_form():
                                  format="%.0f", key="add_amount")
         c1, c2 = st.columns(2)
         with c1:
-            due = st.date_input("תאריך פירעון", value=date.today(), key="add_due")
+            due = st.date_input("תאריך פירעון", value=date.today() + timedelta(days=30), min_value=date.today(), key="add_due")
         with c2:
             use_remind = st.checkbox("הוסף תזכורת", value=False, key="add_use_remind")
 
         remind = None
         if use_remind:
-            remind = st.date_input("תאריך תזכורת", value=date.today(), key="add_remind")
+            remind = st.date_input("תאריך תזכורת", value=date.today() + timedelta(days=30), min_value=date.today(), key="add_remind")
 
         status = st.selectbox("סטטוס", STATUSES, key="add_status")
 
@@ -591,7 +591,7 @@ def render_calculator():
     pick = st.selectbox("בחר צ'ק קיים (או הזנה ידנית)", options, key="calc_pick")
 
     default_amount = 10000.0
-    default_due = date.today()
+    default_due = date.today() + timedelta(days=30)
     if pick != "— הזנה ידנית —":
         idx = options.index(pick) - 1
         ch = checks[idx]
@@ -599,7 +599,7 @@ def render_calculator():
         try:
             default_due = datetime.fromisoformat(ch["due_date"]).date()
         except Exception:
-            default_due = date.today()
+            default_due = date.today() + timedelta(days=30)
 
     amount = st.number_input("סכום הצ'ק (₪)", min_value=0.0, step=100.0,
                              value=default_amount, format="%.0f", key="calc_amount")
@@ -610,6 +610,7 @@ def render_calculator():
 
     due_date = st.date_input(
         "תאריך פירעון הצ'ק", key="calc_due",
+        min_value=date.today(),
         help="החישוב מתחיל ממחר וכולל את יום הפירעון עצמו",
     )
 
