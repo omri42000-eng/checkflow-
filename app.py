@@ -318,17 +318,22 @@ def inject_css():
         border-color: transparent !important;
     }
 
-    /* כפתור חזרה */
+    /* כפתור חזרה — קומפקטי */
+    .back-btn { display: inline-block; margin-bottom: 8px; }
     .back-btn .stButton > button {
-        border-radius: 50px !important;
-        background: rgba(255,255,255,0.07) !important;
-        border: 1px solid rgba(255,255,255,0.18) !important;
-        color: #c6ccd8 !important;
-        font-size: 0.95rem !important;
-        font-weight: 700 !important;
+        border-radius: 20px !important;
+        background: rgba(255,255,255,0.06) !important;
+        border: 1px solid rgba(255,255,255,0.14) !important;
+        color: #9aa3b2 !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        padding: 4px 14px !important;
+        height: auto !important;
+        min-height: 0 !important;
+        line-height: 1.6 !important;
     }
     .back-btn .stButton > button:hover {
-        background: rgba(255,255,255,0.12) !important;
+        background: rgba(255,255,255,0.11) !important;
         color: #fff !important;
     }
 
@@ -394,7 +399,7 @@ def inject_css():
         padding: 10px 28px !important;
         font-size: 1.05rem !important;
         font-weight: 800 !important;
-        color: #39FF14 !important;
+        color: #d0d6e2 !important;
         cursor: pointer;
         transition: all .15s ease;
     }
@@ -407,6 +412,26 @@ def inject_css():
     div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
+
+    # JS — סימון אוטומטי של כל שדות number input בלחיצה
+    st.components.v1.html("""
+    <script>
+    function attachSelectAll() {
+        var inputs = window.parent.document.querySelectorAll('input[type="number"], input[inputmode="decimal"], input[inputmode="numeric"]');
+        inputs.forEach(function(inp) {
+            if (inp._selectAllAttached) return;
+            inp._selectAllAttached = true;
+            inp.addEventListener('focus', function() {
+                var self = this;
+                setTimeout(function() { self.select(); }, 50);
+            });
+        });
+    }
+    // ריצה ראשונית ואחר כך כל חצי שניה (כי Streamlit מחדש אלמנטים)
+    attachSelectAll();
+    setInterval(attachSelectAll, 500);
+    </script>
+    """, height=0)
 
 
 def fmt_ils(x):
@@ -697,13 +722,11 @@ def render_calculator():
 # כפתור חזרה
 # ----------------------------------------------------------------------------
 def render_back_button():
-    st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
     st.markdown('<div class="back-btn">', unsafe_allow_html=True)
-    if st.button("← חזרה למסך הראשי", key="back_home", use_container_width=False):
+    if st.button("← ראשי", key="back_home"):
         st.session_state.screen = "home"
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
 
 
 # ----------------------------------------------------------------------------
