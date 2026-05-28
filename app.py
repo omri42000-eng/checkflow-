@@ -648,34 +648,46 @@ def get_all_users_for_auth():
         return credentials
 
 def register_new_user(authenticator):
-    """מנגנון הרשמה למשתמש חדש בגרסה המעודכנת"""
+    """מנגנון הרשמה למשתמש חדש - תואם לגרסה החדשה ביותר ללא credentials"""
     try:
-        # בגרסה החדשה אין form_name, והכותרת מוגדרת אוטומטית לפי השפה של הדפדפן או החבילה
-        # הפונקציה מציגה את הטופס ומחזירה True אם משתמש נרשם בהצלחה
-        if authenticator.register_user(location='main'):
+        # הספרייה מריצה את טופס ההרשמה (מציגה שדות: שם משתמש, סיסמה, אימייל, שם מלא)
+        # בגרסאות החדשות היא מחזירה True אם מישהו לחץ על כפתור הרישום והקלט תקין
+        result = authenticator.register_user(location='main')
+        
+        if result:
+            # מכיוון שהספרייה שומרת את הפרטים בתוך ה-session_state שלה בזמן הרישום,
+            # אנחנו שולפים את המשתמש החדש ואת הסיסמה המוצפנת שהוא יצר ישירות משם!
             
-            # שליפת המשתמש האחרון שנרשם מתוך המבנה הפנימי של הספרייה
-            # הספרייה מוסיפה אותו אוטומטית לתוך credentials['usernames']
-            new_username = list(authenticator.credentials['usernames'].keys())[-1]
-            user_data = authenticator.credentials['usernames'][new_username]
+            # 1. נמצא את שם המשתמש שנרשם הרגע (הוא נמצא בתוך ה-cookie או ב-state הזמני)
+            # הדרך הכי בטוחה היא לבדוק מה התווסף ל-session_state של ה-authenticator
+            # או פשוט לקחת את השדות הזמניים של ה-Form:
             
-            username = new_username
-            name = user_data['name']
-            hashed_password = user_data['password']
-            email = user_data['email']
+            # ניגש לנתונים שהספרייה עצמה מעדכנת בזיכרון שלה:
+            usernames_dict = authenticator.validator.credentials.get('usernames', {})
             
-            # שמירת המשתמש החדש במסד הנתונים של ה-SQLite שלך
-            with closing(get_conn()) as conn, conn:
-                conn.execute(
-                    "INSERT OR IGNORE INTO users (username, name, password, email) VALUES (?, ?, ?, ?)",
-                    (username, name, hashed_password, email)
-                )
-            st.success('נרשמת בהצלחה! כעת ניתן להסיר את ה-V מההרשמה ולהתחבר.')
-            st.rerun()
-            
+            if usernames_dict:
+                # לוקחים את המשתמש האחרון שהתווסף למערכת
+                new_username = list(usernames_dict.keys())[-1]
+                user_data = usernames_dict[new_username]
+                
+                username = new_username
+                name = user_data.get('name', '')
+                hashed_password = user_data.get('password', '')
+                email = user_data.get('email', '')
+                
+                # שמירת המשתמש החדש במסד הנתונים של ה-SQLite שלך
+                with closing(get_conn()) as conn, conn:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO users (username, name, password, email) VALUES (?, ?, ?, ?)",
+                        (username, name, hashed_password, email)
+                    )
+                st.success('נרשמת בהצלחה! כעת ניתן להסיר את ה-V מההרשמה ולהתחבר.')
+                st.rerun()
+            else:
+                st.error("לא ניתן היה לקרוא את נתוני הרישום. נסה שוב.")
+                
     except Exception as e:
         st.error(f'שגיאה בהרשמה: {e}')
-
 # ----------------------------------------------------------------------------
 # Main (פונקציית הניהול המרכזית המאוחדת)
 # ----------------------------------------------------------------------------
