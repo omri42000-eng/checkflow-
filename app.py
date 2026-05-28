@@ -685,8 +685,25 @@ def main():
     )
 
     # 3. מסך כניסה
-    name, authentication_status, username = authenticator.login(form_name='כניסה למערכת', location='main')
+    # 3. מסך כניסה בגרסה החדשה
+    authentication_status = authenticator.login(location='main')
+if st.session_state["authentication_status"] == False:
+        st.error('שם המשתמש או הסיסמה שגויים.')
+        if st.checkbox("אין לך חשבון? הירשם כאן", key="reg_cb_fail"):
+            register_new_user(authenticator)
+            
+    elif st.session_state["authentication_status"] == None:
+        st.warning('אנא התחבר כדי לצפות בנתונים.')
+        if st.checkbox("אין לך חשבון? הירשם כאן", key="reg_cb_none"):
+            register_new_user(authenticator)
 
+    elif st.session_state["authentication_status"]:
+        # שליפת שם המשתמש שהתחבר בהצלחה
+        username = st.session_state["username"]
+        st.session_state.current_user = username
+        
+        # כפתור התנתקות
+        authenticator.logout('התנתק', 'sidebar')
     if authentication_status == False:
         st.error('שם המשתמש או הסיסמה שגויים.')
         if st.checkbox("אין לך חשבון? הירשם כאן", key="reg_cb_fail"):
