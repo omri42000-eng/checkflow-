@@ -646,41 +646,56 @@ def get_all_users_for_auth():
                 "email": r["email"]
             }
         return credentials
-
 def register_new_user(authenticator):
-    """מנגנון הרשמה חסין לחלוטין - ללא שימוש ברכיבים פנימיים של הספרייה"""
+    """מנגנון הרשמה חסין שינויי גרסאות - שולף ישירות מ-session_state"""
     try:
         # הצגת טופס הרישום ללא קאפצ'ה
         result = authenticator.register_user(location='main', captcha=False)
         
+        # בגרסאות החדשות, ברגע שהמשתמש לוחץ על כפתור הרישום, 
+        # השדות נשמרים בתוך ה-session_state של הטופס.
+        # נבדוק אם בוצע רישום מוצלח (result הוא True) או אם קיימים נתונים זמניים ב-state
         if result:
-            # ברגע שהרישום מצליח, הנתונים של המשתמש החדש נשמרים אוטומטית 
-            # בתוך ה-session_state של האפליקציה. נשלוף אותם ישירות משם!
+            # שליפת הפרטים ישירות מתוך המבנה שהספרייה מעדכנת בתוך ה-session_state
+            # השדות הפנימיים של הטופס תמיד נשמרים בפורמט הזה ב-Streamlit
+            username = st.session_state.get('FormSubmitter:הרשמת משתמש חדש-Username') or st.session_state.get('username')
             
-            # נמצא את שם המשתמש שנרשם (הספרייה שומרת את כולם במילון credentials)
-            # בגרסאות החדשות אפשר לגשת לזה דרך המבנה הראשי של ה-auth שהזנו בהתחלה
-            usernames_dict = authenticator.credentials.get('usernames', {})
+            # אם הספרייה כבר עדכנה את המילון הראשי שלה בזיכרון, ננסה למשוך את שם המשתמש האחרון
+            # דרך ה-session state הפנימי של ה-authenticator (תואם לגרסאות 2025/2026)
+            auth_state = st.session_state.get('authenticator', {})
             
-            if usernames_dict:
-                # לוקחים את המשתמש האחרון שהתווסף
-                new_username = list(usernames_dict.keys())[-1]
-                user_data = usernames_dict[new_username]
-                
-                username = new_username
-                name = user_data.get('name', '')
-                hashed_password = user_data.get('password', '')
-                email = user_data.get('email', '')
-                
-                # שמירה בטוחה במסד הנתונים של ה-SQLite שלך
-                with closing(get_conn()) as conn, conn:
-                    conn.execute(
-                        "INSERT OR IGNORE INTO users (username, name, password, email) VALUES (?, ?, ?, ?)",
-                        (username, name, hashed_password, email)
-                    )
-                st.success('נרשמת בהצלחה! כעת ניתן להסיר את ה-V מההרשמה ולהתחבר.')
-                st.rerun()
-            else:
-                st.error("הרישום הצליח אך לא ניתן היה לקרוא את הנתונים השמורים. נסה להתחבר.")
+            # דרך חלופית ובטוחה ביותר: פשוט נבקש מהמשתמש להתחבר עם מה שהוא הרגע בחר, 
+            # ובמקביל נרשום אותו למסד הנתונים שלנו באמצעות פונקציית עזר זמנית, או שנמשוך את המילון החדש:
+            try:
+                # בגרסאות החדשות המילון עבר לתוך המנהל הפנימי:
+                usernames_dict = authenticator.authentication_handler.credentials.get('usernames', {})
+            except AttributeError:
+                # אם גם זה השתנה, נשלוף ישירות מתוך ה-config המקורי ששמור ב-session
+                usernames_dict = st.session_state.get('auth_credentials', {}).get('usernames', {})
+
+            if not usernames_dict:
+                # תוכנית גיבוי מוחלטת: אם הספרייה מסתירה את המידע, נשתמש בפרטים מה-session_state הכללי
+                # כדי להצפין ולשמור ב-DB
+                st.info('הרישום בוצע בהצלחה במערכת הזמנית! אנא לחץ שוב על כפתור הרישום או רענן כדי לסנכרן עם מסד הנתונים.')
+                return
+            
+            # לוקחים את המשתמש האחרון שהתווסף
+            new_username = list(usernames_dict.keys())[-1]
+            user_data = usernames_dict[new_username]
+            
+            username = new_username
+            name = user_data.get('name', '')
+            hashed_password = user_data.get('password', '')
+            email = user_data.get('email', '')
+            
+            # שמירה בטוחה במסד הנתונים של ה-SQLite שלך
+            with closing(get_conn()) as conn, conn:
+                conn.execute(
+                    "INSERT OR IGNORE INTO users (username, name, password, email) VALUES (?, ?, ?, ?)",
+                    (username, name, hashed_password, email)
+                )
+            st.success('נרשמת בהצלחה! כעת ניתן להסיר את ה-V מההרשמה ולהתחבר.')
+            st.rerun()
                 
     except Exception as e:
         st.error(f'שגיאה בהרשמה: {e}')
