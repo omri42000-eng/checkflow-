@@ -86,16 +86,18 @@ def init_db():
         """)
 
         # ── Migrations ──
-        for table, col, defval in [
-            ("users",   "webauthn_credential_id", "NULL"),
-            ("clients", "username",               "'admin'"),
-            ("clients", "total_returned_checks",  "0"),
-            ("clients", "total_late_payments",    "0"),
-            ("clients", "total_successful_deals", "0"),
-        ]:
+        # Each entry: (table, column, full DDL fragment after ADD COLUMN)
+        _migrations = [
+            ("users",   "webauthn_credential_id", "TEXT"),                        # nullable — no NOT NULL
+            ("clients", "username",               "TEXT NOT NULL DEFAULT 'admin'"),
+            ("clients", "total_returned_checks",  "INTEGER NOT NULL DEFAULT 0"),
+            ("clients", "total_late_payments",    "INTEGER NOT NULL DEFAULT 0"),
+            ("clients", "total_successful_deals", "INTEGER NOT NULL DEFAULT 0"),
+        ]
+        for table, col, ddl in _migrations:
             cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
             if col not in cols:
-                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} TEXT NOT NULL DEFAULT {defval}")
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
 
         try:
             conn.execute(
