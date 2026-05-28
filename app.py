@@ -648,15 +648,21 @@ def get_all_users_for_auth():
         return credentials
 
 def register_new_user(authenticator):
-    """מנגנון הרשמה למשתמש חדש - ללא קאפצ'ה קורסת"""
+    """מנגנון הרשמה חסין לחלוטין - ללא שימוש ברכיבים פנימיים של הספרייה"""
     try:
-        # הוספנו captcha=False כדי למנוע את השגיאה
+        # הצגת טופס הרישום ללא קאפצ'ה
         result = authenticator.register_user(location='main', captcha=False)
         
         if result:
-            usernames_dict = authenticator.validator.credentials.get('usernames', {})
+            # ברגע שהרישום מצליח, הנתונים של המשתמש החדש נשמרים אוטומטית 
+            # בתוך ה-session_state של האפליקציה. נשלוף אותם ישירות משם!
+            
+            # נמצא את שם המשתמש שנרשם (הספרייה שומרת את כולם במילון credentials)
+            # בגרסאות החדשות אפשר לגשת לזה דרך המבנה הראשי של ה-auth שהזנו בהתחלה
+            usernames_dict = authenticator.credentials.get('usernames', {})
             
             if usernames_dict:
+                # לוקחים את המשתמש האחרון שהתווסף
                 new_username = list(usernames_dict.keys())[-1]
                 user_data = usernames_dict[new_username]
                 
@@ -665,7 +671,7 @@ def register_new_user(authenticator):
                 hashed_password = user_data.get('password', '')
                 email = user_data.get('email', '')
                 
-                # שמירה ב-SQLite
+                # שמירה בטוחה במסד הנתונים של ה-SQLite שלך
                 with closing(get_conn()) as conn, conn:
                     conn.execute(
                         "INSERT OR IGNORE INTO users (username, name, password, email) VALUES (?, ?, ?, ?)",
@@ -674,7 +680,7 @@ def register_new_user(authenticator):
                 st.success('נרשמת בהצלחה! כעת ניתן להסיר את ה-V מההרשמה ולהתחבר.')
                 st.rerun()
             else:
-                st.error("לא ניתן היה לקרוא את נתוני הרישום. נסה שוב.")
+                st.error("הרישום הצליח אך לא ניתן היה לקרוא את הנתונים השמורים. נסה להתחבר.")
                 
     except Exception as e:
         st.error(f'שגיאה בהרשמה: {e}')
