@@ -186,201 +186,247 @@ def get_all_users_for_auth():
 def inject_css():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800;900&family=Orbitron:wght@600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
     html, body, [class*="css"] { direction: rtl; }
+
+    /* ─── רקע ─── */
     .stApp {
-        background:
-            radial-gradient(1200px 600px at 80% -10%, rgba(255,45,149,0.10), transparent 60%),
-            radial-gradient(1000px 500px at -10% 20%, rgba(57,255,20,0.08), transparent 55%),
-            radial-gradient(900px 500px at 50% 120%, rgba(255,159,28,0.10), transparent 60%),
-            #0c0d12;
-        font-family: 'Heebo', sans-serif;
-        color: #e8ebf2;
+        background: #F7F7F9;
+        font-family: 'Inter', sans-serif;
+        color: #000000;
     }
     #MainMenu, header, footer { visibility: hidden; }
-    .block-container { padding-top: 1.2rem; padding-bottom: 4rem; max-width: 480px; }
-
-    .glass {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 22px; padding: 18px 20px;
-        backdrop-filter: blur(14px);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.45);
-        margin-bottom: 14px;
+    .block-container {
+        padding-top: 0 !important;
+        padding-bottom: 5rem;
+        max-width: 480px;
     }
 
-    /* KPI */
+    /* ─── KPI ─── */
     .kpi {
-        background: linear-gradient(145deg, rgba(57,255,20,0.06), rgba(255,45,149,0.05));
-        border: 1.5px solid rgba(57,255,20,0.45);
-        border-radius: 26px; padding: 22px 24px;
-        box-shadow: 0 0 24px rgba(57,255,20,0.25), inset 0 0 24px rgba(57,255,20,0.06);
-        margin-bottom: 18px; text-align: center;
+        background: #C4CEFF;
+        border-radius: 32px;
+        padding: 28px 24px 22px;
+        margin-bottom: 6px;
+        text-align: center;
+        border: none;
     }
-    .kpi-label { font-size: 0.85rem; color: #9aa3b2; letter-spacing: 1px; }
+    .kpi-label {
+        font-size: 12px; font-weight: 600; letter-spacing: 1.5px;
+        color: #5A5AA3; text-transform: uppercase; margin-bottom: 6px;
+    }
     .kpi-value {
-        font-family: 'Orbitron', sans-serif; font-size: 2.6rem; font-weight: 800;
-        color: #eafff0; text-shadow: 0 0 18px rgba(57,255,20,0.55);
-        direction: ltr; text-align: center; display: block; width: 100%;
+        font-family: 'Inter', sans-serif;
+        font-size: 3rem; font-weight: 900; line-height: 1;
+        color: #000000; direction: ltr; display: block;
+        letter-spacing: -2px;
     }
-    .kpi-sub { font-size: 0.95rem; color: #c6ccd8; margin-top: 6px; }
+    .kpi-sub {
+        font-size: 13px; color: #6B6BA8; margin-top: 8px; font-weight: 500;
+    }
+
+    /* ─── כרטיסים כלליים ─── */
+    .glass {
+        background: #FFFFFF;
+        border-radius: 28px;
+        padding: 20px 22px;
+        margin-bottom: 6px;
+        border: none;
+    }
+
+    /* ─── pill ─── */
     .pill {
-        display:inline-block; padding: 3px 12px; border-radius: 999px;
-        font-size: 0.78rem; font-weight: 600; margin-inline-start: 6px;
+        display: inline-block; padding: 2px 10px; border-radius: 999px;
+        font-size: 11px; font-weight: 700; margin-inline-start: 6px;
+        letter-spacing: 0.3px;
     }
 
-    .section-title { font-weight:800; font-size:1.15rem; margin:8px 2px 10px; color:#f3f5fa; text-align:center; }
-    .section-title-right { font-weight:800; font-size:1.15rem; margin:8px 2px 10px; color:#f3f5fa; text-align:right; }
-    .neon-bar {
-        height:3px; width:46px; border-radius:3px;
-        background:linear-gradient(90deg,#39FF14,#FF2D95,#FF9F1C);
-        box-shadow:0 0 12px rgba(255,45,149,0.6); margin:0 auto 14px;
+    /* ─── כותרות סקשן ─── */
+    .section-title {
+        font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
+        color: #000; margin: 20px 0 6px; text-align: right;
     }
-    .neon-bar-right {
-        height:3px; width:46px; border-radius:3px;
-        background:linear-gradient(90deg,#39FF14,#FF2D95,#FF9F1C);
-        box-shadow:0 0 12px rgba(255,45,149,0.6); margin:0 0 14px auto;
+    .section-title-right {
+        font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
+        color: #000; margin: 10px 0 6px; text-align: right;
     }
+    .neon-bar, .neon-bar-right {
+        height: 3px; width: 36px; border-radius: 3px;
+        background: #000; margin-bottom: 16px; margin-right: 0;
+    }
+    .neon-bar { margin-right: auto; margin-left: auto; }
 
+    /* ─── כרטיס לקוח ─── */
     .client-card {
-        display:flex; justify-content:space-between; align-items:center;
-        background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08);
-        border-radius:18px; padding:14px 16px; margin-bottom:10px;
+        display: flex; justify-content: space-between; align-items: center;
+        background: #F0F0F5;
+        border-radius: 22px; padding: 16px 18px; margin-bottom: 6px;
+        border: none;
     }
-    .client-name { font-weight:700; font-size:1.05rem; }
+    .client-name { font-weight: 800; font-size: 1rem; color: #000; }
     .client-obligo {
-        font-family:'Orbitron',sans-serif; font-weight:700;
-        color:#FF9F1C; text-shadow:0 0 12px rgba(255,159,28,0.5); direction:ltr;
+        font-weight: 900; font-size: 1.15rem;
+        color: #000; direction: ltr; letter-spacing: -0.5px;
     }
 
-    .calc-out { border-radius:22px; padding:18px 20px; margin-top:8px; text-align:center; }
-    .calc-out.fee {
-        background:linear-gradient(145deg,rgba(255,45,149,0.10),rgba(255,45,149,0.03));
-        border:1.5px solid rgba(255,45,149,0.5); box-shadow:0 0 22px rgba(255,45,149,0.25);
+    /* ─── פלט מחשבון ─── */
+    .calc-out {
+        border-radius: 28px; padding: 20px 22px;
+        margin-top: 6px; text-align: center; border: none;
     }
-    .calc-out.net {
-        background:linear-gradient(145deg,rgba(57,255,20,0.10),rgba(57,255,20,0.03));
-        border:1.5px solid rgba(57,255,20,0.5); box-shadow:0 0 22px rgba(57,255,20,0.3); margin-top:14px;
+    .calc-out.fee { background: #FFD6E8; }
+    .calc-out.net { background: #D6F5E0; margin-top: 6px; }
+    .calc-out .lbl {
+        font-size: 12px; font-weight: 600; letter-spacing: 1.2px;
+        text-transform: uppercase; color: #8A8A93; margin-bottom: 6px;
     }
-    .calc-out .lbl { font-size:0.9rem; color:#aeb5c2; letter-spacing:.5px; }
-    .calc-out .big { font-family:'Orbitron',sans-serif; font-size:2.4rem; font-weight:800; direction:ltr; line-height:1.15; }
-    .fee .big { color:#ffb3da; text-shadow:0 0 18px rgba(255,45,149,.55); }
-    .net .big { color:#c9ffd6; text-shadow:0 0 18px rgba(57,255,20,.6); }
+    .calc-out .big {
+        font-family: 'Inter', sans-serif; font-size: 2.6rem;
+        font-weight: 900; direction: ltr; line-height: 1.1;
+        letter-spacing: -1.5px; color: #000;
+    }
 
-    /* כפתורים כלליים */
+    /* ─── כפתורים כלליים ─── */
     .stButton > button {
-        border-radius:14px; border:1px solid rgba(255,255,255,0.12);
-        background:rgba(255,255,255,0.05); color:#eef1f7; font-weight:700;
-        transition:all .15s ease;
+        border-radius: 16px !important;
+        border: none !important;
+        background: #EFEFEF !important;
+        color: #000 !important;
+        font-weight: 700 !important;
+        font-family: 'Inter', sans-serif !important;
+        transition: opacity .15s ease !important;
     }
-    .stButton > button:hover {
-        border-color:rgba(57,255,20,0.6);
-        box-shadow:0 0 16px rgba(57,255,20,0.3); color:#fff;
-    }
+    .stButton > button:hover { opacity: 0.82 !important; }
 
-    /* כפתורי ניווט מסך הבית */
+    /* ─── כפתורי ניווט מסך הבית ─── */
     .home-nav-btn .stButton > button {
-        border-radius:22px !important; font-size:1.3rem !important;
-        font-weight:800 !important; min-height:80px !important;
-        height:auto !important; padding:22px 24px !important;
-        transition:transform .15s ease, box-shadow .15s ease !important;
+        border-radius: 28px !important;
+        font-size: 1.25rem !important;
+        font-weight: 900 !important;
+        min-height: 90px !important;
+        height: auto !important;
+        padding: 26px 24px !important;
+        letter-spacing: -0.3px !important;
+        border: none !important;
     }
-    .home-nav-btn .stButton > button:hover { transform:scale(1.02) !important; }
     .home-nav-green .stButton > button {
-        background:linear-gradient(145deg,rgba(57,255,20,0.06),rgba(255,45,149,0.05)) !important;
-        border:1.5px solid rgba(57,255,20,0.55) !important;
-        box-shadow:0 0 24px rgba(57,255,20,0.3),inset 0 0 24px rgba(57,255,20,0.06) !important;
-        color:#eafff0 !important; text-shadow:0 0 14px rgba(57,255,20,0.4) !important;
-    }
-    .home-nav-green .stButton > button:hover {
-        border-color:rgba(57,255,20,0.85) !important;
-        box-shadow:0 0 38px rgba(57,255,20,0.5),inset 0 0 28px rgba(57,255,20,0.10) !important;
+        background: #D6F5E0 !important;
+        color: #000 !important;
     }
     .home-nav-pink .stButton > button {
-        background:linear-gradient(145deg,rgba(255,45,149,0.07),rgba(57,255,20,0.04)) !important;
-        border:1.5px solid rgba(255,45,149,0.55) !important;
-        box-shadow:0 0 24px rgba(255,45,149,0.3),inset 0 0 24px rgba(255,45,149,0.06) !important;
-        color:#ffe4f3 !important; text-shadow:0 0 14px rgba(255,45,149,0.4) !important;
-    }
-    .home-nav-pink .stButton > button:hover {
-        border-color:rgba(255,45,149,0.85) !important;
-        box-shadow:0 0 38px rgba(255,45,149,0.5),inset 0 0 28px rgba(255,45,149,0.10) !important;
+        background: #E8E4FF !important;
+        color: #000 !important;
     }
 
-    /* כפתור הוספת צ'ק */
+    /* ─── כפתור הוספת צ'ק ─── */
     .add-check-wrapper .stButton > button {
-        border-radius:50px !important;
-        background:linear-gradient(145deg,#e8003a,#c0002e) !important;
-        border:none !important; color:#fff !important;
-        font-size:1.15rem !important; font-weight:800 !important;
-        padding:14px 0 !important; box-shadow:0 0 22px rgba(232,0,58,0.5) !important;
+        border-radius: 50px !important;
+        background: #000 !important;
+        color: #fff !important;
+        font-size: 1rem !important;
+        font-weight: 800 !important;
+        padding: 14px 0 !important;
+        border: none !important;
+        letter-spacing: 0.2px !important;
     }
+    .add-check-wrapper .stButton > button:hover { opacity: 0.80 !important; }
 
-    /* כפתור חזרה */
-    .back-btn { display:inline-block; margin-bottom:8px; }
+    /* ─── כפתור חזרה ─── */
+    .back-btn { display: inline-block; margin-bottom: 10px; }
     .back-btn .stButton > button {
-        border-radius:20px !important; background:rgba(255,255,255,0.06) !important;
-        border:1px solid rgba(255,255,255,0.14) !important; color:#9aa3b2 !important;
-        font-size:0.82rem !important; font-weight:600 !important;
-        padding:4px 14px !important; height:auto !important;
-        min-height:0 !important; line-height:1.6 !important;
+        border-radius: 50px !important;
+        background: #EFEFEF !important;
+        color: #8A8A93 !important;
+        font-size: 0.80rem !important;
+        font-weight: 700 !important;
+        padding: 5px 16px !important;
+        height: auto !important;
+        min-height: 0 !important;
+        line-height: 1.6 !important;
+        border: none !important;
     }
 
-    /* שדות קלט */
-    .stTextInput input, .stNumberInput input, .stDateInput input,
-    [data-baseweb="input"] input, [data-baseweb="base-input"] input {
-        color:#ffffff !important; background-color:rgba(20,22,30,0.92) !important;
-        -webkit-text-fill-color:#ffffff !important; caret-color:#39FF14 !important;
-        border-radius:12px !important; direction:ltr !important; text-align:right !important;
+    /* ─── שדות קלט ─── */
+    .stTextInput input,
+    .stNumberInput input,
+    .stDateInput input,
+    [data-baseweb="input"] input,
+    [data-baseweb="base-input"] input {
+        color: #000 !important;
+        background-color: #F0F0F5 !important;
+        -webkit-text-fill-color: #000 !important;
+        caret-color: #000 !important;
+        border-radius: 14px !important;
+        border: none !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        direction: ltr !important;
+        text-align: right !important;
     }
     .stTextInput div[data-baseweb="input"],
     .stNumberInput div[data-baseweb="input"],
     .stDateInput div[data-baseweb="input"],
     div[data-baseweb="select"] > div {
-        background-color:rgba(20,22,30,0.92) !important;
-        border:1px solid rgba(255,255,255,0.18) !important; border-radius:12px !important;
+        background-color: #F0F0F5 !important;
+        border: none !important;
+        border-radius: 14px !important;
     }
-    div[data-baseweb="select"] div { color:#ffffff !important; }
-    input::placeholder { color:#8b93a3 !important; opacity:1 !important; }
-    ul[role="listbox"], div[data-baseweb="popover"] { background-color:#14161e !important; }
-    ul[role="listbox"] li { color:#eef1f7 !important; }
-    label { color:#c6ccd8 !important; font-weight:600 !important; }
+    div[data-baseweb="select"] div { color: #000 !important; font-weight: 600 !important; }
+    input::placeholder { color: #AEAEB8 !important; opacity: 1 !important; }
+    ul[role="listbox"], div[data-baseweb="popover"] { background-color: #fff !important; border-radius: 16px !important; }
+    ul[role="listbox"] li { color: #000 !important; font-weight: 600 !important; }
+    label { color: #8A8A93 !important; font-weight: 600 !important; font-size: 0.82rem !important; }
 
-    /* רדיו ריבית */
-    div[data-testid="stRadio"] > div { gap:16px !important; justify-content:center !important; }
+    /* ─── רדיו ריבית ─── */
+    div[data-testid="stRadio"] > div { gap: 10px !important; justify-content: center !important; }
     div[data-testid="stRadio"] label {
-        background:rgba(255,255,255,0.06) !important;
-        border:1.5px solid rgba(255,255,255,0.2) !important;
-        border-radius:14px !important; padding:10px 28px !important;
-        font-size:1.05rem !important; font-weight:800 !important;
-        color:#d0d6e2 !important; cursor:pointer; transition:all .15s ease;
+        background: #F0F0F5 !important;
+        border: none !important;
+        border-radius: 14px !important;
+        padding: 10px 28px !important;
+        font-size: 1rem !important;
+        font-weight: 800 !important;
+        color: #000 !important;
+        cursor: pointer;
+        transition: background .12s ease;
     }
-    div[data-testid="stRadio"] label:hover {
-        background:rgba(57,255,20,0.10) !important;
-        border-color:rgba(57,255,20,0.5) !important;
-    }
-    div[data-testid="stRadio"] input[type="radio"] { display:none !important; }
-    div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display:none !important; }
+    div[data-testid="stRadio"] label:hover { background: #E8E4FF !important; }
+    div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
+    div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
 
-    /* טאבים */
-    .stTabs [data-baseweb="tab-list"] { gap:8px; justify-content:center; }
+    /* ─── טאבים ─── */
+    .stTabs [data-baseweb="tab-list"] { gap: 6px; justify-content: center; background: transparent !important; }
     .stTabs [data-baseweb="tab"] {
-        background:rgba(255,255,255,0.07); border-radius:16px; padding:12px 28px;
-        border:1.5px solid rgba(255,255,255,0.15); font-size:1rem;
-        font-weight:700; color:#d0d6e2 !important; min-width:140px; text-align:center;
+        background: #EFEFEF !important; border-radius: 14px !important;
+        padding: 10px 24px !important; border: none !important;
+        font-size: 0.95rem !important; font-weight: 700 !important;
+        color: #8A8A93 !important; min-width: 130px; text-align: center;
     }
+    .stTabs [data-baseweb="tab"] p,
+    .stTabs [data-baseweb="tab"] span,
+    .stTabs [data-baseweb="tab"] div { color: #8A8A93 !important; }
     .stTabs [aria-selected="true"] {
-        background:linear-gradient(145deg,rgba(57,255,20,0.18),rgba(255,45,149,0.14));
-        border-color:rgba(57,255,20,0.6); color:#ffffff !important;
+        background: #000 !important; color: #fff !important;
+    }
+    .stTabs [aria-selected="true"] p,
+    .stTabs [aria-selected="true"] span,
+    .stTabs [aria-selected="true"] div { color: #fff !important; }
+
+    /* ─── expander ─── */
+    .streamlit-expanderHeader {
+        background: #F0F0F5 !important;
+        border-radius: 14px !important;
+        font-weight: 700 !important; color: #000 !important;
+        border: none !important;
+    }
+    .streamlit-expanderContent {
+        background: #F7F7F9 !important;
+        border: none !important;
     }
 
-    /* מסך התחברות */
-    .auth-box {
-        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.10);
-        border-radius:26px; padding:28px 24px; margin-top:20px;
-        box-shadow:0 8px 40px rgba(0,0,0,0.5);
-    }
+    /* ─── checkbox ─── */
+    .stCheckbox label { color: #000 !important; font-weight: 700 !important; font-size: 0.95rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -402,7 +448,6 @@ def inject_css():
     </script>
     """, height=0)
 
-
 def fmt_ils(x):
     return f"₪{x:,.0f}"
 
@@ -413,11 +458,13 @@ def fmt_ils(x):
 def render_auth_screen(authenticator):
     st.markdown(
         "<div style='height:40px'></div>"
-        "<h1 style='text-align:center;font-family:Orbitron;font-weight:800;font-size:2.2rem;"
-        "background:linear-gradient(90deg,#39FF14,#FF2D95,#FF9F1C);"
-        "-webkit-background-clip:text;-webkit-text-fill-color:transparent;'>"
+        "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
+        "color:#8A8A93;text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
+        "<h1 style='text-align:center;font-family:Inter,sans-serif;font-weight:900;"
+        "font-size:3rem;letter-spacing:-2px;color:#000;line-height:1;margin-bottom:4px;'>"
         "CHECKFLOW</h1>"
-        "<p style='text-align:center;color:#9aa3b2;margin-bottom:24px;'>ניהול צ׳קים ופריטה</p>",
+        "<p style='text-align:center;color:#8A8A93;font-size:0.9rem;"
+        "font-weight:500;margin-bottom:24px;'>ניהול צ׳קים ופריטה</p>",
         unsafe_allow_html=True,
     )
 
@@ -479,13 +526,14 @@ def render_home_screen():
         st.rerun()
 
     st.markdown(
-        "<div style='height:55px'></div>"
-        "<h1 style='text-align:center;font-family:Orbitron;font-weight:800;font-size:2.2rem;"
-        "background:linear-gradient(90deg,#39FF14,#FF2D95,#FF9F1C);"
-        "-webkit-background-clip:text;-webkit-text-fill-color:transparent;"
-        "margin-bottom:6px;'>CHECKFLOW</h1>"
-        "<p style='text-align:center;color:#9aa3b2;font-size:1rem;margin-bottom:30px;'>"
-        "ניהול צ׳קים ופריטה</p>",
+        "<div style='height:40px'></div>"
+        "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
+        "color:#8A8A93;text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
+        "<h1 style='text-align:center;font-family:Inter,sans-serif;font-weight:900;"
+        "font-size:3rem;letter-spacing:-2px;color:#000;line-height:1;margin-bottom:4px;'>"
+        "CHECKFLOW</h1>"
+        "<p style='text-align:center;color:#8A8A93;font-size:0.9rem;margin-bottom:28px;"
+        "font-weight:500;'>ניהול צ׳קים ופריטה</p>",
         unsafe_allow_html=True,
     )
 
@@ -676,15 +724,17 @@ def render_calculator():
 
     days = max((due_date - date.today()).days + 1, 0)
     st.markdown(
-        f"<div style='text-align:center;margin:4px 0 12px;'>"
-        f"<span style='font-size:.85rem;color:#9aa3b2;'>ימי זיכוי</span><br>"
-        f"<span style='font-family:Orbitron;font-size:2rem;font-weight:800;"
-        f"color:#39FF14;text-shadow:0 0 14px rgba(57,255,20,.5);'>{days}</span>"
-        f"<span style='font-size:.9rem;color:#9aa3b2;'> ימים</span></div>",
+        f"<div style='background:#E8F5A3;border-radius:22px;padding:16px;text-align:center;margin:6px 0 10px;'>"
+        f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:#5A6800;"
+        f"text-transform:uppercase;display:block;margin-bottom:2px;'>ימי זיכוי</span>"
+        f"<span style='font-family:Inter,sans-serif;font-size:2.4rem;font-weight:900;"
+        f"color:#000;letter-spacing:-1.5px;'>{days}</span>"
+        f"<span style='font-size:0.9rem;font-weight:600;color:#5A6800;'> ימים</span></div>",
         unsafe_allow_html=True)
 
-    st.markdown("<div style='text-align:center;font-weight:800;font-size:1.05rem;"
-                "color:#f3f5fa;margin-bottom:6px;'>סוג הריבית</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center;font-size:11px;font-weight:700;"
+                "letter-spacing:1.5px;color:#8A8A93;text-transform:uppercase;"
+                "margin-bottom:8px;'>סוג הריבית</div>", unsafe_allow_html=True)
     basis = st.radio("סוג הריבית", ["חודשית", "שנתית"],
                      index=["חודשית", "שנתית"].index(st.session_state.rate_basis),
                      horizontal=True, key="basis_radio", label_visibility="collapsed")
@@ -694,10 +744,11 @@ def render_calculator():
     r1, r2 = st.columns([2, 1])
     with r1:
         st.markdown(
-            f"<div class='glass' style='margin-bottom:0;padding:14px 16px;text-align:center;'>"
-            f"<span style='font-size:.82rem;color:#9aa3b2;'>ריבית קבועה ({basis})</span><br>"
-            f"<span style='font-family:Orbitron;font-size:1.8rem;font-weight:800;"
-            f"color:#FF9F1C;text-shadow:0 0 12px rgba(255,159,28,.5);'>{rate_val:.2f}%</span>"
+            f"<div style='background:#FFF3C8;border-radius:22px;padding:16px;text-align:center;margin-bottom:0;'>"
+            f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:#8A6A00;"
+            f"text-transform:uppercase;display:block;margin-bottom:4px;'>ריבית קבועה ({basis})</span>"
+            f"<span style='font-family:Inter,sans-serif;font-size:2rem;font-weight:900;"
+            f"color:#000;letter-spacing:-1px;'>{rate_val:.2f}%</span>"
             f"</div>", unsafe_allow_html=True)
     with r2:
         st.write(""); st.write("")
@@ -717,8 +768,9 @@ def render_calculator():
     net = amount - fee
 
     if days <= 0:
-        st.markdown("<div style='text-align:center;color:#FF9F1C;font-size:.9rem;"
-                    "margin:10px 0 0;'>⚠️ תאריך הפירעון עבר — אין ימי זיכוי.</div>",
+        st.markdown("<div style='background:#FFE8D6;border-radius:16px;padding:12px;"
+                    "text-align:center;font-size:13px;font-weight:700;color:#8A3A00;"
+                    "margin:8px 0;'>⚠️ תאריך הפירעון עבר — אין ימי זיכוי.</div>",
                     unsafe_allow_html=True)
 
     st.markdown(f"""
