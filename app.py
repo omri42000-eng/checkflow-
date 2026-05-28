@@ -660,12 +660,15 @@ def render_calculator():
         try:    default_due = datetime.fromisoformat(ch["due_date"]).date()
         except: default_due = date.today() + timedelta(days=30)
 
-    amount = st.number_input("סכום הצ'ק (₪)", min_value=0.0, step=100.0,
-                             value=default_amount, format="%.0f", key="calc_amount")
-
+    # כשמשנים צ'ק — מאפסים את המפתח כדי לאלץ עדכון הסכום
     if st.session_state.get("_last_pick") != pick:
-        st.session_state.calc_due  = default_due
-        st.session_state._last_pick = pick
+        st.session_state.calc_due    = default_due
+        st.session_state.calc_amount = default_amount
+        st.session_state._last_pick  = pick
+
+    amount = st.number_input("סכום הצ'ק (₪)", min_value=0.0, step=100.0,
+                             value=st.session_state.get("calc_amount", default_amount),
+                             format="%.0f", key="calc_amount")
 
     due_date = st.date_input("תאריך פירעון הצ'ק", key="calc_due",
                              min_value=date.today(),
