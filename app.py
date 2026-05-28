@@ -6,10 +6,10 @@ Streamlit Web App (Mobile-first)
 """
 
 import sqlite3
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from contextlib import closing
-
 import streamlit as st
+import streamlit_authenticator as stauth
 
 st.set_page_config(
     page_title="ניהול צ'קים | פריטה",
@@ -36,13 +36,24 @@ def get_conn():
     conn.row_factory = sqlite3.Row
     return conn
 
-
 def init_db():
     with closing(get_conn()) as conn, conn:
+        # טבלת משתמשים
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                password TEXT NOT NULL,
+                email TEXT NOT NULL
+            )
+        """)
+        # טבלת לקוחות קשורה למשתמש
         conn.execute("""
             CREATE TABLE IF NOT EXISTS clients (
                 id   INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE
+                name TEXT NOT NULL,
+                username TEXT NOT NULL DEFAULT 'admin',
+                UNIQUE(name, username)
             )
         """)
         conn.execute("""
@@ -57,27 +68,25 @@ def init_db():
             )
         """)
 
-
 def add_client(name):
     name = name.strip()
+    username = st.session_state.get("current_user", "admin")
     if not name:
         return None
     with closing(get_conn()) as conn, conn:
-        cur = conn.execute(
-            "INSERT OR IGNORE INTO clients (name) VALUES (?)", (name,)
+        conn.execute(
+            "INSERT OR IGNORE INTO clients (name, username) VALUES (?, ?)", (name, username)
         )
-        if cur.lastrowid:
-            return cur.lastrowid
         row = conn.execute(
-            "SELECT id FROM clients WHERE name = ?", (name,)
+            "SELECT id FROM clients WHERE name = ? AND username = ?", (name, username)
         ).fetchone()
         return row["id"] if row else None
 
-
 def get_clients():
+    username = st.session_state.get("current_user", "admin")
     with closing(get_conn()) as conn:
         return conn.execute(
-            "SELECT id, name FROM clients ORDER BY name"
+            "SELECT id, name FROM clients WHERE username = ? ORDER BY name", (username,)
         ).fetchall()
 
 
@@ -92,12 +101,17 @@ def add_check(client_id, amount, due_date, status, remind_on):
 
 
 def get_checks(client_id=None):
+    username = st.session_state.get("current_user", "admin")
     q = """SELECT ch.*, cl.name AS client_name
-           FROM checks ch JOIN clients cl ON cl.id = ch.client_id"""
-    params = ()
+           FROM checks ch 
+           JOIN clients cl ON cl.id = ch.client_id 
+           WHERE cl.username = ?"""
+    params = [username]
+    
     if client_id is not None:
-        q += " WHERE ch.client_id = ?"
-        params = (client_id,)
+        q += " AND ch.client_id = ?"
+        params.append(client_id)
+        
     q += " ORDER BY ch.due_date"
     with closing(get_conn()) as conn:
         return conn.execute(q, params).fetchall()
@@ -116,14 +130,19 @@ def delete_check(check_id):
 
 
 def get_totals():
+    username = st.session_state.get("current_user", "admin")
     with closing(get_conn()) as conn:
-        row = conn.execute(
-            "SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS cnt FROM checks"
-        ).fetchone()
+        row = conn.execute("""
+            SELECT COALESCE(SUM(ch.amount),0) AS total, COUNT(ch.id) AS cnt 
+            FROM checks ch
+            JOIN clients cl ON cl.id = ch.client_id
+            WHERE cl.username = ?
+        """, (username,)).fetchone()
         return row["total"], row["cnt"]
 
 
 def get_client_obligo():
+    username = st.session_state.get("current_user", "admin")
     with closing(get_conn()) as conn:
         return conn.execute("""
             SELECT cl.id, cl.name,
@@ -131,9 +150,10 @@ def get_client_obligo():
                    COUNT(ch.id) AS cnt
             FROM clients cl
             LEFT JOIN checks ch ON ch.client_id = cl.id
+            WHERE cl.username = ?
             GROUP BY cl.id
             ORDER BY obligo DESC
-        """).fetchall()
+        """, (username,)).fetchall()
 
 
 # ----------------------------------------------------------------------------
@@ -264,45 +284,43 @@ def inject_css():
         box-shadow: 0 0 16px rgba(57,255,20,0.3); color:#fff;
     }
 
-    /* כפתורי ניווט מסך הבית — סגנון KPI */
-    .home-nav-btn .stButton > button {
+    /* כפתורי מסך הבית הגדולים */
+    .home-btn-green > button {
+        width: 100% !important;
+        height: 140px !important;
         border-radius: 22px !important;
-        padding: 22px 24px !important;
-        font-size: 1.3rem !important;
+        background: radial-gradient(circle at 35% 35%, rgba(200,255,160,0.2) 0%, rgba(57,255,20,0.15) 40%, rgba(8,50,3,0.6) 90%) !important;
+        border: 2px solid rgba(57,255,20,0.5) !important;
+        box-shadow: 0 0 24px rgba(57,255,20,0.2) !important;
+        color: #e2ffe0 !important;
+        font-size: 1.4rem !important;
         font-weight: 800 !important;
-        height: auto !important;
-        min-height: 80px !important;
-        transition: transform .15s ease, box-shadow .15s ease !important;
-        letter-spacing: 0.3px !important;
     }
-    .home-nav-btn .stButton > button:hover {
-        transform: scale(1.02) !important;
-    }
-    .home-nav-green .stButton > button {
-        background: linear-gradient(145deg, rgba(57,255,20,0.06), rgba(255,45,149,0.05)) !important;
-        border: 1.5px solid rgba(57,255,20,0.55) !important;
-        box-shadow: 0 0 24px rgba(57,255,20,0.3), inset 0 0 24px rgba(57,255,20,0.06) !important;
-        color: #eafff0 !important;
-        text-shadow: 0 0 14px rgba(57,255,20,0.4) !important;
-    }
-    .home-nav-green .stButton > button:hover {
-        border-color: rgba(57,255,20,0.85) !important;
-        box-shadow: 0 0 38px rgba(57,255,20,0.5), inset 0 0 28px rgba(57,255,20,0.10) !important;
-    }
-    .home-nav-pink .stButton > button {
-        background: linear-gradient(145deg, rgba(255,45,149,0.07), rgba(57,255,20,0.04)) !important;
-        border: 1.5px solid rgba(255,45,149,0.55) !important;
-        box-shadow: 0 0 24px rgba(255,45,149,0.3), inset 0 0 24px rgba(255,45,149,0.06) !important;
-        color: #ffe4f3 !important;
-        text-shadow: 0 0 14px rgba(255,45,149,0.4) !important;
-    }
-    .home-nav-pink .stButton > button:hover {
-        border-color: rgba(255,45,149,0.85) !important;
-        box-shadow: 0 0 38px rgba(255,45,149,0.5), inset 0 0 28px rgba(255,45,149,0.10) !important;
+    .home-btn-green > button:hover {
+        box-shadow: 0 0 40px rgba(57,255,20,0.5) !important;
+        border-color: #39FF14 !important;
+        transform: scale(1.02);
     }
 
-        /* כפתור הוספת צ'ק — עגול אדום */
-    .add-check-wrapper .stButton > button {
+    .home-btn-pink > button {
+        width: 100% !important;
+        height: 140px !important;
+        border-radius: 22px !important;
+        background: radial-gradient(circle at 35% 35%, rgba(255,190,225,0.2) 0%, rgba(255,45,149,0.15) 40%, rgba(55,3,28,0.6) 90%) !important;
+        border: 2px solid rgba(255,45,149,0.5) !important;
+        box-shadow: 0 0 24px rgba(255,45,149,0.2) !important;
+        color: #ffe4f3 !important;
+        font-size: 1.4rem !important;
+        font-weight: 800 !important;
+    }
+    .home-btn-pink > button:hover {
+        box-shadow: 0 0 40px rgba(255,45,149,0.5) !important;
+        border-color: #FF2D95 !important;
+        transform: scale(1.02);
+    }
+
+    /* כפתור הוספת צ'ק */
+    .add-check-wrapper > button {
         border-radius: 50px !important;
         background: linear-gradient(145deg, #e8003a, #c0002e) !important;
         border: none !important;
@@ -312,126 +330,15 @@ def inject_css():
         padding: 14px 0 !important;
         box-shadow: 0 0 22px rgba(232,0,58,0.5) !important;
     }
-    .add-check-wrapper .stButton > button:hover {
-        box-shadow: 0 0 32px rgba(232,0,58,0.75) !important;
-        background: linear-gradient(145deg, #ff1a50, #e0003a) !important;
-        border-color: transparent !important;
-    }
-
-    /* כפתור חזרה — קומפקטי */
-    .back-btn { display: inline-block; margin-bottom: 8px; }
-    .back-btn .stButton > button {
-        border-radius: 20px !important;
-        background: rgba(255,255,255,0.06) !important;
-        border: 1px solid rgba(255,255,255,0.14) !important;
-        color: #9aa3b2 !important;
-        font-size: 0.82rem !important;
-        font-weight: 600 !important;
-        padding: 4px 14px !important;
-        height: auto !important;
-        min-height: 0 !important;
-        line-height: 1.6 !important;
-    }
-    .back-btn .stButton > button:hover {
-        background: rgba(255,255,255,0.11) !important;
-        color: #fff !important;
-    }
-
-    /* טאבים */
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; justify-content:center; }
-    .stTabs [data-baseweb="tab"] {
-        background: rgba(255,255,255,0.07);
-        border-radius: 16px;
-        padding: 12px 28px;
-        border: 1.5px solid rgba(255,255,255,0.15);
-        font-size: 1rem;
-        font-weight: 700;
-        color: #d0d6e2 !important;
-        min-width: 140px;
-        text-align: center;
-    }
-    .stTabs [data-baseweb="tab"] p,
-    .stTabs [data-baseweb="tab"] span,
-    .stTabs [data-baseweb="tab"] div { color: #d0d6e2 !important; opacity: 1 !important; }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(145deg, rgba(57,255,20,0.18), rgba(255,45,149,0.14));
-        border-color: rgba(57,255,20,0.6);
-        color: #ffffff !important;
-    }
-    .stTabs [aria-selected="true"] p,
-    .stTabs [aria-selected="true"] span,
-    .stTabs [aria-selected="true"] div { color: #ffffff !important; }
 
     /* שדות קלט */
-    .stTextInput input,
-    .stNumberInput input,
-    .stDateInput input,
-    [data-baseweb="input"] input,
-    [data-baseweb="base-input"] input {
+    .stTextInput input, .stNumberInput input, .stDateInput input {
         color: #ffffff !important;
         background-color: rgba(20,22,30,0.92) !important;
-        -webkit-text-fill-color: #ffffff !important;
-        caret-color: #39FF14 !important;
-        border-radius: 12px !important;
-        direction: ltr !important;
-        text-align: right !important;
-    }
-    .stTextInput div[data-baseweb="input"],
-    .stNumberInput div[data-baseweb="input"],
-    .stDateInput div[data-baseweb="input"],
-    div[data-baseweb="select"] > div {
-        background-color: rgba(20,22,30,0.92) !important;
-        border: 1px solid rgba(255,255,255,0.18) !important;
         border-radius: 12px !important;
     }
-    div[data-baseweb="select"] div { color: #ffffff !important; }
-    input::placeholder { color: #8b93a3 !important; opacity: 1 !important; }
-    ul[role="listbox"], div[data-baseweb="popover"] { background-color: #14161e !important; }
-    ul[role="listbox"] li { color: #eef1f7 !important; }
-    label { color: #c6ccd8 !important; font-weight:600 !important; }
-
-    /* רדיו ריבית */
-    div[data-testid="stRadio"] > div { gap: 16px !important; justify-content: center !important; }
-    div[data-testid="stRadio"] label {
-        background: rgba(57,255,20,0.07) !important;
-        border: 1.5px solid rgba(57,255,20,0.35) !important;
-        border-radius: 14px !important;
-        padding: 10px 28px !important;
-        font-size: 1.05rem !important;
-        font-weight: 800 !important;
-        color: #d0d6e2 !important;
-        cursor: pointer;
-        transition: all .15s ease;
-    }
-    div[data-testid="stRadio"] label:hover {
-        background: rgba(57,255,20,0.15) !important;
-        border-color: rgba(57,255,20,0.7) !important;
-        box-shadow: 0 0 14px rgba(57,255,20,0.35);
-    }
-    div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
-    div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
-
-    # JS — סימון אוטומטי של כל שדות number input בלחיצה
-    st.components.v1.html("""
-    <script>
-    function attachSelectAll() {
-        var inputs = window.parent.document.querySelectorAll('input[type="number"], input[inputmode="decimal"], input[inputmode="numeric"]');
-        inputs.forEach(function(inp) {
-            if (inp._selectAllAttached) return;
-            inp._selectAllAttached = true;
-            inp.addEventListener('focus', function() {
-                var self = this;
-                setTimeout(function() { self.select(); }, 50);
-            });
-        });
-    }
-    // ריצה ראשונית ואחר כך כל חצי שניה (כי Streamlit מחדש אלמנטים)
-    attachSelectAll();
-    setInterval(attachSelectAll, 500);
-    </script>
-    """, height=0)
 
 
 def fmt_ils(x):
@@ -439,35 +346,33 @@ def fmt_ils(x):
 
 
 # ----------------------------------------------------------------------------
-# מסך ראשי — שני כדורים
+# מסך ראשי — שני כפתורים מעוצבים נייטיב
 # ----------------------------------------------------------------------------
 def render_home_screen():
     st.markdown(
-        "<div style='height:55px'></div>"
-        "<h1 style='text-align:center;font-family:Orbitron;font-weight:800;font-size:2.2rem;"
+        "<div style='height: 40px;'></div>"
+        "<h1 style='text-align:center;font-family:Orbitron;font-weight:800;font-size:2.6rem;"
         "background:linear-gradient(90deg,#39FF14,#FF2D95,#FF9F1C);"
         "-webkit-background-clip:text;-webkit-text-fill-color:transparent;"
         "margin-bottom:6px;'>CHECKFLOW</h1>"
-        "<p style='text-align:center;color:#9aa3b2;font-size:1rem;margin-bottom:30px;'>"
+        "<p style='text-align:center;color:#9aa3b2;font-size:1rem;margin-bottom:40px;'>"
         "ניהול צ׳קים ופריטה</p>",
         unsafe_allow_html=True,
     )
 
-    render_kpi()
+    # יצירת הניווט באמצעות כפתורי Streamlit תואמי עיצוב הסייברפאנק
+    st.markdown('<div class="home-btn-pink">', unsafe_allow_html=True)
+    if st.button("📋\n\nניהול צ׳קים", key="nav_mgmt"):
+        st.session_state.screen = "mgmt"
+        st.rerun()
+    st.markdown('</div><div style="height:25px;"></div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="home-nav-btn home-nav-green">', unsafe_allow_html=True)
-    if st.button("🧮  מחשבון פריטה", key="go_calc", use_container_width=True):
+    st.markdown('<div class="home-btn-green">', unsafe_allow_html=True)
+    if st.button("🧮\n\nמחשבון פריטה", key="nav_calc"):
         st.session_state.screen = "calc"
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="home-nav-btn home-nav-pink">', unsafe_allow_html=True)
-    if st.button("📋  ניהול צ׳קים", key="go_mgmt", use_container_width=True):
-        st.session_state.screen = "mgmt"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------------------------------------------------------------------
 # רכיבי ניהול
@@ -510,13 +415,13 @@ def render_add_check_form():
                                  format="%.0f", key="add_amount")
         c1, c2 = st.columns(2)
         with c1:
-            due = st.date_input("תאריך פירעון", value=date.today() + timedelta(days=30), min_value=date.today(), key="add_due")
+            due = st.date_input("תאריך פירעון", value=date.today(), key="add_due")
         with c2:
             use_remind = st.checkbox("הוסף תזכורת", value=False, key="add_use_remind")
 
         remind = None
         if use_remind:
-            remind = st.date_input("תאריך תזכורת", value=date.today() + timedelta(days=30), min_value=date.today(), key="add_remind")
+            remind = st.date_input("תאריך תזכורת", value=date.today(), key="add_remind")
 
         status = st.selectbox("סטטוס", STATUSES, key="add_status")
 
@@ -616,7 +521,7 @@ def render_calculator():
     pick = st.selectbox("בחר צ'ק קיים (או הזנה ידנית)", options, key="calc_pick")
 
     default_amount = 10000.0
-    default_due = date.today() + timedelta(days=30)
+    default_due = date.today()
     if pick != "— הזנה ידנית —":
         idx = options.index(pick) - 1
         ch = checks[idx]
@@ -624,7 +529,7 @@ def render_calculator():
         try:
             default_due = datetime.fromisoformat(ch["due_date"]).date()
         except Exception:
-            default_due = date.today() + timedelta(days=30)
+            default_due = date.today()
 
     amount = st.number_input("סכום הצ'ק (₪)", min_value=0.0, step=100.0,
                              value=default_amount, format="%.0f", key="calc_amount")
@@ -635,7 +540,6 @@ def render_calculator():
 
     due_date = st.date_input(
         "תאריך פירעון הצ'ק", key="calc_due",
-        min_value=date.today(),
         help="החישוב מתחיל ממחר וכולל את יום הפירעון עצמו",
     )
 
@@ -718,69 +622,103 @@ def render_calculator():
     """, unsafe_allow_html=True)
 
 
-# ----------------------------------------------------------------------------
-# כפתור חזרה
-# ----------------------------------------------------------------------------
 def render_back_button():
+    st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
     st.markdown('<div class="back-btn">', unsafe_allow_html=True)
-    if st.button("← ראשי", key="back_home"):
+    if st.button("← חזרה למסך הראשי", key="back_home", use_container_width=False):
         st.session_state.screen = "home"
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
 
 
 # ----------------------------------------------------------------------------
-# Main
+# אימות משתמשים (Authentication Layer)
+# ----------------------------------------------------------------------------
+def get_all_users_for_auth():
+    with closing(get_conn()) as conn:
+        rows = conn.execute("SELECT username, name, password, email FROM users").fetchall()
+        credentials = {"usernames": {}}
+        for r in rows:
+            credentials["usernames"][r["username"]] = {
+                "name": r["name"],
+                "password": r["password"],
+                "email": r["email"]
+            }
+        return credentials
+
+def register_new_user(authenticator):
+    try:
+        email, username, name = authenticator.register_user(
+            form_name='הרשמת משתמש חדש', 
+            location='main'
+        )
+        if username:
+            hashed_password = authenticator.credentials['usernames'][username]['password']
+            with closing(get_conn()) as conn, conn:
+                conn.execute(
+                    "INSERT INTO users (username, name, password, email) VALUES (?, ?, ?, ?)",
+                    (username, name, hashed_password, email)
+                )
+            st.success('נרשמת בהצלחה! כעת ניתן להתחבר.')
+            st.rerun()
+    except Exception as e:
+        st.error(f'שגיאה בהרשמה: {e}')
+
+
+# ----------------------------------------------------------------------------
+# Main (פונקציית הניהול המרכזית המאוחדת)
 # ----------------------------------------------------------------------------
 def main():
     init_db()
     inject_css()
 
-    # קריאת hash מה-URL כדי לתמוך בכפתור "חזור" של הדפדפן
-    qp = st.query_params.get("s", None)
-    if qp in ("calc", "mgmt", "home"):
-        st.session_state.screen = qp
+    # 1. טעינת המשתמשים
+    credentials = get_all_users_for_auth()
 
-    if "screen" not in st.session_state:
-        st.session_state.screen = "home"
+    # 2. אתחול ה-Authenticator
+    authenticator = stauth.Authenticate(
+        credentials,
+        cookie_name='checkflow_cookie',
+        key='some_signature_key',
+        cookie_expiry_days=30
+    )
 
-    screen = st.session_state.screen
+    # 3. מסך כניסה
+    name, authentication_status, username = authenticator.login(form_name='כניסה למערכת', location='main')
 
-    # pushState — מוסיף רשומה להיסטוריה של הדפדפן
-    push_js = f"""
-    <script>
-    (function() {{
-        var s = "{screen}";
-        var cur = new URLSearchParams(window.location.search).get("s");
-        if (cur !== s) {{
-            var url = window.location.pathname + "?s=" + s;
-            window.history.pushState({{screen: s}}, "", url);
-        }}
-        // כשלוחצים "חזור" בדפדפן — עדכן Streamlit
-        window.addEventListener("popstate", function(e) {{
-            var prev = new URLSearchParams(window.location.search).get("s") || "home";
-            var url = window.location.pathname + "?s=home";
-            window.history.replaceState({{screen: "home"}}, "", url);
-            // מרענן את Streamlit עם ה-query param החדש
-            window.location.search = "?s=" + prev;
-        }});
-    }})();
-    </script>
-    """
-    st.components.v1.html(push_js, height=0)
+    if authentication_status == False:
+        st.error('שם המשתמש או הסיסמה שגויים.')
+        if st.checkbox("אין לך חשבון? הירשם כאן", key="reg_cb_fail"):
+            register_new_user(authenticator)
+            
+    elif authentication_status == None:
+        st.warning('אנא התחבר כדי לצפות בנתונים.')
+        if st.checkbox("אין לך חשבון? הירשם כאן", key="reg_cb_none"):
+            register_new_user(authenticator)
 
-    if screen == "home":
-        render_home_screen()
+    elif authentication_status:
+        # שמירת המשתמש המחובר
+        st.session_state.current_user = username
+        
+        # כפתור התנתקות בסיידבר
+        authenticator.logout('התנתק', 'sidebar')
+        
+        if "screen" not in st.session_state:
+            st.session_state.screen = "home"
 
-    elif screen == "calc":
-        render_back_button()
-        render_calculator()
+        screen = st.session_state.screen
 
-    elif screen == "mgmt":
-        render_back_button()
-        render_kpi()
-        render_add_check_form()
-        render_clients()
+        if screen == "home":
+            render_home_screen()
+        elif screen == "calc":
+            render_back_button()
+            render_calculator()
+        elif screen == "mgmt":
+            render_back_button()
+            render_kpi()
+            render_add_check_form()
+            render_clients()
 
 
 if __name__ == "__main__":
