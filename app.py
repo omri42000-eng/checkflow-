@@ -67,6 +67,19 @@ def init_db():
             )
         """)
 
+        # Migration: הוספת עמודת username אם לא קיימת (DB ישן)
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(clients)").fetchall()]
+        if "username" not in cols:
+            conn.execute("ALTER TABLE clients ADD COLUMN username TEXT NOT NULL DEFAULT 'admin'")
+
+        # Migration: הוספת unique index אם לא קיים
+        indexes = [r[1] for r in conn.execute("PRAGMA index_list(clients)").fetchall()]
+        if not any("name" in i and "username" in i for i in indexes):
+            try:
+                conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_name_user ON clients(name, username)")
+            except Exception:
+                pass
+
 
 def current_user():
     return st.session_state.get("current_user", "admin")
