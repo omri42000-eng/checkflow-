@@ -192,7 +192,7 @@ def inject_css():
 
     /* ─── רקע ─── */
     .stApp {
-        background: #F7F7F9;
+        background: #708D9F;
         font-family: 'Inter', sans-serif;
         color: #000000;
     }
@@ -228,7 +228,7 @@ def inject_css():
 
     /* ─── כרטיסים כלליים ─── */
     .glass {
-        background: #FFFFFF;
+        background: rgba(255,255,255,0.15);
         border-radius: 28px;
         padding: 20px 22px;
         margin-bottom: 6px;
@@ -245,15 +245,15 @@ def inject_css():
     /* ─── כותרות סקשן ─── */
     .section-title {
         font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
-        color: #000; margin: 20px 0 6px; text-align: right;
+        color: #fff; margin: 20px 0 6px; text-align: right;
     }
     .section-title-right {
         font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
-        color: #000; margin: 10px 0 6px; text-align: right;
+        color: #fff; margin: 10px 0 6px; text-align: right;
     }
     .neon-bar, .neon-bar-right {
         height: 3px; width: 36px; border-radius: 3px;
-        background: #000; margin-bottom: 16px; margin-right: 0;
+        background: #fff; margin-bottom: 16px; margin-right: 0;
     }
     .neon-bar { margin-right: auto; margin-left: auto; }
 
@@ -332,19 +332,35 @@ def inject_css():
     }
     .add-check-wrapper .stButton > button:hover { opacity: 0.80 !important; }
 
-    /* ─── כפתור חזרה ─── */
-    .back-btn { display: inline-block; margin-bottom: 10px; }
+    /* ─── כפתור חזרה צף ─── */
+    .back-btn {
+        position: fixed !important;
+        bottom: 28px !important;
+        left: 20px !important;
+        z-index: 9999 !important;
+    }
     .back-btn .stButton > button {
         border-radius: 50px !important;
-        background: #EFEFEF !important;
-        color: #8A8A93 !important;
-        font-size: 0.80rem !important;
-        font-weight: 700 !important;
-        padding: 5px 16px !important;
+        background: rgba(255,255,255,0.92) !important;
+        color: #000 !important;
+        font-size: 0.82rem !important;
+        font-weight: 800 !important;
+        padding: 10px 20px !important;
         height: auto !important;
         min-height: 0 !important;
-        line-height: 1.6 !important;
+        line-height: 1.4 !important;
         border: none !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.18) !important;
+    }
+
+    /* ─── סכום צ'ק במחשבון — גדול ומרכז ─── */
+    div[data-testid="stNumberInput"]:has(input[aria-label*="סכום"]) input,
+    #calc_amount input {
+        font-size: 1.8rem !important;
+        font-weight: 900 !important;
+        text-align: center !important;
+        letter-spacing: -1px !important;
+        height: 64px !important;
     }
 
     /* ─── שדות קלט ─── */
@@ -455,28 +471,49 @@ def fmt_ils(x):
 # ─────────────────────────────────────────────
 # מסך התחברות / הרשמה
 # ─────────────────────────────────────────────
+def do_login(username, password):
+    """בדיקת סיסמה ישירה מ-DB"""
+    username = username.strip()
+    with closing(get_conn()) as conn:
+        user = conn.execute(
+            "SELECT * FROM users WHERE username=?", (username,)
+        ).fetchone()
+    if not user:
+        return False, "שם משתמש לא קיים"
+    if stauth.Hasher().check_pw(password, user["password"]):
+        st.session_state["authentication_status"] = True
+        st.session_state["username"] = user["username"]
+        st.session_state["name"]     = user["name"]
+        return True, ""
+    return False, "סיסמה שגויה"
+
+
 def render_auth_screen(authenticator):
     st.markdown(
         "<div style='height:40px'></div>"
         "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
-        "color:#8A8A93;text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
+        "color:rgba(255,255,255,0.7);text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
         "<h1 style='text-align:center;font-family:Inter,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;color:#000;line-height:1;margin-bottom:4px;'>"
+        "font-size:3rem;letter-spacing:-2px;color:#fff;line-height:1;margin-bottom:4px;'>"
         "CHECKFLOW</h1>"
-        "<p style='text-align:center;color:#8A8A93;font-size:0.9rem;"
-        "font-weight:500;margin-bottom:24px;'>ניהול צ׳קים ופריטה</p>",
+        "<p style='text-align:center;color:rgba(255,255,255,0.7);font-size:0.9rem;"
+        "font-weight:500;margin-bottom:28px;'>ניהול צ׳קים ופריטה</p>",
         unsafe_allow_html=True,
     )
 
     tab_login, tab_register = st.tabs(["🔑  כניסה", "📝  הרשמה"])
 
     with tab_login:
-        authenticator.login(location="main")
-        status = st.session_state.get("authentication_status")
-        if status is False:
-            st.error("שם משתמש או סיסמה שגויים ❌")
-        elif status is None:
-            st.info("אנא הכנס שם משתמש וסיסמה")
+        with st.form("login_form", clear_on_submit=False):
+            l_user = st.text_input("שם משתמש", key="l_user")
+            l_pass = st.text_input("סיסמה", type="password", key="l_pass")
+            login_btn = st.form_submit_button("כניסה →", use_container_width=True)
+        if login_btn:
+            ok, msg = do_login(l_user, l_pass)
+            if ok:
+                st.rerun()
+            else:
+                st.error(msg)
 
     with tab_register:
         st.markdown("#### צור חשבון חדש")
@@ -489,9 +526,7 @@ def render_auth_screen(authenticator):
             submitted = st.form_submit_button("הרשמה ✅", use_container_width=True)
 
         if submitted:
-            r_user  = r_user.strip()
-            r_name  = r_name.strip()
-            r_email = r_email.strip()
+            r_user = r_user.strip(); r_name = r_name.strip(); r_email = r_email.strip()
             if not all([r_user, r_name, r_email, r_pass]):
                 st.error("יש למלא את כל השדות.")
             elif len(r_pass) < 6:
@@ -500,9 +535,7 @@ def render_auth_screen(authenticator):
                 st.error("הסיסמאות אינן תואמות.")
             else:
                 with closing(get_conn()) as conn:
-                    exists = conn.execute(
-                        "SELECT 1 FROM users WHERE username=?", (r_user,)
-                    ).fetchone()
+                    exists = conn.execute("SELECT 1 FROM users WHERE username=?", (r_user,)).fetchone()
                 if exists:
                     st.error("שם המשתמש כבר קיים.")
                 else:
@@ -528,9 +561,9 @@ def render_home_screen():
     st.markdown(
         "<div style='height:40px'></div>"
         "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
-        "color:#8A8A93;text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
+        "color:rgba(255,255,255,0.7);text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
         "<h1 style='text-align:center;font-family:Inter,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;color:#000;line-height:1;margin-bottom:4px;'>"
+        "font-size:3rem;letter-spacing:-2px;color:#fff;line-height:1;margin-bottom:4px;'>"
         "CHECKFLOW</h1>"
         "<p style='text-align:center;color:#8A8A93;font-size:0.9rem;margin-bottom:28px;"
         "font-weight:500;'>ניהול צ׳קים ופריטה</p>",
@@ -632,6 +665,17 @@ def render_add_check_form():
 # ─────────────────────────────────────────────
 # רשימת לקוחות
 # ─────────────────────────────────────────────
+# פלטת צבעי פסטל ללקוחות
+CLIENT_PALETTE = [
+    ("#E8E4FF", "#5A5AA3"),
+    ("#D6F5E0", "#2A7A4A"),
+    ("#FFD6E8", "#8A2A50"),
+    ("#E8F5A3", "#5A6800"),
+    ("#FFF3C8", "#8A6A00"),
+    ("#C8E8FF", "#1A5A8A"),
+    ("#FFE8D6", "#8A3A00"),
+]
+
 def render_clients():
     st.markdown('<div class="section-title">הלקוחות שלי</div>', unsafe_allow_html=True)
     st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
@@ -641,12 +685,13 @@ def render_clients():
         st.markdown('<div class="glass">אין עדיין צ\'קים ⬆️</div>', unsafe_allow_html=True)
         return
 
-    for r in rows:
+    for i, r in enumerate(rows):
+        bg, txt = CLIENT_PALETTE[i % len(CLIENT_PALETTE)]
         st.markdown(f"""
-        <div class="client-card">
+        <div class="client-card" style="background:{bg};">
             <div>
                 <div class="client-name">{r['name']}</div>
-                <div style="font-size:.82rem;color:#9aa3b2;">{r['cnt']} צ'קים</div>
+                <div style="font-size:.82rem;color:{txt};font-weight:600;">{r['cnt']} צ'קים</div>
             </div>
             <div class="client-obligo">{fmt_ils(r['obligo'])}</div>
         </div>""", unsafe_allow_html=True)
@@ -661,7 +706,7 @@ def render_clients():
                     <div style="padding:6px 0;">
                         <span style="font-family:'Orbitron';font-weight:700;direction:ltr;">
                             {fmt_ils(ch['amount'])}</span><br>
-                        <span style="font-size:.8rem;color:#9aa3b2;">
+                        <span style="font-size:.8rem;color:rgba(255,255,255,0.75);">
                             פירעון: {ch['due_date']}{remind_str}</span>
                         <span class="pill" style="background:{color}22;color:{color};
                             border:1px solid {color}66;">{ch['status']}</span>
@@ -809,10 +854,23 @@ def main():
     # מחובר
     st.session_state.current_user = st.session_state.get("username", "admin")
 
-    # כפתור התנתקות בסיידבר
+    # סיידבר — רק אייקון אווטאר וכפתור התנתקות
     with st.sidebar:
-        st.markdown(f"👤 **{st.session_state.get('name', '')}**")
-        authenticator.logout("התנתק 🚪")
+        name = st.session_state.get('name', '')
+        initial = name[0].upper() if name else '?'
+        st.markdown(
+            f"<div style='text-align:center;padding:10px 0;'>"
+            f"<div style='width:52px;height:52px;border-radius:50%;"
+            f"background:#E8E4FF;display:flex;align-items:center;"
+            f"justify-content:center;font-size:1.4rem;font-weight:900;"
+            f"color:#5A5AA3;margin:0 auto;'>{initial}</div>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+        if st.button("🚪 התנתק", use_container_width=True):
+            for k in ["authentication_status","username","name","current_user","screen"]:
+                st.session_state.pop(k, None)
+            st.rerun()
 
     # pushState לתמיכה בכפתור חזור
     screen = st.session_state.get("screen", "home")
