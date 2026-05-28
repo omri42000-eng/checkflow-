@@ -698,7 +698,49 @@ def register_new_user(authenticator):
             st.rerun()
                 
     except Exception as e:
-        st.error(f'שגיאה בהרשמה: {e}')
+        st.error(f'שגיאה בהרשמה: {e}')def register_new_user(authenticator):
+    """מנגנון הרשמה עצמאי וחסין לחלוטין - עוקף את באג הגרסאות של הספרייה"""
+    st.markdown('<div class="glass" style="padding: 20px;">', unsafe_allow_html=True)
+    st.subheader("הרשמת משתמש חדש")
+    
+    with st.form("custom_registration_form", clear_on_submit=True):
+        new_username = st.text_input("שם משתמש (באנגלית)", key="reg_username").strip()
+        new_name = st.text_input("שם מלא", key="reg_name").strip()
+        new_email = st.text_input("כתובת אימייל", key="reg_email").strip()
+        new_password = st.text_input("סיסמה", type="password", key="reg_password")
+        
+        submit_btn = st.form_submit_button("הרשמה ומילוי פרטים", use_container_width=True)
+        
+        if submit_btn:
+            if not new_username or not new_name or not new_email or not new_password:
+                st.error("אנא מלא את כל השדות בטופס.")
+            elif len(new_password) < 6:
+                st.error("הסיסמה חייבת להכיל לפחות 6 תווים.")
+            else:
+                try:
+                    # בדיקה אם שם המשתמש כבר קיים במערכת
+                    with closing(get_conn()) as conn:
+                        existing = conn.execute("SELECT username FROM users WHERE username = ?", (new_username,)).fetchone()
+                    
+                    if existing:
+                        st.error("שם המשתמש הזה כבר תפוס. אנא בחר שם אחר.")
+                    else:
+                        # השורה החשובה ביותר: שימוש במנגנון ההצפנה הרשמי של הספרייה כדי להצפין את הסיסמה!
+                        # תואם לכל הגרסאות הישנות והחדשות של streamlit-authenticator
+                        hasher = stauth.Hasher([new_password])
+                        hashed_password = hasher.generate()[0]
+                        
+                        # שמירה ישירה במסד הנתונים של ה-SQLite שלך
+                        with closing(get_conn()) as conn, conn:
+                            conn.execute(
+                                "INSERT INTO users (username, name, password, email) VALUES (?, ?, ?, ?)",
+                                (new_username, new_name, hashed_password, new_email)
+                            )
+                        st.success('🎉 נרשמת בהצלחה! כעת ניתן להסיר את ה-V מההרשמה ולהתחבר.')
+                except Exception as e:
+                    st.error(f'שגיאה בתהליך השמירה: {e}')
+                    
+    st.markdown('</div>', unsafe_allow_html=True)
 # ----------------------------------------------------------------------------
 # Main (פונקציית הניהול המרכזית המאוחדת)
 # ----------------------------------------------------------------------------
