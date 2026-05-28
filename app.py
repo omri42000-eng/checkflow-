@@ -540,129 +540,150 @@ attachSelectAll(); setInterval(attachSelectAll,600);
 # WebAuthn JS helpers
 # ═══════════════════════════════════════════
 
-def inject_webauthn_register(username: str):
+def render_webauthn_register_btn(username: str):
     """
-    Injects a WebAuthn registration call into the parent document.
-    On success navigates to ?wa_reg=<credId>&wa_user=<username>
+    Self-contained WebAuthn registration component.
+
+    WHY THIS WORKS:
+    • The button lives INSIDE the iframe rendered by st.components.v1.html.
+    • The user clicks the button directly → navigator.credentials.create() is
+      called in the SAME click-event handler → user-gesture requirement is met.
+    • The old approach called credentials.create() after a Python st.rerun(),
+      by which time the browser's user-gesture window had already expired.
+    • On success: navigate parent to ?wa_reg=...&wa_user=... (page reload is
+      fine here — main() will catch the params, store the credential, and
+      auto-login the user before reaching the auth check).
     """
+    has_bio = current_user_has_webauthn()
+    btn_label = "🔄 עדכן טביעת אצבע / Face ID" if has_bio else "🔏 רשום טביעת אצבע / Face ID"
+
     st.components.v1.html(f"""
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:Inter,sans-serif;direction:rtl;}}
+#btn{{
+    width:100%;padding:13px 20px;
+    background:rgba(255,255,255,.13);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,.28);border-radius:14px;
+    color:#fff;font-size:15px;font-weight:700;cursor:pointer;
+    transition:all .15s ease;
+}}
+#btn:hover{{background:rgba(255,255,255,.22);}}
+#btn:disabled{{opacity:.5;cursor:default;}}
+#msg{{margin-top:7px;font-size:12px;color:rgba(255,255,255,.7);
+      text-align:center;min-height:16px;}}
+</style>
+<button id="btn">{btn_label}</button>
+<div id="msg"></div>
 <script>
-(function(){{
-    async function doRegister(){{
-        if(!window.parent.PublicKeyCredential){{
-            alert('הדפדפן אינו תומך בכניסה ביומטרית');return;
-        }}
-        var challenge=new Uint8Array(32); crypto.getRandomValues(challenge);
-        try{{
-            var cred=await window.parent.navigator.credentials.create({{publicKey:{{
-                challenge:challenge,
-                rp:{{name:"Check-Me"}},
-                user:{{
-                    id:new TextEncoder().encode("{username}"),
-                    name:"{username}",displayName:"{username}"
-                }},
-                pubKeyCredParams:[
-                    {{alg:-7,type:"public-key"}},
-                    {{alg:-257,type:"public-key"}}
-                ],
-                authenticatorSelection:{{
-                    authenticatorAttachment:"platform",
-                    userVerification:"required",residentKey:"preferred"
-                }},
-                timeout:60000
-            }}}});
-            var credId=btoa(String.fromCharCode(...new Uint8Array(cred.rawId)))
-                .replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=/g,'');
-            var url=new URL(window.parent.location.href);
-            url.searchParams.set('wa_reg',credId);
-            url.searchParams.set('wa_user','{username}');
-            window.parent.location.href=url.toString();
-        }}catch(e){{
-            if(e.name!=='NotAllowedError') alert('שגיאה: '+e.message);
-        }}
+document.getElementById('btn').addEventListener('click', async function(){{
+    var btn=this, msg=document.getElementById('msg');
+    btn.disabled=true;
+    btn.textContent='⏳ ממתין לאישור ביומטרי...';
+    msg.textContent='';
+    try{{
+        if(!window.PublicKeyCredential)
+            throw new Error('הדפדפן אינו תומך ב-WebAuthn');
+        var ch=new Uint8Array(32); crypto.getRandomValues(ch);
+        var cred=await navigator.credentials.create({{publicKey:{{
+            challenge:ch,
+            rp:{{name:"Check-Me"}},
+            user:{{
+                id:new TextEncoder().encode("{username}"),
+                name:"{username}",displayName:"{username}"
+            }},
+            pubKeyCredParams:[
+                {{alg:-7,type:"public-key"}},
+                {{alg:-257,type:"public-key"}}
+            ],
+            authenticatorSelection:{{
+                authenticatorAttachment:"platform",
+                userVerification:"required",
+                residentKey:"preferred"
+            }},
+            timeout:60000
+        }}}});
+        var id=btoa(String.fromCharCode(...new Uint8Array(cred.rawId)))
+            .replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=/g,'');
+        msg.textContent='✅ אומת! שומר...';
+        window.parent.location.href=
+            '?wa_reg='+encodeURIComponent(id)+'&wa_user='+encodeURIComponent('{username}');
+    }}catch(e){{
+        btn.disabled=false;
+        btn.textContent='{btn_label}';
+        msg.textContent=(e.name==='NotAllowedError')?'❌ בוטל':'❌ שגיאה: '+e.message;
     }}
-    doRegister();
-}})();
-</script>""", height=0)
+}});
+</script>
+""", height=88)
 
 
-def inject_webauthn_login_button(cred_map: dict):
+def render_webauthn_login_btn(cred_map: dict):
     """
-    Injects a floating biometric login button into parent document.
-    cred_map: {username: credId_b64_urlsafe}
+    Self-contained WebAuthn login component.
+    Shown on the login page when at least one user has biometrics enrolled.
+    Click → credentials.get() directly in same event → no gesture expiry issue.
     """
     if not cred_map:
         return
     cred_json = json.dumps([{"u": u, "c": c} for u, c in cred_map.items()])
+
     st.components.v1.html(f"""
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:Inter,sans-serif;direction:rtl;}}
+#btn{{
+    width:100%;padding:13px 20px;
+    background:rgba(255,255,255,.13);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,.28);border-radius:14px;
+    color:#fff;font-size:15px;font-weight:700;cursor:pointer;
+    transition:all .15s ease;
+}}
+#btn:hover{{background:rgba(255,255,255,.22);}}
+#btn:disabled{{opacity:.5;cursor:default;}}
+#msg{{margin-top:7px;font-size:12px;color:rgba(255,255,255,.7);
+      text-align:center;min-height:16px;}}
+</style>
+<button id="btn">📱 כניסה ביומטרית (טביעת אצבע / Face ID)</button>
+<div id="msg"></div>
 <script>
-(function(){{
-    var doc=window.parent.document;
-    var old=doc.getElementById('__wabtn__'); if(old)old.remove();
-
-    var wrapper=doc.createElement('div');
-    wrapper.id='__wabtn__';
-    wrapper.style.cssText=[
-        'position:fixed','bottom:28px','right:20px','z-index:99999',
-        'display:flex','flex-direction:column','align-items:center','gap:4px'
-    ].join(';');
-
-    var btn=doc.createElement('button');
-    btn.innerHTML='<span style="font-size:1.6rem;display:block;">&#x1F4F1;</span>'
-                 +'<span style="font-size:10px;font-weight:800;letter-spacing:.5px;">BIOMETRIC</span>';
-    btn.style.cssText=[
-        'background:rgba(255,255,255,0.14)',
-        'backdrop-filter:blur(22px)','-webkit-backdrop-filter:blur(22px)',
-        'color:#fff','border:1px solid rgba(255,255,255,.35)',
-        'border-radius:20px','padding:12px 18px',
-        'font-family:Inter,sans-serif','cursor:pointer',
-        'box-shadow:0 8px 28px rgba(0,0,0,.28)',
-        'transition:all .15s ease','text-align:center','min-width:70px'
-    ].join(';');
-    btn.addEventListener('mouseenter',function(){{
-        this.style.background='rgba(255,255,255,.24)';
-        this.style.transform='translateY(-2px)';
+document.getElementById('btn').addEventListener('click', async function(){{
+    var btn=this, msg=document.getElementById('msg');
+    btn.disabled=true;
+    btn.textContent='⏳ ממתין לאישור...';
+    var credMap={cred_json};
+    var allow=credMap.map(function(x){{
+        var raw=x.c.replace(/-/g,'+').replace(/_/g,'/');
+        while(raw.length%4)raw+='=';
+        return{{id:Uint8Array.from(atob(raw),c=>c.charCodeAt(0)),type:'public-key'}};
     }});
-    btn.addEventListener('mouseleave',function(){{
-        this.style.background='rgba(255,255,255,.14)';
-        this.style.transform='';
-    }});
-
-    btn.addEventListener('click',async function(){{
-        if(!window.parent.PublicKeyCredential){{
-            alert('הדפדפן אינו תומך בכניסה ביומטרית'); return;
+    try{{
+        if(!window.PublicKeyCredential)
+            throw new Error('הדפדפן אינו תומך ב-WebAuthn');
+        var ch=new Uint8Array(32); crypto.getRandomValues(ch);
+        var a=await navigator.credentials.get({{publicKey:{{
+            challenge:ch,allowCredentials:allow,
+            userVerification:'required',timeout:60000
+        }}}});
+        var used=btoa(String.fromCharCode(...new Uint8Array(a.rawId)))
+            .replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=/g,'');
+        var m=credMap.find(x=>x.c===used);
+        if(m){{
+            msg.textContent='✅ מאומת! מתחבר...';
+            window.parent.location.href='?wa_auth='+encodeURIComponent(m.u);
+        }} else {{
+            throw new Error('Credential mismatch');
         }}
-        var credMap={cred_json};
-        var allowCreds=credMap.map(function(x){{
-            var raw=x.c.replace(/-/g,'+').replace(/_/g,'/');
-            while(raw.length%4)raw+='=';
-            return{{id:Uint8Array.from(atob(raw),function(c){{return c.charCodeAt(0)}}),type:'public-key'}};
-        }});
-        var challenge=new Uint8Array(32); crypto.getRandomValues(challenge);
-        try{{
-            var assertion=await window.parent.navigator.credentials.get({{publicKey:{{
-                challenge:challenge,
-                allowCredentials:allowCreds,
-                userVerification:'required',
-                timeout:60000
-            }}}});
-            var usedId=btoa(String.fromCharCode(...new Uint8Array(assertion.rawId)))
-                .replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=/g,'');
-            var matched=credMap.find(function(x){{return x.c===usedId;}});
-            if(matched){{
-                var url=new URL(window.parent.location.href);
-                url.searchParams.set('wa_auth',matched.u);
-                window.parent.location.href=url.toString();
-            }}
-        }}catch(e){{
-            if(e.name!=='NotAllowedError') alert('שגיאת אימות: '+e.message);
-        }}
-    }});
-
-    wrapper.appendChild(btn);
-    doc.body.appendChild(wrapper);
-}})();
-</script>""", height=0)
+    }}catch(e){{
+        btn.disabled=false;
+        btn.textContent='📱 כניסה ביומטרית (טביעת אצבע / Face ID)';
+        msg.textContent=(e.name==='NotAllowedError')?'❌ בוטל':'❌ שגיאה: '+e.message;
+    }}
+}});
+</script>
+""", height=88)
 
 
 # ═══════════════════════════════════════════
@@ -795,26 +816,18 @@ def render_home_screen():
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Biometric enrollment option ──
+    # ── Biometric enrollment ──
     has_bio = current_user_has_webauthn()
-    bio_label = "🔏 עדכון כניסה ביומטרית" if has_bio else "🔏 הפעלת כניסה ביומטרית (טביעת אצבע)"
     bio_status = "✅ פעיל" if has_bio else "לא מוגדר"
-    with st.expander(f"הגדרות אבטחה — {bio_status}"):
+    with st.expander(f"🔒 הגדרות אבטחה — {bio_status}"):
         st.markdown(
             f"<p style='color:rgba(255,255,255,.7);font-size:.85rem;margin-bottom:12px;'>"
-            f"כניסה ביומטרית מאפשרת כניסה מהירה ללא סיסמה — רק עם טביעת אצבע או זיהוי פנים.<br>"
-            f"<b>סטטוס:</b> <span style='color:{('#4DDC96' if has_bio else '#FF7070')};'>{bio_status}</span>"
-            f"</p>",
+            f"כניסה ביומטרית מאפשרת כניסה מהירה ללא סיסמה.<br>"
+            f"<b>סטטוס:</b> <span style='color:{('#4DDC96' if has_bio else '#FF7070')};'>"
+            f"{bio_status}</span></p>",
             unsafe_allow_html=True,
         )
-        if st.button(bio_label, use_container_width=True, key="enable_bio"):
-            st.session_state["_trigger_register"] = True
-            st.rerun()
-
-    # Trigger WebAuthn registration if button was pressed
-    if st.session_state.pop("_trigger_register", False):
-        inject_webauthn_register(st.session_state.get("username", ""))
-        st.info("📱 הפעל את חיישן הטביעה בהנחיית המכשיר…")
+        render_webauthn_register_btn(st.session_state.get("username", ""))
 
 
 # ═══════════════════════════════════════════
