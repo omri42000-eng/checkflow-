@@ -500,10 +500,20 @@ div[data-testid="stRadio"] label p,
 div[data-testid="stRadio"] label span,
 div[data-testid="stRadio"] label div { color:#fff!important; }
 
-/* ── Hide back-nav trigger input completely ── */
-div[data-testid="stTextInput"]:has(input[aria-label="back_trigger_input"]) {
-    display:none!important;height:0!important;overflow:hidden!important;
-    margin:0!important;padding:0!important;pointer-events:none!important;
+/* ── Back navigation buttons ── */
+/* Top small pill */
+div[data-testid="stHorizontalBlock"]:has(button[kind="secondary"]) > div:first-child .stButton > button {
+    border-radius:50px!important;
+    background:rgba(255,255,255,.12)!important;
+    border:1px solid rgba(255,255,255,.3)!important;
+    font-size:.82rem!important;
+    padding:8px 14px!important;
+    font-weight:800!important;
+    letter-spacing:.3px!important;
+}
+/* Bottom full-width back button — target by use_container_width */
+.stButton > button[data-testid="baseButton-secondary"] {
+    /* Covered by general .stButton rule */
 }
 
 /* ── Big number input ── */
@@ -729,82 +739,31 @@ def render_kpi():
     )
 
 
-def render_back_button():
-    """
-    Floating back button — zero session loss.
+def render_back_btn_top():
+    """Small pill back button at the top — pure Streamlit, zero JS, zero session loss."""
+    col, _ = st.columns([1, 4])
+    with col:
+        if st.button("← ראשי", key=f"back_top_{st.session_state.get('screen','')}",
+                     use_container_width=True):
+            st.session_state.screen = "home"
+            st.rerun()
+    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
-    HOW IT WORKS:
-    • A hidden st.text_input acts as a communication channel between JS and Python.
-    • The floating button (injected into parent document) writes '1' to that input
-      via React's native property setter — this triggers a Streamlit widget-change
-      rerun WITHOUT a full page reload, so the session (auth) is never lost.
-    • CSS hides the trigger input so it takes zero visual space.
-    """
-    # ── Trigger input (visually hidden via CSS) ──
-    trigger = st.text_input(
-        "back_trigger_input",
-        key="back_nav_trigger",
-        label_visibility="collapsed",
-        value="",
+
+def render_back_btn_bottom():
+    """Full-width back button at the bottom of the page."""
+    st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='text-align:center;font-size:11px;font-weight:700;letter-spacing:2px;"
+        "color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:8px;'>"
+        "— — —</p>",
+        unsafe_allow_html=True,
     )
-    if trigger:
-        st.session_state["back_nav_trigger"] = ""
+    if st.button("⬅  חזרה לתפריט הראשי",
+                 key=f"back_bot_{st.session_state.get('screen','')}",
+                 use_container_width=True):
         st.session_state.screen = "home"
         st.rerun()
-
-    # ── Floating button that fires the trigger ──
-    st.components.v1.html("""
-<script>
-(function(){
-    try{
-        var doc = window.parent.document;
-        var old = doc.getElementById('__cfb__'); if(old) old.remove();
-
-        var btn = doc.createElement('button');
-        btn.id   = '__cfb__';
-        btn.type = 'button';
-        btn.innerHTML = '&#8592; &#x05E8;&#x05D0;&#x05E9;&#x05D9;';
-        btn.style.cssText = [
-            'position:fixed','bottom:28px','left:20px','z-index:99999',
-            'background:rgba(255,255,255,.84)',
-            'backdrop-filter:blur(22px)','-webkit-backdrop-filter:blur(22px)',
-            'color:#1C1C24','border:1px solid rgba(255,255,255,.65)',
-            'border-radius:50px','padding:11px 24px',
-            'font-weight:800','font-size:14px','cursor:pointer',
-            'box-shadow:0 8px 28px rgba(0,0,0,.28)',
-            'font-family:Inter,sans-serif',
-            'display:inline-flex','align-items:center',
-            'transition:all .15s ease','direction:rtl','line-height:1'
-        ].join(';');
-
-        btn.addEventListener('mouseenter', function(){
-            this.style.background = 'rgba(255,255,255,.97)';
-            this.style.transform  = 'translateY(-2px)';
-        });
-        btn.addEventListener('mouseleave', function(){
-            this.style.background = 'rgba(255,255,255,.84)';
-            this.style.transform  = '';
-        });
-
-        btn.addEventListener('click', function(){
-            // Find the hidden Streamlit trigger input by its aria-label.
-            // We use React's native value setter so React detects the change
-            // and Streamlit queues a rerun — no full page reload, session intact.
-            var inp = doc.querySelector('input[aria-label="back_trigger_input"]');
-            if(inp){
-                var setter = Object.getOwnPropertyDescriptor(
-                    window.parent.HTMLInputElement.prototype, 'value'
-                ).set;
-                setter.call(inp, '1');
-                inp.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        });
-
-        doc.body.appendChild(btn);
-    }catch(e){ console.warn('back-btn:', e); }
-})();
-</script>
-""", height=0)
 
 
 # ═══════════════════════════════════════════
@@ -1192,13 +1151,15 @@ def main():
     if screen == "home":
         render_home_screen()
     elif screen == "calc":
-        render_back_button()
+        render_back_btn_top()
         render_calculator()
+        render_back_btn_bottom()
     elif screen == "mgmt":
-        render_back_button()
+        render_back_btn_top()
         render_kpi()
         render_add_check_form()
         render_clients()
+        render_back_btn_bottom()
 
 
 if __name__ == "__main__":
