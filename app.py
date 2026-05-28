@@ -697,26 +697,35 @@ def render_auth_screen(authenticator):
 # ═══════════════════════════════════════════
 def render_kpi():
     total, cnt = get_totals()
-    st.markdown(f"""
-<div class="kpi">
-    <div class="kpi-label">סך הצ'קים שביד כרגע</div>
-    <div class="kpi-value">{fmt_ils(total)}</div>
-    <div class="kpi-sub">{cnt} צ'קים פיזיים בארנק 💸</div>
-</div>""", unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="kpi">'
+        f'<div class="kpi-label">סך הצ\'קים שביד כרגע</div>'
+        f'<div class="kpi-value">{fmt_ils(total)}</div>'
+        f'<div class="kpi-sub">{cnt} צ\'קים פיזיים בארנק 💸</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def render_back_button():
-    """Floating back button injected into parent document — zero layout impact."""
+    """
+    Floating back-button injected into the parent document as a plain <a href> tag.
+    An anchor with href is the most reliable cross-browser navigation method —
+    no location.href assignment, no JS click handler, no CSP issues.
+    height=0 so the iframe takes zero layout space.
+    """
     st.components.v1.html("""
 <script>
 (function(){
     try{
         var doc=window.parent.document;
         var old=doc.getElementById('__cfb__'); if(old)old.remove();
-        var btn=doc.createElement('button');
-        btn.id='__cfb__';
-        btn.innerHTML='&#8592; ראשי';
-        btn.style.cssText=[
+
+        var a=doc.createElement('a');
+        a.id='__cfb__';
+        a.href='?s=home';
+        a.innerHTML='&#8592; &#x05E8;&#x05D0;&#x05E9;&#x05D9;';
+        a.style.cssText=[
             'position:fixed','bottom:28px','left:20px','z-index:99999',
             'background:rgba(255,255,255,.82)',
             'backdrop-filter:blur(22px)','-webkit-backdrop-filter:blur(22px)',
@@ -724,23 +733,21 @@ def render_back_button():
             'border-radius:50px','padding:11px 24px',
             'font-weight:800','font-size:14px','cursor:pointer',
             'box-shadow:0 8px 28px rgba(0,0,0,.28)',
-            'font-family:Inter,sans-serif','letter-spacing:.2px',
-            'transition:all .15s ease','direction:rtl'
+            'font-family:Inter,sans-serif','text-decoration:none',
+            'display:inline-flex','align-items:center',
+            'transition:all .15s ease','direction:rtl','line-height:1'
         ].join(';');
-        btn.addEventListener('mouseenter',function(){
-            this.style.background='rgba(255,255,255,.96)';
+        a.addEventListener('mouseenter',function(){
+            this.style.background='rgba(255,255,255,.97)';
             this.style.transform='translateY(-2px)';
+            this.style.boxShadow='0 12px 36px rgba(0,0,0,.35)';
         });
-        btn.addEventListener('mouseleave',function(){
+        a.addEventListener('mouseleave',function(){
             this.style.background='rgba(255,255,255,.82)';
             this.style.transform='';
+            this.style.boxShadow='0 8px 28px rgba(0,0,0,.28)';
         });
-        btn.addEventListener('click',function(){
-            var url=new URL(window.parent.location.href);
-            url.searchParams.set('s','home');
-            window.parent.location.href=url.toString();
-        });
-        doc.body.appendChild(btn);
+        doc.body.appendChild(a);
     }catch(e){console.warn('back-btn:',e);}
 })();
 </script>""", height=0)
@@ -871,18 +878,20 @@ def render_clients():
                        f"background:rgba(0,0,0,.18);border-radius:8px;padding:2px 7px;"
                        f"margin-inline-end:4px;'>{score}</span>")
 
-        st.markdown(f"""
-<div class="client-card" style="background:{bg};">
-    <div style="flex:1;">
-        <div class="client-name" style="color:{txt};">{r['name']}</div>
-        <div style="display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;">
-            <span style="font-size:.82rem;color:{txt};opacity:.7;font-weight:600;">{r['cnt']} צ'קים &nbsp;|</span>
-            {stars} {score_badge}
-        </div>
-        {alerts_html}
-    </div>
-    <div class="client-obligo" style="color:{txt};margin-inline-start:14px;">{fmt_ils(r['obligo'])}</div>
-</div>""", unsafe_allow_html=True)
+        card_html = (
+            f'<div class="client-card" style="background:{bg};">'
+            f'<div style="flex:1;">'
+            f'<div class="client-name" style="color:{txt};">{r["name"]}</div>'
+            f'<div style="display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;">'
+            f'<span style="font-size:.82rem;color:{txt};opacity:.7;font-weight:600;">{r["cnt"]} &#x05E6;\'&#x05E7;&#x05D9;&#x05DD; |</span>'
+            f'{stars} {score_badge}'
+            f'</div>'
+            f'{alerts_html}'
+            f'</div>'
+            f'<div class="client-obligo" style="color:{txt};margin-inline-start:14px;">{fmt_ils(r["obligo"])}</div>'
+            f'</div>'
+        )
+        st.markdown(card_html, unsafe_allow_html=True)
 
         label_expand = (f"פעיל:{r['cnt']} · חזרות:{r['total_returned_checks']} "
                         f"· איחורים:{r['total_late_payments']} · הצלחות:{r['total_successful_deals']}")
@@ -895,15 +904,17 @@ def render_clients():
                 for ch in checks_of_client:
                     color      = STATUS_COLORS.get(ch["status"], "#aaa")
                     remind_str = f" | תזכורת: {ch['remind_on']}" if ch["remind_on"] else ""
-                    st.markdown(f"""
-<div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
-    border-radius:16px;padding:12px 14px;margin-bottom:8px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-weight:900;direction:ltr;color:#fff;font-size:1.1rem;">{fmt_ils(ch['amount'])}</span>
-        <span class="pill" style="background:{color}22;color:{color};border:1px solid {color}66;">{ch['status']}</span>
-    </div>
-    <span style="font-size:.8rem;color:rgba(255,255,255,.55);">פירעון: {ch['due_date']}{remind_str}</span>
-</div>""", unsafe_allow_html=True)
+                    check_html = (
+                        f'<div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);'
+                        f'border-radius:16px;padding:12px 14px;margin-bottom:8px;">'
+                        f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+                        f'<span style="font-weight:900;direction:ltr;color:#fff;font-size:1.1rem;">{fmt_ils(ch["amount"])}</span>'
+                        f'<span class="pill" style="background:{color}22;color:{color};border:1px solid {color}66;">{ch["status"]}</span>'
+                        f'</div>'
+                        f'<span style="font-size:.8rem;color:rgba(255,255,255,.55);">&#x05E4;&#x05D9;&#x05E8;&#x05E2;&#x05D5;&#x05DF;: {ch["due_date"]}{remind_str}</span>'
+                        f'</div>'
+                    )
+                    st.markdown(check_html, unsafe_allow_html=True)
 
                     col_sel, col_upd = st.columns([3,2])
                     with col_sel:
@@ -933,22 +944,22 @@ def render_clients():
                     st.markdown("<hr style='border:none;border-top:1px solid rgba(255,255,255,.08);margin:6px 0;'>",
                                 unsafe_allow_html=True)
 
-            # Credit history summary
-            st.markdown(f"""
-<div style="background:rgba(255,255,255,.06);border-radius:14px;padding:12px 14px;margin-top:8px;">
-    <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.45);
-        text-transform:uppercase;margin-bottom:10px;">היסטוריית אמינות</div>
-    <div style="display:flex;justify-content:space-around;text-align:center;">
-        <div><div style="font-size:1.4rem;font-weight:900;color:#FF5555;">{r['total_returned_checks']}</div>
-             <div style="font-size:10px;color:rgba(255,255,255,.45);font-weight:600;">חזרות</div></div>
-        <div><div style="font-size:1.4rem;font-weight:900;color:#FFB060;">{r['total_late_payments']}</div>
-             <div style="font-size:10px;color:rgba(255,255,255,.45);font-weight:600;">איחורים</div></div>
-        <div><div style="font-size:1.4rem;font-weight:900;color:#4DDC96;">{r['total_successful_deals']}</div>
-             <div style="font-size:10px;color:rgba(255,255,255,.45);font-weight:600;">הצלחות</div></div>
-        <div><div style="font-size:1.4rem;font-weight:900;color:{scolor};">{score}</div>
-             <div style="font-size:10px;color:rgba(255,255,255,.45);font-weight:600;">ציון</div></div>
-    </div>
-</div>""", unsafe_allow_html=True)
+            hist_html = (
+                f'<div style="background:rgba(255,255,255,.06);border-radius:14px;padding:12px 14px;margin-top:8px;">'
+                f'<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.45);'
+                f'text-transform:uppercase;margin-bottom:10px;">&#x05D4;&#x05D9;&#x05E1;&#x05D8;&#x05D5;&#x05E8;&#x05D9;&#x05D9;&#x05EA; &#x05D0;&#x05DE;&#x05D9;&#x05E0;&#x05D5;&#x05EA;</div>'
+                f'<div style="display:flex;justify-content:space-around;text-align:center;">'
+                f'<div><div style="font-size:1.4rem;font-weight:900;color:#FF5555;">{r["total_returned_checks"]}</div>'
+                f'<div style="font-size:10px;color:rgba(255,255,255,.45);font-weight:600;">&#x05D7;&#x05D6;&#x05E8;&#x05D5;&#x05EA;</div></div>'
+                f'<div><div style="font-size:1.4rem;font-weight:900;color:#FFB060;">{r["total_late_payments"]}</div>'
+                f'<div style="font-size:10px;color:rgba(255,255,255,.45);font-weight:600;">&#x05D0;&#x05D9;&#x05D7;&#x05D5;&#x05E8;&#x05D9;&#x05DD;</div></div>'
+                f'<div><div style="font-size:1.4rem;font-weight:900;color:#4DDC96;">{r["total_successful_deals"]}</div>'
+                f'<div style="font-size:10px;color:rgba(255,255,255,.45);font-weight:600;">&#x05D4;&#x05E6;&#x05DC;&#x05D7;&#x05D5;&#x05EA;</div></div>'
+                f'<div><div style="font-size:1.4rem;font-weight:900;color:{scolor};">{score}</div>'
+                f'<div style="font-size:10px;color:rgba(255,255,255,.45);font-weight:600;">&#x05E6;&#x05D9;&#x05D5;&#x05DF;</div></div>'
+                f'</div></div>'
+            )
+            st.markdown(hist_html, unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════
@@ -1047,10 +1058,11 @@ def render_calculator():
                     "font-weight:700;color:rgba(255,255,255,.85);margin:10px 0;'>"
                     "⚠️ תאריך הפירעון עבר — אין ימי זיכוי.</div>", unsafe_allow_html=True)
 
-    st.markdown(f"""
-<div class="calc-out fee"><div class="lbl">סך העמלה שיורדת</div><div class="big">{fmt_ils(fee)}</div></div>
-<div class="calc-out net"><div class="lbl">נטו מזומן שמתקבל</div><div class="big">{fmt_ils(net)}</div></div>
-""", unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="calc-out fee"><div class="lbl">&#x05E1;&#x05DA; &#x05D4;&#x05E2;&#x05DE;&#x05DC;&#x05D4; &#x05E9;&#x05D9;&#x05D5;&#x05E8;&#x05D3;&#x05EA;</div><div class="big">{fmt_ils(fee)}</div></div>'
+        f'<div class="calc-out net"><div class="lbl">&#x05E0;&#x05D8;&#x05D5; &#x05DE;&#x05D6;&#x05D5;&#x05DE;&#x05DF; &#x05E9;&#x05DE;&#x05EA;&#x05E7;&#x05D1;&#x05DC;</div><div class="big">{fmt_ils(net)}</div></div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ═══════════════════════════════════════════
