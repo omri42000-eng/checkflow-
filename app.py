@@ -358,9 +358,13 @@ section[data-testid="stMain"],[data-testid="stVerticalBlock"],
     border:1px solid rgba(255,255,255,.32); border-radius:24px;
     padding:18px 20px; margin-bottom:10px;
     box-shadow:0 8px 22px rgba(0,0,0,.14);
+    gap:20px;
 }
-.client-name  { font-weight:800;font-size:1rem; }
-.client-obligo{ font-weight:900;font-size:1.15rem;direction:ltr;letter-spacing:-.5px;padding-top:2px; }
+.client-name  { font-weight:800;font-size:1.15rem;margin-bottom:2px; }
+.client-obligo{
+    font-weight:900;font-size:1.2rem;direction:ltr;letter-spacing:-.5px;
+    padding-top:2px;white-space:nowrap;flex-shrink:0;
+}
 
 /* ── Alert banners ── */
 .alert-obligo{
@@ -476,6 +480,13 @@ div[data-testid="stRadio"] div[data-baseweb="radio"]>div:first-child{ display:no
     border:1px solid rgba(255,255,255,.22)!important;border-radius:14px!important;
     font-weight:700!important;color:#fff!important;
 }
+/* Ensure all text nodes inside expander header are white */
+.streamlit-expanderHeader p,
+.streamlit-expanderHeader span,
+.streamlit-expanderHeader div,
+[data-testid="stExpander"] details summary,
+[data-testid="stExpander"] details summary *,
+[data-testid="stExpander"] > details > summary { color:#fff!important; }
 .streamlit-expanderContent{
     background:rgba(255,255,255,.07)!important;backdrop-filter:blur(12px)!important;
     border:1px solid rgba(255,255,255,.14)!important;border-radius:0 0 14px 14px!important;
@@ -483,6 +494,17 @@ div[data-testid="stRadio"] div[data-baseweb="radio"]>div:first-child{ display:no
 
 /* ── Checkbox ── */
 .stCheckbox label{ color:#fff!important;font-weight:700!important;font-size:.95rem!important; }
+
+/* ── Radio button label text — all descendant text nodes ── */
+div[data-testid="stRadio"] label p,
+div[data-testid="stRadio"] label span,
+div[data-testid="stRadio"] label div { color:#fff!important; }
+
+/* ── Hide back-nav trigger input completely ── */
+div[data-testid="stTextInput"]:has(input[aria-label="back_trigger_input"]) {
+    display:none!important;height:0!important;overflow:hidden!important;
+    margin:0!important;padding:0!important;pointer-events:none!important;
+}
 
 /* ── Big number input ── */
 div[data-testid="stNumberInput"]:has(input[aria-label*="סכום"]) input{
@@ -709,48 +731,80 @@ def render_kpi():
 
 def render_back_button():
     """
-    Floating back-button injected into the parent document as a plain <a href> tag.
-    An anchor with href is the most reliable cross-browser navigation method —
-    no location.href assignment, no JS click handler, no CSP issues.
-    height=0 so the iframe takes zero layout space.
+    Floating back button — zero session loss.
+
+    HOW IT WORKS:
+    • A hidden st.text_input acts as a communication channel between JS and Python.
+    • The floating button (injected into parent document) writes '1' to that input
+      via React's native property setter — this triggers a Streamlit widget-change
+      rerun WITHOUT a full page reload, so the session (auth) is never lost.
+    • CSS hides the trigger input so it takes zero visual space.
     """
+    # ── Trigger input (visually hidden via CSS) ──
+    trigger = st.text_input(
+        "back_trigger_input",
+        key="back_nav_trigger",
+        label_visibility="collapsed",
+        value="",
+    )
+    if trigger:
+        st.session_state["back_nav_trigger"] = ""
+        st.session_state.screen = "home"
+        st.rerun()
+
+    # ── Floating button that fires the trigger ──
     st.components.v1.html("""
 <script>
 (function(){
     try{
-        var doc=window.parent.document;
-        var old=doc.getElementById('__cfb__'); if(old)old.remove();
+        var doc = window.parent.document;
+        var old = doc.getElementById('__cfb__'); if(old) old.remove();
 
-        var a=doc.createElement('a');
-        a.id='__cfb__';
-        a.href='?s=home';
-        a.innerHTML='&#8592; &#x05E8;&#x05D0;&#x05E9;&#x05D9;';
-        a.style.cssText=[
+        var btn = doc.createElement('button');
+        btn.id   = '__cfb__';
+        btn.type = 'button';
+        btn.innerHTML = '&#8592; &#x05E8;&#x05D0;&#x05E9;&#x05D9;';
+        btn.style.cssText = [
             'position:fixed','bottom:28px','left:20px','z-index:99999',
-            'background:rgba(255,255,255,.82)',
+            'background:rgba(255,255,255,.84)',
             'backdrop-filter:blur(22px)','-webkit-backdrop-filter:blur(22px)',
             'color:#1C1C24','border:1px solid rgba(255,255,255,.65)',
             'border-radius:50px','padding:11px 24px',
             'font-weight:800','font-size:14px','cursor:pointer',
             'box-shadow:0 8px 28px rgba(0,0,0,.28)',
-            'font-family:Inter,sans-serif','text-decoration:none',
+            'font-family:Inter,sans-serif',
             'display:inline-flex','align-items:center',
             'transition:all .15s ease','direction:rtl','line-height:1'
         ].join(';');
-        a.addEventListener('mouseenter',function(){
-            this.style.background='rgba(255,255,255,.97)';
-            this.style.transform='translateY(-2px)';
-            this.style.boxShadow='0 12px 36px rgba(0,0,0,.35)';
+
+        btn.addEventListener('mouseenter', function(){
+            this.style.background = 'rgba(255,255,255,.97)';
+            this.style.transform  = 'translateY(-2px)';
         });
-        a.addEventListener('mouseleave',function(){
-            this.style.background='rgba(255,255,255,.82)';
-            this.style.transform='';
-            this.style.boxShadow='0 8px 28px rgba(0,0,0,.28)';
+        btn.addEventListener('mouseleave', function(){
+            this.style.background = 'rgba(255,255,255,.84)';
+            this.style.transform  = '';
         });
-        doc.body.appendChild(a);
-    }catch(e){console.warn('back-btn:',e);}
+
+        btn.addEventListener('click', function(){
+            // Find the hidden Streamlit trigger input by its aria-label.
+            // We use React's native value setter so React detects the change
+            // and Streamlit queues a rerun — no full page reload, session intact.
+            var inp = doc.querySelector('input[aria-label="back_trigger_input"]');
+            if(inp){
+                var setter = Object.getOwnPropertyDescriptor(
+                    window.parent.HTMLInputElement.prototype, 'value'
+                ).set;
+                setter.call(inp, '1');
+                inp.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+
+        doc.body.appendChild(btn);
+    }catch(e){ console.warn('back-btn:', e); }
 })();
-</script>""", height=0)
+</script>
+""", height=0)
 
 
 # ═══════════════════════════════════════════
@@ -852,7 +906,7 @@ def render_add_check_form():
 # Client List + BI
 # ═══════════════════════════════════════════
 def render_clients():
-    st.markdown('<div class="section-title">הלקוחות שלי</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title" style="margin-top:4px;">הלקוחות שלי</div>', unsafe_allow_html=True)
     st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
 
     rows = [r for r in get_client_obligo()
@@ -966,7 +1020,10 @@ def render_clients():
 # Calculator
 # ═══════════════════════════════════════════
 def render_calculator():
-    st.markdown('<div class="section-title-right">מחשבון פריטה (ניכיון)</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title-right" style="margin-top:4px;">מחשבון פריטה (ניכיון)</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown('<div class="neon-bar-right"></div>', unsafe_allow_html=True)
 
     if "fixed_rate"     not in st.session_state: st.session_state.fixed_rate     = 12.0
