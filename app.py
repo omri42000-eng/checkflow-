@@ -648,25 +648,15 @@ def get_all_users_for_auth():
         return credentials
 
 def register_new_user(authenticator):
-    """מנגנון הרשמה למשתמש חדש - תואם לגרסה החדשה ביותר ללא credentials"""
+    """מנגנון הרשמה למשתמש חדש - ללא קאפצ'ה קורסת"""
     try:
-        # הספרייה מריצה את טופס ההרשמה (מציגה שדות: שם משתמש, סיסמה, אימייל, שם מלא)
-        # בגרסאות החדשות היא מחזירה True אם מישהו לחץ על כפתור הרישום והקלט תקין
-        result = authenticator.register_user(location='main')
+        # הוספנו captcha=False כדי למנוע את השגיאה
+        result = authenticator.register_user(location='main', captcha=False)
         
         if result:
-            # מכיוון שהספרייה שומרת את הפרטים בתוך ה-session_state שלה בזמן הרישום,
-            # אנחנו שולפים את המשתמש החדש ואת הסיסמה המוצפנת שהוא יצר ישירות משם!
-            
-            # 1. נמצא את שם המשתמש שנרשם הרגע (הוא נמצא בתוך ה-cookie או ב-state הזמני)
-            # הדרך הכי בטוחה היא לבדוק מה התווסף ל-session_state של ה-authenticator
-            # או פשוט לקחת את השדות הזמניים של ה-Form:
-            
-            # ניגש לנתונים שהספרייה עצמה מעדכנת בזיכרון שלה:
             usernames_dict = authenticator.validator.credentials.get('usernames', {})
             
             if usernames_dict:
-                # לוקחים את המשתמש האחרון שהתווסף למערכת
                 new_username = list(usernames_dict.keys())[-1]
                 user_data = usernames_dict[new_username]
                 
@@ -675,7 +665,7 @@ def register_new_user(authenticator):
                 hashed_password = user_data.get('password', '')
                 email = user_data.get('email', '')
                 
-                # שמירת המשתמש החדש במסד הנתונים של ה-SQLite שלך
+                # שמירה ב-SQLite
                 with closing(get_conn()) as conn, conn:
                     conn.execute(
                         "INSERT OR IGNORE INTO users (username, name, password, email) VALUES (?, ?, ?, ?)",
