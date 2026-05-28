@@ -698,7 +698,8 @@ def register_new_user(authenticator):
             st.rerun()
                 
     except Exception as e:
-        st.error(f'שגיאה בהרשמה: {e}')def register_new_user(authenticator):
+        st.error(f'שגיאה בהרשמה: {e}')
+        def register_new_user(authenticator):
     """מנגנון הרשמה עצמאי וחסין לחלוטין - עוקף את באג הגרסאות של הספרייה"""
     st.markdown('<div class="glass" style="padding: 20px;">', unsafe_allow_html=True)
     st.subheader("הרשמת משתמש חדש")
