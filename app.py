@@ -648,23 +648,33 @@ def get_all_users_for_auth():
         return credentials
 
 def register_new_user(authenticator):
+    """מנגנון הרשמה למשתמש חדש בגרסה המעודכנת"""
     try:
-        email, username, name = authenticator.register_user(
-            form_name='הרשמת משתמש חדש', 
-            location='main'
-        )
-        if username:
-            hashed_password = authenticator.credentials['usernames'][username]['password']
+        # בגרסה החדשה אין form_name, והכותרת מוגדרת אוטומטית לפי השפה של הדפדפן או החבילה
+        # הפונקציה מציגה את הטופס ומחזירה True אם משתמש נרשם בהצלחה
+        if authenticator.register_user(location='main'):
+            
+            # שליפת המשתמש האחרון שנרשם מתוך המבנה הפנימי של הספרייה
+            # הספרייה מוסיפה אותו אוטומטית לתוך credentials['usernames']
+            new_username = list(authenticator.credentials['usernames'].keys())[-1]
+            user_data = authenticator.credentials['usernames'][new_username]
+            
+            username = new_username
+            name = user_data['name']
+            hashed_password = user_data['password']
+            email = user_data['email']
+            
+            # שמירת המשתמש החדש במסד הנתונים של ה-SQLite שלך
             with closing(get_conn()) as conn, conn:
                 conn.execute(
-                    "INSERT INTO users (username, name, password, email) VALUES (?, ?, ?, ?)",
+                    "INSERT OR IGNORE INTO users (username, name, password, email) VALUES (?, ?, ?, ?)",
                     (username, name, hashed_password, email)
                 )
-            st.success('נרשמת בהצלחה! כעת ניתן להתחבר.')
+            st.success('נרשמת בהצלחה! כעת ניתן להסיר את ה-V מההרשמה ולהתחבר.')
             st.rerun()
+            
     except Exception as e:
         st.error(f'שגיאה בהרשמה: {e}')
-
 
 # ----------------------------------------------------------------------------
 # Main (פונקציית הניהול המרכזית המאוחדת)
