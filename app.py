@@ -237,10 +237,13 @@ def inject_css():
     }
     #MainMenu, header, footer { visibility: hidden; }
     .block-container {
-        padding-top: 0 !important;
+        padding-top: 0.5rem !important;
         padding-bottom: 5rem;
         max-width: 480px;
     }
+    /* הסרת רווח עליון מהאלמנט הראשון */
+    .block-container > div:first-child { margin-top: 0 !important; padding-top: 0 !important; }
+    [data-testid="stAppViewBlockContainer"] { padding-top: 0.5rem !important; }
 
     /* ─── KPI ─── */
     .kpi {
@@ -709,6 +712,13 @@ def inject_css():
         border-radius: 14px !important;
     }
     details summary { color: var(--text-primary) !important; font-weight: 700 !important; }
+
+    /* ─── כפתורי בסיס שכ"ט (toggle) — הנבחר מודגש ─── */
+    [data-testid="stButton"]:has(button p:first-child) button:has(p:contains("✓")) {
+        background: linear-gradient(135deg,#4D8DFF,#9D8BFF) !important;
+        border-color: transparent !important;
+        color: #fff !important;
+    }
 
     /* ─── checkbox ─── */
     .stCheckbox label { color: var(--text-primary) !important; font-weight: 700 !important; font-size: 0.88rem !important; }
@@ -1226,23 +1236,36 @@ def render_add_check_form():
         with sc:
             status = st.selectbox("סטטוס", STATUSES, key="add_status")
         with sd:
-            single_rate = st.number_input("שכ\"ט (%)", min_value=0.0, max_value=100.0,
+            single_rate = st.number_input('שכ"ט (%)', min_value=0.0, max_value=100.0,
                                           value=float(st.session_state.get("fixed_rate", 12.0)),
                                           step=0.1, format="%.2f", key="single_rate")
-
-        # שורה 3: בסיס (חודשי/שנתי) + תזכורת — כפתורים זעירים
-        se, sf = st.columns(2)
-        with se:
-            single_basis = st.radio("בסיס", ["חודשי", "שנתי"],
-                                    index=["חודשי","שנתי"].index(
-                                        st.session_state.get("rate_basis","שנתי"))
-                                          if st.session_state.get("rate_basis","שנתי") in ["חודשי","שנתי"] else 1,
-                                    key="single_basis", horizontal=True,
-                                    label_visibility="collapsed")
-        with sf:
-            use_remind = st.checkbox("תזכורת 🔔", value=False, key="add_use_remind")
-
         st.session_state.fixed_rate = single_rate
+
+        # שורה 3: בסיס toggle (2 כפתורי Streamlit) + תזכורת
+        cur_basis = st.session_state.get("rate_basis", "שנתי")
+        se, sf, sg = st.columns([2, 2, 2])
+        with se:
+            active_m = cur_basis == "חודשי"
+            st.markdown(
+                f"<div style='font-size:0.75rem;color:rgba(244,245,248,0.5);"
+                f"text-align:right;margin-bottom:2px;'>בסיס</div>",
+                unsafe_allow_html=True)
+            if st.button(f"{'✓ ' if active_m else ''}חודשי",
+                         key="basis_monthly", use_container_width=True):
+                st.session_state.rate_basis = "חודשי"
+                st.rerun()
+        with sf:
+            active_y = cur_basis == "שנתי"
+            st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+            if st.button(f"{'✓ ' if active_y else ''}שנתי",
+                         key="basis_yearly", use_container_width=True):
+                st.session_state.rate_basis = "שנתי"
+                st.rerun()
+        with sg:
+            st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+            use_remind = st.checkbox("🔔 תזכורת", value=False, key="add_use_remind")
+
+        single_basis = st.session_state.get("rate_basis", "שנתי")
         st.session_state.rate_basis = single_basis
 
         if use_remind:
@@ -1318,11 +1341,19 @@ def render_add_check_form():
                                          value=float(st.session_state.get("fixed_rate", 12.0)),
                                          step=0.1, format="%.2f", key="batch_rate")
         with bb:
-            batch_basis = st.radio("בסיס", ["חודשי", "שנתי"],
-                                   index=["חודשי","שנתי"].index(
-                                       st.session_state.get("rate_basis","שנתי")) if st.session_state.get("rate_basis","שנתי") in ["חודשי","שנתי"] else 1,
-                                   key="batch_basis", horizontal=True,
-                                   label_visibility="collapsed")
+            cur_bb = st.session_state.get("rate_basis", "שנתי")
+            bb1, bb2 = st.columns(2)
+            with bb1:
+                if st.button(f"{'✓ ' if cur_bb=='חודשי' else ''}חודשי",
+                             key="batch_basis_m", use_container_width=True):
+                    st.session_state.rate_basis = "חודשי"
+                    st.rerun()
+            with bb2:
+                if st.button(f"{'✓ ' if cur_bb=='שנתי' else ''}שנתי",
+                             key="batch_basis_y", use_container_width=True):
+                    st.session_state.rate_basis = "שנתי"
+                    st.rerun()
+            batch_basis = st.session_state.get("rate_basis", "שנתי")
         st.session_state.fixed_rate = batch_rate
         st.session_state.rate_basis = batch_basis
 
@@ -1607,9 +1638,16 @@ def render_clients():
 # מחשבון פריטה
 # ─────────────────────────────────────────────
 def render_calculator():
-    st.markdown('<div class="section-title-right">מחשבון פריטה (ניכיון)</div>',
-                unsafe_allow_html=True)
-    st.markdown('<div class="neon-bar-right"></div>', unsafe_allow_html=True)
+    # כותרת קומפקטית — לא תופסת מקום
+    st.markdown(
+        "<div style='display:flex;align-items:center;gap:10px;margin:6px 0 12px;'>"
+        "<div style='width:3px;height:22px;border-radius:2px;"
+        "background:linear-gradient(180deg,#4D8DFF,#9D8BFF);flex-shrink:0;'></div>"
+        "<span style='font-family:Outfit,sans-serif;font-size:1.1rem;font-weight:800;"
+        "color:#F4F5F8;letter-spacing:-0.3px;'>מחשבון פריטה</span>"
+        "</div>",
+        unsafe_allow_html=True
+    )
 
     if "fixed_rate"    not in st.session_state: st.session_state.fixed_rate    = 12.0
     if "rate_basis"    not in st.session_state: st.session_state.rate_basis    = "שנתי"
@@ -1646,32 +1684,35 @@ def render_calculator():
         due_date = st.date_input("תאריך פירעון", key="calc_due",
                                  min_value=date.today())
 
-    # ── ימים + בסיס שכר טרחה — באותה שורה ──
+    # ── ימים + בסיס — שורה אחת ──
     days = max((due_date - date.today()).days + 1, 0)
-    di, ri = st.columns([1, 1])
+    cur_basis_c = st.session_state.get("rate_basis", "שנתי")
+
+    di, bm, by_ = st.columns([2, 1, 1])
     with di:
         st.markdown(
             f"<div style='background:rgba(157,139,255,0.16);border:1px solid rgba(157,139,255,0.30);"
-            f"border-radius:16px;padding:10px 8px;text-align:center;"
-            f"backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);height:72px;"
-            f"display:flex;flex-direction:column;justify-content:center;'>"
-            f"<span style='font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(244,245,248,0.55);"
-            f"text-transform:uppercase;'>ימי זיכוי</span>"
-            f"<span style='font-family:Outfit,sans-serif;font-size:1.9rem;font-weight:900;"
-            f"color:#9D8BFF;letter-spacing:-1px;line-height:1.1;'>{days}</span>"
-            f"</div>",
-            unsafe_allow_html=True)
-    with ri:
-        st.markdown(
-            "<div style='font-size:10px;font-weight:700;letter-spacing:1px;"
-            "color:rgba(244,245,248,0.5);text-transform:uppercase;margin-bottom:4px;"
-            "text-align:center;'>בסיס שכ\"ט</div>",
-            unsafe_allow_html=True)
-        basis = st.radio("בסיס שכר הטרחה", ["חודשי", "שנתי"],
-                         index=["חודשי", "שנתי"].index(st.session_state.rate_basis)
-                               if st.session_state.rate_basis in ["חודשי","שנתי"] else 1,
-                         horizontal=True, key="basis_radio", label_visibility="collapsed")
-        st.session_state.rate_basis = basis
+            f"border-radius:14px;padding:8px;text-align:center;"
+            f"backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);'>"
+            f"<div style='font-size:9px;font-weight:700;color:rgba(244,245,248,0.5);"
+            f"text-transform:uppercase;letter-spacing:1px;'>ימי זיכוי</div>"
+            f"<div style='font-family:Outfit,sans-serif;font-size:1.7rem;font-weight:900;"
+            f"color:#9D8BFF;letter-spacing:-1px;line-height:1;'>{days}</div>"
+            f"</div>", unsafe_allow_html=True)
+    with bm:
+        st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
+        if st.button(f"{'✓ ' if cur_basis_c=='חודשי' else ''}חודשי",
+                     key="calc_basis_m", use_container_width=True):
+            st.session_state.rate_basis = "חודשי"
+            st.rerun()
+    with by_:
+        st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
+        if st.button(f"{'✓ ' if cur_basis_c=='שנתי' else ''}שנתי",
+                     key="calc_basis_y", use_container_width=True):
+            st.session_state.rate_basis = "שנתי"
+            st.rerun()
+
+    basis = st.session_state.get("rate_basis", "שנתי")
 
     # ── שכר טרחה + כפתור עריכה — שורה אחת ──
     rate_val = st.session_state.fixed_rate
