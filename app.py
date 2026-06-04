@@ -1,1809 +1,214 @@
-# -*- coding: utf-8 -*-
-"""
-ניהול אובליגו ומחשבון פריטת צ'קים
-Streamlit Web App — Mobile-first + Auth
-"""
-
-import sqlite3
-from datetime import date, datetime, timedelta
-from contextlib import closing
-
-import streamlit as st
-import streamlit_authenticator as stauth
-
-st.set_page_config(
-    page_title="ניהול צ'קים | פריטה",
-    page_icon="💸",
-    layout="centered",
-    initial_sidebar_state="collapsed",
-)
-
-DB_PATH = "checks.db"
-
-STATUSES = ["ממתין למזומן", "להפקדה", "בפריטה"]
-STATUS_COLORS = {
-    "ממתין למזומן": "#FFC857",
-    "להפקדה": "#4FE3A1",
-    "בפריטה": "#FF6FA5",
-}
-
-
-# ─────────────────────────────────────────────
-# DB
-# ─────────────────────────────────────────────
-def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db():
-    with closing(get_conn()) as conn, conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                username TEXT PRIMARY KEY,
-                name     TEXT NOT NULL,
-                password TEXT NOT NULL,
-                email    TEXT NOT NULL
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS clients (
-                id       INTEGER PRIMARY KEY AUTOINCREMENT,
-                name     TEXT NOT NULL,
-                username TEXT NOT NULL DEFAULT 'admin',
-                UNIQUE(name, username)
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS checks (
-                id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                client_id INTEGER NOT NULL,
-                amount    REAL NOT NULL,
-                due_date  TEXT NOT NULL,
-                status    TEXT NOT NULL,
-                remind_on TEXT,
-                FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
-            )
-        """)
-
-        # Migration: הוספת עמודת username אם לא קיימת (DB ישן)
-        cols = [r[1] for r in conn.execute("PRAGMA table_info(clients)").fetchall()]
-        if "username" not in cols:
-            conn.execute("ALTER TABLE clients ADD COLUMN username TEXT NOT NULL DEFAULT 'admin'")
-
-        # Migration: הוספת unique index אם לא קיים
-        indexes = [r[1] for r in conn.execute("PRAGMA index_list(clients)").fetchall()]
-        if not any("name" in i and "username" in i for i in indexes):
-            try:
-                conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_name_user ON clients(name, username)")
-            except Exception:
-                pass
-
-
-def current_user():
-    return st.session_state.get("current_user", "admin")
-
-
-def add_client(name):
-    name = name.strip()
-    if not name:
-        return None
-    u = current_user()
-    with closing(get_conn()) as conn, conn:
-        conn.execute(
-            "INSERT OR IGNORE INTO clients (name, username) VALUES (?, ?)", (name, u)
-        )
-        row = conn.execute(
-            "SELECT id FROM clients WHERE name=? AND username=?", (name, u)
-        ).fetchone()
-        return row["id"] if row else None
-
-
-def get_clients():
-    with closing(get_conn()) as conn:
-        return conn.execute(
-            "SELECT id, name FROM clients WHERE username=? ORDER BY name",
-            (current_user(),)
-        ).fetchall()
-
-
-def add_check(client_id, amount, due_date, status, remind_on):
-    with closing(get_conn()) as conn, conn:
-        conn.execute(
-            "INSERT INTO checks (client_id,amount,due_date,status,remind_on) VALUES (?,?,?,?,?)",
-            (client_id, amount, due_date.isoformat(), status,
-             remind_on.isoformat() if remind_on else None),
-        )
-
-
-def get_checks(client_id=None):
-    u = current_user()
-    q = """SELECT ch.*, cl.name AS client_name
-           FROM checks ch JOIN clients cl ON cl.id=ch.client_id
-           WHERE cl.username=?"""
-    params = [u]
-    if client_id is not None:
-        q += " AND ch.client_id=?"
-        params.append(client_id)
-    q += " ORDER BY ch.due_date"
-    with closing(get_conn()) as conn:
-        return conn.execute(q, params).fetchall()
-
-
-def update_status(check_id, status):
-    with closing(get_conn()) as conn, conn:
-        conn.execute("UPDATE checks SET status=? WHERE id=?", (status, check_id))
-
-
-def delete_check(check_id):
-    with closing(get_conn()) as conn, conn:
-        conn.execute("DELETE FROM checks WHERE id=?", (check_id,))
-
-
-def get_totals():
-    u = current_user()
-    with closing(get_conn()) as conn:
-        row = conn.execute("""
-            SELECT COALESCE(SUM(ch.amount),0) AS total, COUNT(ch.id) AS cnt
-            FROM checks ch JOIN clients cl ON cl.id=ch.client_id
-            WHERE cl.username=?
-        """, (u,)).fetchone()
-        return row["total"], row["cnt"]
-
-
-def get_client_obligo():
-    with closing(get_conn()) as conn:
-        return conn.execute("""
-            SELECT cl.id, cl.name,
-                   COALESCE(SUM(ch.amount),0) AS obligo,
-                   COUNT(ch.id) AS cnt
-            FROM clients cl
-            LEFT JOIN checks ch ON ch.client_id=cl.id
-            WHERE cl.username=?
-            GROUP BY cl.id ORDER BY obligo DESC
-        """, (current_user(),)).fetchall()
-
-
-def get_all_users_for_auth():
-    with closing(get_conn()) as conn:
-        rows = conn.execute(
-            "SELECT username, name, password, email FROM users"
-        ).fetchall()
-    creds = {"usernames": {}}
-    for r in rows:
-        creds["usernames"][r["username"]] = {
-            "name": r["name"],
-            "password": r["password"],
-            "email": r["email"],
-        }
-    return creds
-
-
-# ─────────────────────────────────────────────
-# CSS
-# ─────────────────────────────────────────────
 def inject_css():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Plus+Jakarta+Sans:wght@600;800&family=Outfit:wght@800;900&display=swap');
 
     :root {
-        /* רקע כהה */
-        --bg-dark-1: #1A1D24;
-        --bg-dark-2: #242832;
-
-        /* זוהר Aurora */
-        --aurora-warm:  rgba(232,184,144,0.22);
-        --aurora-cool:  rgba(63,167,255,0.20);
-        --aurora-violet: rgba(138,120,255,0.16);
-
-        /* זכוכית */
-        --glass-bg:      rgba(255,255,255,0.10);
-        --glass-bg-2:    rgba(255,255,255,0.07);
-        --glass-strong:  rgba(255,255,255,0.16);
-        --glass-border:  rgba(255,255,255,0.18);
-
-        /* טקסט */
-        --text-primary:   #F4F5F8;
-        --text-secondary: rgba(244,245,248,0.62);
-        --text-muted:     rgba(244,245,248,0.42);
-
-        /* גוונים */
-        --accent-blue:   #4D8DFF;
-        --accent-mint:   #4FE3A1;
-        --accent-pink:   #FF6FA5;
-        --accent-amber:  #FFC857;
-        --accent-violet: #9D8BFF;
-
-        --radius-card: 26px;
-        --radius-pill: 50px;
-        --shadow-soft: 0 16px 40px rgba(0,0,0,0.35);
-        --shadow-glow: 0 8px 28px rgba(77,141,255,0.28);
+        /* פלטת צבעים פרועה - Cyber Neon */
+        --bg-cyber-dark: #0a0512;
+        --neon-purple:   #bd00ff;
+        --neon-blue:     #00d1ff;
+        --neon-pink:     #ff007a;
+        --neon-amber:    #ffb800;
+        
+        /* אפקטים של זכוכית שבורה וחומרים עתידניים */
+        --glass-cyber:   rgba(15, 8, 28, 0.45);
+        --glass-border:  rgba(0, 209, 255, 0.3);
+        --text-primary:  #ffffff;
+        --text-neon-glow: 0 0 10px rgba(0, 209, 255, 0.6);
     }
 
     html, body, [class*="css"] { direction: rtl; }
 
-    /* ─── רקע Aurora ─── */
+    /* ─── רקע פרוע: שילוב לייזרים וזכוכית נוזלית שבורה ─── */
     .stApp {
-        background:
-            radial-gradient(circle at 18% 12%, var(--aurora-warm), transparent 42%),
-            radial-gradient(circle at 85% 8%, var(--aurora-cool), transparent 40%),
-            radial-gradient(circle at 60% 95%, var(--aurora-violet), transparent 45%),
-            linear-gradient(160deg, var(--bg-dark-1), var(--bg-dark-2));
+        background: 
+            radial-gradient(ellipse at 80% 20%, rgba(255, 0, 122, 0.25), transparent 45%),
+            radial-gradient(ellipse at 15% 75%, rgba(189, 0, 255, 0.3), transparent 50%),
+            linear-gradient(135deg, rgba(0, 209, 255, 0.08) 0%, transparent 100%),
+            var(--bg-cyber-dark);
+        background-image: 
+            radial-gradient(rgba(0, 209, 255, 0.1) 1px, transparent 0),
+            radial-gradient(rgba(255, 0, 122, 0.1) 1px, transparent 0);
+        background-size: 24px 24px;
+        background-position: 0 0, 12px 12px;
         background-attachment: fixed;
         font-family: 'Plus Jakarta Sans', sans-serif;
         color: var(--text-primary);
     }
+    
     #MainMenu, header, footer { visibility: hidden; }
     .block-container {
-        padding-top: 0.5rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 5rem;
-        max-width: 480px;
+        max-width: 460px;
     }
-    /* הסרת רווח עליון מהאלמנט הראשון */
-    .block-container > div:first-child { margin-top: 0 !important; padding-top: 0 !important; }
-    [data-testid="stAppViewBlockContainer"] { padding-top: 0.5rem !important; }
 
-    /* ─── KPI ─── */
+    /* ─── כותרת CHECKFLOW כרום מטאלית תלת-ממדית משוגעת ─── */
+    h1 {
+        font-family: 'Orbitron', sans-serif !important;
+        font-weight: 900 !important;
+        font-size: 3.5rem !important;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: -2px !important;
+        background: linear-gradient(180deg, #ffffff 0%, #a6afb8 45%, #00d1ff 50%, #bd00ff 100%);
+        -webkit-background-clip: text !important;
+        background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        filter: drop-shadow(0px 4px 12px rgba(189, 0, 255, 0.6)) drop-shadow(0px 0px 30px rgba(0, 209, 255, 0.4));
+        transform: skewX(-4deg) rotate(-1deg);
+        margin-bottom: 30px !important;
+    }
+
+    /* ─── כרטיס הנתונים המרכזי (KPI) - תצוגה דיגיטלית רוטטת ─── */
     .kpi {
-        background: var(--glass-bg);
+        background: var(--glass-cyber);
+        -webkit-backdrop-filter: blur(25px);
+        backdrop-filter: blur(25px);
+        border: 2px solid #ff007a;
+        border-radius: 24px;
+        padding: 30px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 0 25px rgba(255, 0, 122, 0.3), inset 0 0 15px rgba(255, 0, 122, 0.2);
+        position: relative;
+        overflow: hidden;
+        transform: rotate(0.5deg);
+    }
+    .kpi::before {
+        content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(0, 209, 255, 0.15), transparent);
+        transform: rotate(45deg); animation: laser-sweep 4s linear infinite;
+    }
+    @keyframes laser-sweep {
+        0% { transform: translate(-30%, -30%) rotate(45deg); }
+        100% { transform: translate(30%, 30%) rotate(45deg); }
+    }
+    .kpi-label {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 11px; font-weight: 900; letter-spacing: 2px;
+        color: var(--neon-blue); text-shadow: var(--text-neon-glow);
+        margin-bottom: 12px;
+    }
+    .kpi-value {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 3.2rem; font-weight: 900;
+        color: #ffffff; text-shadow: 0 0 20px rgba(0, 209, 255, 0.85);
+        letter-spacing: -1px;
+    }
+    .kpi-sub {
+        font-size: 13px; color: #a6afb8; font-weight: 600; margin-top: 10px;
+    }
+
+    /* ─── כפתורי ניווט מסך הבית - אלכסוניים ודינמיים ─── */
+    .home-nav-btn .stButton > button {
+        border-radius: 16px !important;
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 1.3rem !important;
+        font-weight: 900 !important;
+        min-height: 76px !important;
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        text-transform: uppercase;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.4) !important;
+    }
+    /* כפתור מנצנץ כחול */
+    .home-nav-green .stButton > button {
+        background: linear-gradient(135deg, rgba(0, 210, 255, 0.3), rgba(189, 0, 255, 0.2)) !important;
+        border: 2px solid var(--neon-blue) !important;
+        color: #ffffff !important;
+        text-shadow: 0 0 8px var(--neon-blue);
+        transform: skewX(-6deg);
+    }
+    .home-nav-green .stButton > button:hover {
+        background: linear-gradient(135deg, rgba(0, 210, 255, 0.5), rgba(189, 0, 255, 0.4)) !important;
+        box-shadow: 0 0 25px var(--neon-blue) !important;
+        transform: skewX(-6deg) scale(1.03) translateY(-2px) !important;
+    }
+    /* כפתור מנצנץ פינק */
+    .home-nav-pink .stButton > button {
+        background: linear-gradient(135deg, rgba(255, 0, 122, 0.3), rgba(10, 5, 18, 0.2)) !important;
+        border: 2px solid var(--neon-pink) !important;
+        color: #ffffff !important;
+        text-shadow: 0 0 8px var(--neon-pink);
+        transform: skewX(6deg);
+    }
+    .home-nav-pink .stButton > button:hover {
+        background: linear-gradient(135deg, rgba(255, 0, 122, 0.5), rgba(189, 0, 255, 0.3)) !important;
+        box-shadow: 0 0 25px var(--neon-pink) !important;
+        transform: skewX(6deg) scale(1.03) translateY(-2px) !important;
+    }
+
+    /* ─── כרטיסים כלליים ולוח שנה (Glassmorphism אגרסיבי) ─── */
+    .glass, .reminder-card {
+        background: var(--glass-cyber);
         -webkit-backdrop-filter: blur(20px);
         backdrop-filter: blur(20px);
         border: 1px solid var(--glass-border);
-        border-radius: 30px;
-        padding: 28px 24px 22px;
-        margin-bottom: 8px;
-        text-align: center;
-        box-shadow: var(--shadow-soft);
-        position: relative;
-        overflow: hidden;
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 12px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.5);
     }
-    .kpi::before {
-        content: "";
-        position: absolute; inset: 0;
-        background: linear-gradient(120deg, rgba(255,255,255,0.16), transparent 55%);
-        pointer-events: none;
-    }
-    .kpi-label {
-        font-size: 11px; font-weight: 700; letter-spacing: 1.8px;
-        color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;
-        position: relative;
-    }
-    .kpi-value {
-        font-family: 'Outfit', sans-serif;
-        font-size: 3rem; font-weight: 800; line-height: 1;
-        color: var(--text-primary); direction: ltr; display: block;
-        letter-spacing: -2px; position: relative;
-        text-shadow: 0 2px 20px rgba(77,141,255,0.25);
-    }
-    .kpi-sub {
-        font-size: 13px; color: var(--text-secondary); margin-top: 8px;
-        font-weight: 500; position: relative;
-    }
+    .reminder-card { border-color: var(--neon-amber); box-shadow: 0 0 15px rgba(255, 184, 0, 0.15); }
+    .reminder-title { font-family: 'Orbitron', sans-serif; color: var(--neon-amber); font-weight: 900; }
 
-    /* ─── כרטיסים כלליים ─── */
-    .glass {
-        background: var(--glass-bg);
-        -webkit-backdrop-filter: blur(18px);
-        backdrop-filter: blur(18px);
-        border: 1px solid var(--glass-border);
-        border-radius: 26px;
-        padding: 20px 22px;
-        margin-bottom: 8px;
-        box-shadow: var(--shadow-soft);
-        color: var(--text-primary);
-    }
-
-    /* ─── pill ─── */
-    .pill {
-        display: inline-block; padding: 3px 11px; border-radius: 999px;
-        font-size: 11px; font-weight: 700; margin-inline-start: 6px;
-        letter-spacing: 0.3px;
-    }
-
-    /* ─── כותרות סקשן ─── */
-    .section-title, .section-title-right {
-        font-family: 'Outfit', sans-serif;
-        font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
-        color: var(--text-primary); margin: 22px 0 6px; text-align: right;
-    }
-    .section-title-right { margin: 12px 0 6px; }
-    .neon-bar, .neon-bar-right {
-        height: 3px; width: 40px; border-radius: 3px;
-        background: linear-gradient(90deg, var(--accent-blue), var(--accent-violet));
-        margin-bottom: 16px; margin-right: 0;
-        box-shadow: 0 0 12px rgba(77,141,255,0.6);
-    }
-    .neon-bar { margin-right: auto; margin-left: auto; }
-
-    /* ─── כרטיס לקוח ─── */
-    .client-card {
-        display: flex; justify-content: space-between; align-items: center;
-        background: var(--glass-bg);
-        -webkit-backdrop-filter: blur(16px);
-        backdrop-filter: blur(16px);
-        border: 1px solid var(--glass-border);
-        border-radius: 22px; padding: 16px 18px; margin-bottom: 8px;
-        box-shadow: var(--shadow-soft);
-        transition: transform .2s ease;
-    }
-    .client-card:hover { transform: translateY(-2px); }
-    .client-name { font-weight: 700; font-size: 1rem; color: var(--text-primary); }
-    .client-obligo {
-        font-family: 'Outfit', sans-serif;
-        font-weight: 800; font-size: 1.15rem;
-        color: var(--text-primary); direction: ltr; letter-spacing: -0.5px;
-    }
-
-    /* ─── פלט מחשבון ─── */
+    /* ─── פלט מחשבון - תוצאות קיצוניות ─── */
     .calc-out {
-        border-radius: 26px; padding: 20px 22px;
-        margin-top: 8px; text-align: center;
-        -webkit-backdrop-filter: blur(18px);
-        backdrop-filter: blur(18px);
-        border: 1px solid var(--glass-border);
-        box-shadow: var(--shadow-soft);
+        border-radius: 20px; padding: 22px; margin-top: 12px; text-align: center;
+        background: rgba(10, 5, 24, 0.7);
+        border: 2px solid var(--glass-border);
     }
-    .calc-out.fee { background: rgba(255,111,165,0.16); }
-    .calc-out.net { background: rgba(79,227,161,0.16); margin-top: 8px; }
-    .calc-out .lbl {
-        font-size: 12px; font-weight: 600; letter-spacing: 1.2px;
-        text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px;
-    }
+    .calc-out.fee { border-color: var(--neon-pink); box-shadow: 0 0 20px rgba(255, 0, 122, 0.2); }
+    .calc-out.net { border-color: #00ff66; box-shadow: 0 0 20px rgba(0, 255, 102, 0.2); }
     .calc-out .big {
-        font-family: 'Outfit', sans-serif; font-size: 2.6rem;
-        font-weight: 800; direction: ltr; line-height: 1.1;
-        letter-spacing: -1.5px; color: var(--text-primary);
+        font-family: 'Orbitron', sans-serif; font-size: 2.8rem; font-weight: 900;
     }
-    .calc-out.fee .big { color: var(--accent-pink); }
-    .calc-out.net .big { color: var(--accent-mint); }
+    .calc-out.fee .big { color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink); }
+    .calc-out.net .big { color: #00ff66; text-shadow: 0 0 10px #00ff66; }
 
-    /* ─── כפתורים כלליים ─── */
-    .stButton > button {
-        border-radius: 14px !important;
-        border: 1px solid var(--glass-border) !important;
-        background: var(--glass-strong) !important;
-        -webkit-backdrop-filter: blur(14px) !important;
-        backdrop-filter: blur(14px) !important;
-        color: var(--text-primary) !important;
-        font-weight: 700 !important;
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        transition: transform .15s ease, background .15s ease !important;
-        min-height: 36px !important;
-        padding: 6px 14px !important;
-        font-size: 0.88rem !important;
-        line-height: 1.3 !important;
-    }
-    .stButton > button:hover {
-        background: rgba(255,255,255,0.22) !important;
-        transform: translateY(-1px) !important;
-    }
-
-    /* ─── כפתורי ניווט מסך הבית ─── */
-    .home-nav-btn .stButton > button {
-        border-radius: 24px !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-size: 1.15rem !important;
-        font-weight: 800 !important;
-        min-height: 72px !important;
-        height: auto !important;
-        padding: 18px 20px !important;
-        letter-spacing: -0.3px !important;
-        box-shadow: var(--shadow-soft) !important;
-    }
-    .home-nav-green .stButton > button {
-        background: linear-gradient(135deg, rgba(79,227,161,0.28), rgba(77,141,255,0.20)) !important;
-        border: 1px solid rgba(79,227,161,0.35) !important;
-        color: var(--text-primary) !important;
-    }
-    .home-nav-green .stButton > button:hover {
-        background: linear-gradient(135deg, rgba(79,227,161,0.40), rgba(77,141,255,0.30)) !important;
-    }
-    .home-nav-pink .stButton > button {
-        background: linear-gradient(135deg, rgba(157,139,255,0.28), rgba(255,111,165,0.20)) !important;
-        border: 1px solid rgba(157,139,255,0.35) !important;
-        color: var(--text-primary) !important;
-    }
-    .home-nav-pink .stButton > button:hover {
-        background: linear-gradient(135deg, rgba(157,139,255,0.40), rgba(255,111,165,0.30)) !important;
-    }
-
-    /* ─── כפתורי הוספת צ'ק ─── */
-    .btn-single .stButton > button {
-        border-radius: 50px !important;
-        background: var(--text-primary) !important;
-        color: var(--bg-dark-1) !important;
-        font-size: 0.95rem !important;
-        font-weight: 800 !important;
-        padding: 12px 0 !important;
-        border: none !important;
-    }
-    .btn-batch .stButton > button {
-        border-radius: 50px !important;
-        background: linear-gradient(135deg, rgba(157,139,255,0.35), rgba(77,141,255,0.30)) !important;
-        border: 1px solid var(--glass-border) !important;
-        color: var(--text-primary) !important;
-        font-size: 0.95rem !important;
-        font-weight: 800 !important;
-        padding: 12px 0 !important;
-    }
-    .btn-single .stButton > button:hover { opacity: 0.88 !important; }
-    .btn-batch .stButton > button:hover { transform: translateY(-1px) !important; }
-
-    /* ─── כרטיס תזכורת ─── */
-    .reminder-card {
-        background: rgba(255,200,87,0.14);
-        -webkit-backdrop-filter: blur(16px);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(255,200,87,0.30);
-        border-radius: 22px;
-        padding: 16px 18px;
-        margin-bottom: 8px;
-        cursor: pointer;
-        box-shadow: var(--shadow-soft);
-    }
-    .reminder-title {
-        font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
-        text-transform: uppercase; color: var(--accent-amber); margin-bottom: 8px;
-    }
-    .reminder-row {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-    .reminder-row:last-child { border-bottom: none; }
-
-    /* ─── כפתורי עדכן/מחק קטנים ─── */
-    .btn-sm .stButton > button {
-        padding: 2px 6px !important;
-        font-size: 0.72rem !important;
-        border-radius: 9px !important;
-        min-height: 0 !important;
-        height: auto !important;
-        font-weight: 700 !important;
-        line-height: 1.4 !important;
-    }
-
-    /* ─── data editor ─── */
-    .stDataFrame, [data-testid="stDataEditor"] {
-        border-radius: 16px !important;
-        overflow: hidden !important;
-    }
-
-    /* ─── כפתור חזרה צף ─── */
-    .back-btn {
-        position: fixed !important;
-        bottom: 28px !important;
-        left: 20px !important;
-        z-index: 9999 !important;
-    }
-    .back-btn .stButton > button {
-        border-radius: 50px !important;
-        background: var(--glass-strong) !important;
-        -webkit-backdrop-filter: blur(18px) !important;
-        backdrop-filter: blur(18px) !important;
-        border: 1px solid var(--glass-border) !important;
-        color: var(--text-primary) !important;
-        font-size: 0.82rem !important;
-        font-weight: 800 !important;
-        padding: 10px 20px !important;
-        height: auto !important;
-        min-height: 0 !important;
-        line-height: 1.4 !important;
-        box-shadow: var(--shadow-soft) !important;
-    }
-
-    /* ─── סכום צ'ק במחשבון — גדול ומרכז ─── */
-    div[data-testid="stNumberInput"]:has(input[aria-label*="סכום"]) input,
-    #calc_amount input {
-        font-size: 1.8rem !important;
-        font-weight: 800 !important;
-        text-align: center !important;
-        letter-spacing: -1px !important;
-        height: 64px !important;
-        font-family: 'Outfit', sans-serif !important;
-    }
-
-    /* ─── שדות קלט — גובה קומפקטי ─── */
-    .stTextInput input,
-    .stNumberInput input,
-    .stDateInput input,
-    [data-baseweb="input"] input,
-    [data-baseweb="base-input"] input,
-    textarea {
-        color: #F4F5F8 !important;
-        background-color: rgba(20,23,30,0.65) !important;
-        -webkit-text-fill-color: #F4F5F8 !important;
-        caret-color: var(--accent-blue) !important;
-        border-radius: 12px !important;
-        border: 1px solid var(--glass-border) !important;
-        font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        padding-top: 6px !important;
-        padding-bottom: 6px !important;
-        min-height: 0 !important;
-        height: 38px !important;
-    }
-    /* wrapper של שדה */
-    .stTextInput div[data-baseweb="input"],
-    .stNumberInput div[data-baseweb="input"],
-    .stDateInput div[data-baseweb="input"],
-    div[data-baseweb="base-input"],
-    div[data-baseweb="select"] > div {
-        background-color: rgba(20,23,30,0.65) !important;
-        border: 1px solid var(--glass-border) !important;
-        border-radius: 12px !important;
-        min-height: 0 !important;
-    }
-    /* label מעל שדה — קטן יותר */
-    .stTextInput label, .stNumberInput label,
-    .stDateInput label, .stSelectbox label {
-        font-size: 0.78rem !important;
-        margin-bottom: 2px !important;
-        padding-bottom: 0 !important;
-    }
-    /* selectbox */
-    div[data-baseweb="select"] > div {
-        min-height: 38px !important;
-        padding-top: 4px !important;
-        padding-bottom: 4px !important;
-    }
-
-    /* כפתורי +/- של number_input */
-    .stNumberInput button {
-        background-color: rgba(20,23,30,0.65) !important;
-        color: #F4F5F8 !important;
-        border: 1px solid var(--glass-border) !important;
-        padding: 2px 6px !important;
-        min-height: 0 !important;
-    }
-    .stNumberInput button svg { fill: #F4F5F8 !important; }
-    div[data-baseweb="select"] div { color: #F4F5F8 !important; font-weight: 600 !important; }
-    input::placeholder { color: var(--text-muted) !important; opacity: 1 !important; }
-
-    /* ─── RTL בטפסים ─── */
-    .stTextInput input, .stNumberInput input, .stDateInput input {
-        text-align: right !important;
-        direction: rtl !important;
-    }
-    .stSelectbox label, .stNumberInput label,
-    .stTextInput label, .stDateInput label,
-    .stCheckbox label { text-align: right !important; display: block !important; }
-    ul[role="listbox"], div[data-baseweb="popover"]:not([data-baseweb="calendar"]) {
-        background-color: var(--bg-dark-2) !important;
-        border: 1px solid var(--glass-border) !important;
-        border-radius: 16px !important;
-    }
-    ul[role="listbox"] li { color: var(--text-primary) !important; font-weight: 600 !important; }
-    label { color: var(--text-secondary) !important; font-weight: 700 !important; font-size: 0.82rem !important; }
-
-    /* ─── לוח שנה (date picker) — כיסוי מלא ─── */
-    div[data-baseweb="popover"],
-    div[data-baseweb="popover"] > div,
-    div[data-baseweb="calendar"],
-    div[data-baseweb="datepicker"],
-    [data-baseweb="calendar"],
-    [data-baseweb="calendarheader"] {
-        background-color: #1E2230 !important;
-        color: #F4F5F8 !important;
-        border: 1px solid rgba(255,255,255,0.15) !important;
-        border-radius: 18px !important;
-    }
-    /* כל הטקסט בלוח — לבן */
-    div[data-baseweb="calendar"] *,
-    div[data-baseweb="popover"] * {
-        color: #F4F5F8 !important;
-        -webkit-text-fill-color: #F4F5F8 !important;
-        background-color: transparent !important;
-    }
-    /* header חודש/שנה */
-    div[data-baseweb="calendar"] [data-testid="stDateInputCalendarHeader"],
-    div[data-baseweb="calendar"] button[aria-label*="חודש"],
-    div[data-baseweb="calendar"] button[aria-label*="שנה"],
-    div[data-baseweb="calendar"] button[aria-label*="month"],
-    div[data-baseweb="calendar"] button[aria-label*="year"] {
-        background: #1E2230 !important;
-        color: #F4F5F8 !important;
-    }
-    /* ימים בלוח */
-    div[data-baseweb="calendar"] div[role="grid"] *,
-    div[data-baseweb="calendar"] button[aria-label] {
-        background: transparent !important;
-        color: #F4F5F8 !important;
-    }
-    /* יום נבחר */
-    div[data-baseweb="calendar"] [aria-selected="true"],
-    div[data-baseweb="calendar"] button[aria-selected="true"] {
-        background: linear-gradient(135deg,#4D8DFF,#9D8BFF) !important;
-        border-radius: 50% !important;
-        color: #fff !important;
-    }
-    /* hover על יום */
-    div[data-baseweb="calendar"] button:not([aria-selected="true"]):hover {
-        background: rgba(157,139,255,0.28) !important;
-        border-radius: 50% !important;
-    }
-    /* כפתורי חץ ניווט חודש */
-    div[data-baseweb="calendar"] button[aria-label="Previous month"],
-    div[data-baseweb="calendar"] button[aria-label="Next month"],
-    div[data-baseweb="calendar"] button[aria-label*="חודש קודם"],
-    div[data-baseweb="calendar"] button[aria-label*="חודש הבא"] {
-        background: rgba(255,255,255,0.10) !important;
+    /* ─── שדות קלט דיגיטליים מעוצבים כחומרה עתידנית ─── */
+    .stTextInput input, .stNumberInput input, .stDateInput input, [data-baseweb="input"] input {
+        color: #ffffff !important;
+        background-color: rgba(5, 2, 10, 0.85) !important;
+        border: 1px solid var(--neon-blue) !important;
         border-radius: 10px !important;
-        color: #F4F5F8 !important;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 700 !important;
+        box-shadow: inset 0 0 8px rgba(0, 209, 255, 0.2) !important;
     }
-    /* input של התאריך עצמו */
-    div[data-baseweb="datepicker"] div[data-baseweb="base-input"],
-    div[data-baseweb="datepicker"] input {
-        background-color: rgba(20,23,30,0.85) !important;
-        color: #F4F5F8 !important;
-        -webkit-text-fill-color: #F4F5F8 !important;
+    .stTextInput input:focus, .stNumberInput input:focus {
+        border-color: var(--neon-pink) !important;
+        box-shadow: 0 0 12px rgba(255, 0, 122, 0.5) !important;
     }
-
-    /* ─── רדיו שכר טרחה ─── */
-    div[data-testid="stRadio"] > div { gap: 10px !important; justify-content: center !important; }
-    div[data-testid="stRadio"] label {
-        background: var(--glass-bg-2) !important;
-        border: 1px solid var(--glass-border) !important;
-        border-radius: 14px !important;
-        padding: 10px 28px !important;
-        font-size: 1rem !important;
-        font-weight: 800 !important;
-        cursor: pointer;
-        transition: background .12s ease;
-    }
-    /* הכרחת צבע טקסט לבן בכל צאצא של תווית הרדיו */
-    div[data-testid="stRadio"] label,
-    div[data-testid="stRadio"] label *,
-    div[data-testid="stRadio"] label p,
-    div[data-testid="stRadio"] label div,
-    div[data-testid="stRadio"] label span {
-        color: var(--text-primary) !important;
-        -webkit-text-fill-color: var(--text-primary) !important;
-    }
-    div[data-testid="stRadio"] label:hover { background: rgba(157,139,255,0.25) !important; }
-    /* הבחירה הפעילה — מודגשת */
+    
+    /* פקדים מיוחדים (Radio / Tabs) */
     div[data-testid="stRadio"] label:has(input:checked) {
-        background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet)) !important;
-        border: 1px solid transparent !important;
+        background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink)) !important;
+        box-shadow: 0 0 15px var(--neon-pink) !important;
     }
-    div[data-testid="stRadio"] label:has(input:checked) *,
-    div[data-testid="stRadio"] label:has(input:checked) p,
-    div[data-testid="stRadio"] label:has(input:checked) span {
-        color: #fff !important;
-        -webkit-text-fill-color: #fff !important;
-    }
-    div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
-    div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
-
-    /* ─── טאבים ─── */
-    .stTabs [data-baseweb="tab-list"] { gap: 6px; justify-content: center; background: transparent !important; }
-    .stTabs [data-baseweb="tab"] {
-        background: var(--glass-bg-2) !important; border-radius: 14px !important;
-        padding: 10px 24px !important; border: 1px solid var(--glass-border) !important;
-        font-size: 0.95rem !important; font-weight: 700 !important;
-        color: var(--text-secondary) !important; min-width: 130px; text-align: center;
-    }
-    .stTabs [data-baseweb="tab"] p,
-    .stTabs [data-baseweb="tab"] span,
-    .stTabs [data-baseweb="tab"] div { color: var(--text-secondary) !important; }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet)) !important;
-        border: none !important;
-    }
-    .stTabs [aria-selected="true"] p,
-    .stTabs [aria-selected="true"] span,
-    .stTabs [aria-selected="true"] div { color: #fff !important; }
-
-    /* ─── expander ─── */
-    .streamlit-expanderHeader {
-        background: var(--glass-bg-2) !important;
-        border-radius: 14px !important;
-        font-weight: 700 !important; color: var(--text-primary) !important;
-        border: 1px solid var(--glass-border) !important;
-    }
-    .streamlit-expanderContent {
-        background: var(--glass-bg-2) !important;
-        border: 1px solid var(--glass-border) !important;
-    }
-    details {
-        background: var(--glass-bg-2) !important;
-        border: 1px solid var(--glass-border) !important;
-        border-radius: 14px !important;
-    }
-    details summary { color: var(--text-primary) !important; font-weight: 700 !important; }
-
-    /* ─── כפתורי בסיס שכ"ט (toggle) — הנבחר מודגש ─── */
-    [data-testid="stButton"]:has(button p:first-child) button:has(p:contains("✓")) {
-        background: linear-gradient(135deg,#4D8DFF,#9D8BFF) !important;
-        border-color: transparent !important;
-        color: #fff !important;
+        background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)) !important;
+        box-shadow: 0 0 15px var(--neon-blue) !important;
     }
 
-    /* ─── checkbox ─── */
-    .stCheckbox label { color: var(--text-primary) !important; font-weight: 700 !important; font-size: 0.88rem !important; }
-
-    /* ─── ריווח אנכי קומפקטי ─── */
-    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"],
-    div[data-testid="stVerticalBlock"] > div {
-        gap: 0 !important;
+    /* ─── כרטיס לקוח מודולרי ─── */
+    .client-card {
+        background: rgba(189, 0, 255, 0.08);
+        border: 1px solid rgba(189, 0, 255, 0.3);
+        border-radius: 16px; padding: 16px; margin-bottom: 10px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     }
-    .element-container { margin-bottom: 6px !important; }
-    div[data-testid="column"] .element-container { margin-bottom: 4px !important; }
-    /* הורדת padding מעל/מתחת ל-stMarkdown */
-    div[data-testid="stMarkdownContainer"] { margin-bottom: 2px !important; }
+    .client-name { font-weight: 800; font-size: 1.1rem; color: #ffffff; }
+    .client-obligo { font-family: 'Orbitron', sans-serif; font-weight: 900; color: var(--neon-blue); }
+
+    /* כפתור חזרה צף קשוח */
+    .back-btn .stButton > button {
+        border-radius: 30px !important;
+        border: 2px solid var(--neon-purple) !important;
+        background: var(--bg-cyber-dark) !important;
+        color: #ffffff !important;
+        font-family: 'Orbitron', sans-serif !important;
+        box-shadow: 0 0 15px rgba(189, 0, 255, 0.4) !important;
+    }
     </style>
     """, unsafe_allow_html=True)
-
-    # JS — סימון אוטומטי בלחיצה על שדה מספר
-    st.components.v1.html("""
-    <script>
-    function attachSelectAll() {
-        var inputs = window.parent.document.querySelectorAll('input[type="number"]');
-        inputs.forEach(function(inp) {
-            if (inp._sa) return;
-            inp._sa = true;
-            inp.addEventListener('focus', function() {
-                var s = this; setTimeout(function(){ s.select(); }, 50);
-            });
-        });
-    }
-    attachSelectAll();
-    setInterval(attachSelectAll, 600);
-    </script>
-    """, height=0)
-
-def fmt_ils(x):
-    """פורמט שקלים — שלמים לסכומים גדולים, עשרוניים לסכומים קטנים"""
-    if abs(x) < 10:
-        return f"₪{x:,.2f}"
-    return f"₪{x:,.0f}"
-
-def calc_fee(amount, due_date, rate_val, rate_basis):
-    """חישוב שכר טרחה"""
-    days = max((due_date - date.today()).days + 1, 0)
-    if rate_basis in ("חודשית", "חודשי"):
-        fee = float(amount) * (rate_val / 100.0) * (days / 30.0)
-    else:
-        fee = float(amount) * (rate_val / 100.0) * (days / 365.0)
-    return fee, days
-
-
-def fmt_date(d):
-    """ממיר תאריך לפורמט עברי DD.MM.YYYY"""
-    if not d:
-        return ""
-    try:
-        if isinstance(d, str):
-            d = datetime.fromisoformat(d).date()
-        return d.strftime("%d.%m.%Y")
-    except Exception:
-        return str(d)
-
-
-
-# ─────────────────────────────────────────────
-# מסך התחברות / הרשמה
-# ─────────────────────────────────────────────
-def get_upcoming_checks(days_ahead=2):
-    """צ'קים שפורעים היום + הימים הקרובים"""
-    u = current_user()
-    results = {}
-    today = date.today()
-    for i in range(days_ahead + 1):
-        d = today + timedelta(days=i)
-        with closing(get_conn()) as conn:
-            rows = conn.execute("""
-                SELECT ch.id, ch.amount, ch.due_date, ch.status, cl.name AS client_name
-                FROM checks ch JOIN clients cl ON cl.id=ch.client_id
-                WHERE cl.username=? AND DATE(ch.due_date)=DATE(?)
-                ORDER BY cl.name
-            """, (u, d.isoformat())).fetchall()
-        if rows:
-            results[d] = [dict(r) for r in rows]
-    return results
-
-
-def add_checks_batch(client_id, amounts, due_dates, status):
-    """שמירת מקבץ צ'קים בבת אחת"""
-    with closing(get_conn()) as conn, conn:
-        for amt, dd in zip(amounts, due_dates):
-            conn.execute(
-                "INSERT INTO checks (client_id,amount,due_date,status,remind_on) VALUES (?,?,?,?,NULL)",
-                (client_id, float(amt), dd.isoformat() if hasattr(dd, "isoformat") else str(dd), status)
-            )
-
-
-def do_login(username, password):
-    """בדיקת סיסמה ישירה מ-DB"""
-    username = username.strip()
-    with closing(get_conn()) as conn:
-        user = conn.execute(
-            "SELECT * FROM users WHERE username=?", (username,)
-        ).fetchone()
-    if not user:
-        return False, "שם משתמש לא קיים"
-    if stauth.Hasher().check_pw(password, user["password"]):
-        st.session_state["authentication_status"] = True
-        st.session_state["username"] = user["username"]
-        st.session_state["name"]     = user["name"]
-        return True, ""
-    return False, "סיסמה שגויה"
-
-
-def render_auth_screen(authenticator):
-    st.markdown(
-        "<div style='height:40px'></div>"
-        "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
-        "color:rgba(244,245,248,0.55);text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
-        "<h1 style='text-align:center;font-family:Outfit,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;line-height:1;margin-bottom:4px;"
-        "background:linear-gradient(120deg,#fff,#9D8BFF 60%,#4D8DFF);"
-        "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;'>"
-        "CHECKFLOW</h1>"
-        "<p style='text-align:center;color:rgba(244,245,248,0.55);font-size:0.9rem;"
-        "font-weight:500;margin-bottom:28px;'>ניהול צ׳קים ופריטה</p>",
-        unsafe_allow_html=True,
-    )
-
-    tab_login, tab_register = st.tabs(["🔑  כניסה", "📝  הרשמה"])
-
-    with tab_login:
-        with st.form("login_form", clear_on_submit=False):
-            l_user = st.text_input("שם משתמש", key="l_user")
-            l_pass = st.text_input("סיסמה", type="password", key="l_pass")
-            login_btn = st.form_submit_button("כניסה →", use_container_width=True)
-        if login_btn:
-            ok, msg = do_login(l_user, l_pass)
-            if ok:
-                st.rerun()
-            else:
-                st.error(msg)
-
-    with tab_register:
-        st.markdown("#### צור חשבון חדש")
-        with st.form("reg_form", clear_on_submit=True):
-            r_user  = st.text_input("שם משתמש (אנגלית)", key="r_user")
-            r_name  = st.text_input("שם מלא", key="r_name")
-            r_email = st.text_input("אימייל", key="r_email")
-            r_pass  = st.text_input("סיסמה (6+ תווים)", type="password", key="r_pass")
-            r_pass2 = st.text_input("אימות סיסמה", type="password", key="r_pass2")
-            submitted = st.form_submit_button("הרשמה ✅", use_container_width=True)
-
-        if submitted:
-            r_user = r_user.strip(); r_name = r_name.strip(); r_email = r_email.strip()
-            if not all([r_user, r_name, r_email, r_pass]):
-                st.error("יש למלא את כל השדות.")
-            elif len(r_pass) < 6:
-                st.error("הסיסמה חייבת להכיל לפחות 6 תווים.")
-            elif r_pass != r_pass2:
-                st.error("הסיסמאות אינן תואמות.")
-            else:
-                with closing(get_conn()) as conn:
-                    exists = conn.execute("SELECT 1 FROM users WHERE username=?", (r_user,)).fetchone()
-                if exists:
-                    st.error("שם המשתמש כבר קיים.")
-                else:
-                    hashed = stauth.Hasher().hash(r_pass)
-                    with closing(get_conn()) as conn, conn:
-                        conn.execute(
-                            "INSERT INTO users (username,name,password,email) VALUES (?,?,?,?)",
-                            (r_user, r_name, hashed, r_email)
-                        )
-                    st.success("נרשמת בהצלחה! עבור ללשונית 'כניסה' והתחבר. 🎉")
-
-
-# ─────────────────────────────────────────────
-# מסך ראשי
-# ─────────────────────────────────────────────
-def render_home_screen():
-    # בדיקת query param לתמיכה בכפתור חזור
-    qp = st.query_params.get("s", None)
-    if qp in ("calc", "mgmt"):
-        st.session_state.screen = qp
-        st.rerun()
-
-    st.markdown(
-        "<div style='height:44px'></div>"
-        "<h1 style='text-align:center;font-family:Outfit,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;line-height:1;margin-bottom:24px;"
-        "background:linear-gradient(120deg,#fff,#9D8BFF 60%,#4D8DFF);"
-        "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;'>"
-        "CHECKFLOW</h1>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="home-nav-btn home-nav-green">', unsafe_allow_html=True)
-    if st.button("🧮  מחשבון פריטה", key="go_calc", use_container_width=True):
-        st.session_state.screen = "calc"
-        st.rerun()
-    st.markdown('</div><div style="height:14px"></div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="home-nav-btn home-nav-pink">', unsafe_allow_html=True)
-    if st.button("📋  ניהול צ׳קים", key="go_mgmt", use_container_width=True):
-        st.session_state.screen = "mgmt"
-        st.rerun()
-    st.markdown('</div><div style="height:20px"></div>', unsafe_allow_html=True)
-
-    render_kpi()
-    render_home_calendar()
-
-
-def render_home_calendar():
-    """יומן 2 הימים הקרובים עם צ'קים — מסך הבית"""
-    u = current_user()
-    today = date.today()
-
-    # מצא את 2 התאריכים הקרובים ביותר שיש בהם צ'קים
-    with closing(get_conn()) as conn:
-        rows = conn.execute("""
-            SELECT ch.id, ch.amount, ch.due_date, cl.name AS client_name
-            FROM checks ch JOIN clients cl ON cl.id=ch.client_id
-            WHERE cl.username=? AND DATE(ch.due_date) >= DATE(?)
-            ORDER BY ch.due_date
-        """, (u, today.isoformat())).fetchall()
-
-    if not rows:
-        return  # אין צ'קים קרובים בכלל — לא מציגים כלום
-
-    # קיבוץ לפי תאריך
-    from collections import defaultdict
-    by_date = defaultdict(list)
-    for r in rows:
-        by_date[r["due_date"][:10]].append(dict(r))
-
-    # 2 התאריכים הקרובים בלבד
-    upcoming_dates = sorted(by_date.keys())[:2]
-    if not upcoming_dates:
-        return
-
-    # תוויות ימים
-    def day_label(d_str):
-        d = date.fromisoformat(d_str)
-        delta = (d - today).days
-        if delta == 0:   return "היום"
-        if delta == 1:   return "מחר"
-        if delta == 2:   return "מחרתיים"
-        # שמות ימי שבוע בעברית
-        names = ["שני","שלישי","רביעי","חמישי","שישי","שבת","ראשון"]
-        return names[d.weekday()]
-
-    PALETTE = [
-        ("rgba(157,139,255,0.16)", "rgba(157,139,255,0.32)", "#F4F5F8", "#BDB0FF"),
-        ("rgba(255,200,87,0.14)",  "rgba(255,200,87,0.30)",  "#F4F5F8", "#FFDB8F"),
-    ]
-
-    st.markdown(
-        "<div style='font-size:10px;font-weight:700;letter-spacing:2px;"
-        "text-transform:uppercase;color:rgba(244,245,248,0.55);"
-        "margin:14px 0 8px;text-align:right;'>📅 פירעונות קרובים</div>",
-        unsafe_allow_html=True
-    )
-
-    for i, d_str in enumerate(upcoming_dates):
-        checks_list = by_date[d_str]
-        day_total   = sum(c["amount"] for c in checks_list)
-        cnt         = len(checks_list)
-        label       = day_label(d_str)
-        bg, bd, txt_main, txt_accent = PALETTE[i % len(PALETTE)]
-        d_fmt       = fmt_date(d_str)
-        key_toggle  = f"cal_open_{d_str}"
-
-        # כרטיס ראשי — תמיד גלוי
-        st.markdown(
-            f"<div style='background:{bg};border:1px solid {bd};border-radius:20px;"
-            f"padding:14px 18px;margin-bottom:6px;backdrop-filter:blur(16px);"
-            f"-webkit-backdrop-filter:blur(16px);box-shadow:0 12px 30px rgba(0,0,0,0.25);'>"
-            f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
-            f"<div>"
-            f"<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;"
-            f"text-transform:uppercase;color:{txt_accent};margin-bottom:2px;'>{label}</div>"
-            f"<div style='font-size:0.82rem;font-weight:600;color:{txt_main};opacity:0.6;'>{d_fmt}</div>"
-            f"</div>"
-            f"<div style='text-align:left;'>"
-            f"<div style='font-family:Outfit,sans-serif;font-size:1.15rem;font-weight:800;color:{txt_main};"
-            f"letter-spacing:-0.5px;direction:ltr;'>{fmt_ils(day_total)}</div>"
-            f"<div style='font-size:0.78rem;font-weight:600;color:{txt_accent};text-align:center;'>"
-            f"{cnt} צ'קים</div>"
-            f"</div></div></div>",
-            unsafe_allow_html=True
-        )
-
-        # כפתור פרטים
-        expanded = st.session_state.get(key_toggle, False)
-        lbl_btn  = "▲ סגור" if expanded else f"▼ מי ומה ({cnt})"
-        if st.button(lbl_btn, key=f"cal_btn_{d_str}", use_container_width=True):
-            st.session_state[key_toggle] = not expanded
-            st.rerun()
-
-        if expanded:
-            for ch in checks_list:
-                st.markdown(
-                    f"<div style='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);"
-                    f"border-radius:14px;padding:10px 14px;margin-bottom:4px;display:flex;"
-                    f"backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);"
-                    f"justify-content:space-between;align-items:center;'>"
-                    f"<span style='font-weight:800;font-size:0.9rem;color:#F4F5F8;'>{ch['client_name']}</span>"
-                    f"<span style='font-weight:900;font-size:0.9rem;color:#F4F5F8;"
-                    f"direction:ltr;'>{fmt_ils(ch['amount'])}</span>"
-                    f"</div>",
-                    unsafe_allow_html=True
-                )
-        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────
-# כפתור חזרה
-# ─────────────────────────────────────────────
-def render_back_button():
-    st.markdown('<div class="back-btn">', unsafe_allow_html=True)
-    if st.button("← ראשי", key="back_home"):
-        st.session_state.screen = "home"
-        st.query_params.clear()
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────
-# KPI
-# ─────────────────────────────────────────────
-def render_kpi():
-    total, cnt = get_totals()
-    st.markdown(f"""
-    <div class="kpi">
-        <div class="kpi-label">סך הצ'קים שביד כרגע</div>
-        <div class="kpi-value">{fmt_ils(total)}</div>
-        <div class="kpi-sub">{cnt} צ'קים פיזיים בארנק 💸</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────
-# הוספת צ'ק
-# ─────────────────────────────────────────────
-def render_upcoming_reminder():
-    upcoming = get_upcoming_checks(days_ahead=2)
-    if not upcoming:
-        return  # אין פירעונות — לא מציג כלום
-
-    day_labels = {
-        date.today():                     "היום",
-        date.today() + timedelta(days=1): "מחר",
-        date.today() + timedelta(days=2): "מחרתיים",
-    }
-
-    total_checks = sum(len(v) for v in upcoming.values())
-    total_amount = sum(ch["amount"] for v in upcoming.values() for ch in v)
-
-    header = (
-        "<div class='reminder-card'>"
-        "<div class='reminder-title'>⏰ פירעונות קרובים</div>"
-        "<div style='display:flex;justify-content:space-between;'>"
-        f"<span style='font-weight:800;font-size:1rem;color:#F4F5F8;'>{total_checks} צ'קים</span>"
-        f"<span style='font-weight:900;font-size:1rem;color:#FFC857;direction:ltr;'>{fmt_ils(total_amount)}</span>"
-        "</div></div>"
-    )
-    st.markdown(header, unsafe_allow_html=True)
-
-    expanded = st.session_state.get("reminder_open", False)
-    btn_label = "📋 פרטים מלאים" if not expanded else "✖ סגור"
-    if st.button(btn_label, key="toggle_reminder"):
-        st.session_state.reminder_open = not expanded
-        st.rerun()
-
-    if not st.session_state.get("reminder_open", False):
-        return
-
-    for d, checks in sorted(upcoming.items()):
-        label   = day_labels.get(d, d.strftime("%d.%m"))
-        day_sum = sum(ch["amount"] for ch in checks)
-        bg_map  = {
-            date.today():                     "rgba(79,227,161,0.16)",
-            date.today() + timedelta(days=1): "rgba(157,139,255,0.16)",
-            date.today() + timedelta(days=2): "rgba(255,200,87,0.16)",
-        }
-        bd_map  = {
-            date.today():                     "rgba(79,227,161,0.30)",
-            date.today() + timedelta(days=1): "rgba(157,139,255,0.30)",
-            date.today() + timedelta(days=2): "rgba(255,200,87,0.30)",
-        }
-        bg = bg_map.get(d, "rgba(255,255,255,0.08)")
-        bd = bd_map.get(d, "rgba(255,255,255,0.18)")
-        date_str   = d.strftime("%d.%m.%Y")
-        total_str  = fmt_ils(day_sum)
-        header_day = (
-            f"<div style='background:{bg};border:1px solid {bd};border-radius:18px;"
-            f"padding:14px 16px;margin-bottom:6px;backdrop-filter:blur(14px);"
-            f"-webkit-backdrop-filter:blur(14px);'>"
-            f"<div style='font-size:11px;font-weight:700;letter-spacing:1.2px;"
-            f"text-transform:uppercase;color:rgba(244,245,248,0.7);margin-bottom:8px;'>"
-            f"{label} — {date_str} | {total_str}</div>"
-        )
-        rows_html = ""
-        for ch in checks:
-            rows_html += (
-                "<div class='reminder-row'>"
-                f"<span style='font-weight:700;color:#F4F5F8;'>{ch['client_name']}</span>"
-                f"<span style='font-weight:900;color:#F4F5F8;direction:ltr;'>{fmt_ils(ch['amount'])}</span>"
-                "</div>"
-            )
-        st.markdown(header_day + rows_html + "</div>", unsafe_allow_html=True)
-
-
-def render_add_check_form():
-    clients = get_clients()
-    names   = [c["name"] for c in clients]
-
-    # ── שני כפתורים ──
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown('<div class="btn-single">', unsafe_allow_html=True)
-        if st.button("➕ צ'ק בודד", key="open_single", use_container_width=True):
-            st.session_state.add_mode = "single" if st.session_state.get("add_mode") != "single" else None
-        st.markdown('</div>', unsafe_allow_html=True)
-    with c2:
-        st.markdown('<div class="btn-batch">', unsafe_allow_html=True)
-        if st.button("📦 מקבץ צ'קים", key="open_batch", use_container_width=True):
-            st.session_state.add_mode = "batch" if st.session_state.get("add_mode") != "batch" else None
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # הצגת סיכום אחרי שמירת מקבץ
-    if "batch_summary" in st.session_state and st.session_state.batch_summary:
-        bs = st.session_state.batch_summary
-        import pandas as pd
-
-        total_checks_amount = sum(
-            float(r["סכום"].replace("₪","").replace(",","")) for r in bs["rows"]
-        )
-        fee_str   = fmt_ils(bs["total_fee"])
-        net_str   = fmt_ils(bs["total_net"])
-        total_str = fmt_ils(total_checks_amount)
-
-        # כותרת סיכום
-        st.markdown(
-            f"<div style='background:linear-gradient(135deg,#1A5A2A 0%,#2A7A4A 100%);"
-            f"border-radius:24px;padding:20px 22px 16px;margin-bottom:6px;'>"
-            f"<div style='font-size:10px;font-weight:700;letter-spacing:2px;"
-            f"text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px;'>"
-            f"✅ סיכום מקבץ — {bs['count']} צ'קים נשמרו</div>"
-            f"<div style='font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);"
-            f"margin-bottom:14px;'>שכר טרחה {bs['rate_val']:.2f}% {bs['rate_basis']}</div>"
-            # שלושה KPI
-            f"<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;'>"
-            # סה"כ צ'קים
-            f"<div style='background:rgba(255,255,255,0.12);border-radius:16px;"
-            f"padding:12px 8px;text-align:center;'>"
-            f"<div style='font-size:9px;font-weight:700;letter-spacing:1px;"
-            f"text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:4px;'>סה\"כ</div>"
-            f"<div style='font-size:1.05rem;font-weight:900;color:#fff;"
-            f"letter-spacing:-0.5px;direction:ltr;'>{total_str}</div></div>"
-            # שכר טרחה
-            f"<div style='background:rgba(255,60,60,0.22);border-radius:16px;"
-            f"padding:12px 8px;text-align:center;'>"
-            f"<div style='font-size:9px;font-weight:700;letter-spacing:1px;"
-            f"text-transform:uppercase;color:rgba(255,180,180,0.8);margin-bottom:4px;'>שכ\"ט</div>"
-            f"<div style='font-size:1.05rem;font-weight:900;color:#FFB3B3;"
-            f"letter-spacing:-0.5px;direction:ltr;'>{fee_str}</div></div>"
-            # נטו ללקוח
-            f"<div style='background:rgba(80,255,160,0.15);border-radius:16px;"
-            f"padding:12px 8px;text-align:center;'>"
-            f"<div style='font-size:9px;font-weight:700;letter-spacing:1px;"
-            f"text-transform:uppercase;color:rgba(180,255,210,0.8);margin-bottom:4px;'>ללקוח</div>"
-            f"<div style='font-size:1.05rem;font-weight:900;color:#B3FFDA;"
-            f"letter-spacing:-0.5px;direction:ltr;'>{net_str}</div></div>"
-            f"</div></div>",
-            unsafe_allow_html=True
-        )
-
-        # טבלת פירוט
-        df_sum = pd.DataFrame(bs["rows"])
-        st.dataframe(df_sum, use_container_width=True, hide_index=True)
-
-        if st.button("✖ סגור סיכום", key="close_summary"):
-            st.session_state.batch_summary = None
-            st.rerun()
-
-    mode = st.session_state.get("add_mode")
-    if not mode:
-        return
-
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-
-    # ── בחירת לקוח משותפת ──
-    sel = st.selectbox("לקוח", ["— חדש —"] + names, key="add_client_sel")
-    if sel == "— חדש —":
-        new_name = st.text_input("שם לקוח חדש", key="new_client_name",
-                                  placeholder="הזן שם לקוח...")
-    else:
-        new_name = None
-
-    # ════════════════════
-    # מסלול א׳ — צ'ק בודד
-    # ════════════════════
-    if mode == "single":
-        # שורה 1: סכום + תאריך
-        sa, sb = st.columns(2)
-        with sa:
-            amount = st.number_input("סכום (₪)", min_value=0.0, step=100.0,
-                                     format="%.0f", key="add_amount")
-        with sb:
-            due = st.date_input("תאריך פירעון",
-                                value=date.today() + timedelta(days=30),
-                                min_value=date.today(), key="add_due")
-
-        # שורה 2: סטטוס + שכ"ט %
-        sc, sd = st.columns(2)
-        with sc:
-            status = st.selectbox("סטטוס", STATUSES, key="add_status")
-        with sd:
-            single_rate = st.number_input('שכ"ט (%)', min_value=0.0, max_value=100.0,
-                                          value=float(st.session_state.get("fixed_rate", 12.0)),
-                                          step=0.1, format="%.2f", key="single_rate")
-        st.session_state.fixed_rate = single_rate
-
-        # שורה 3: בסיס toggle (2 כפתורי Streamlit) + תזכורת
-        cur_basis = st.session_state.get("rate_basis", "שנתי")
-        se, sf, sg = st.columns([2, 2, 2])
-        with se:
-            active_m = cur_basis == "חודשי"
-            st.markdown(
-                f"<div style='font-size:0.75rem;color:rgba(244,245,248,0.5);"
-                f"text-align:right;margin-bottom:2px;'>בסיס</div>",
-                unsafe_allow_html=True)
-            if st.button(f"{'✓ ' if active_m else ''}חודשי",
-                         key="basis_monthly", use_container_width=True):
-                st.session_state.rate_basis = "חודשי"
-                st.rerun()
-        with sf:
-            active_y = cur_basis == "שנתי"
-            st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
-            if st.button(f"{'✓ ' if active_y else ''}שנתי",
-                         key="basis_yearly", use_container_width=True):
-                st.session_state.rate_basis = "שנתי"
-                st.rerun()
-        with sg:
-            st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
-            use_remind = st.checkbox("🔔 תזכורת", value=False, key="add_use_remind")
-
-        single_basis = st.session_state.get("rate_basis", "שנתי")
-        st.session_state.rate_basis = single_basis
-
-        if use_remind:
-            remind = st.date_input("תאריך תזכורת",
-                                   value=date.today() + timedelta(days=30),
-                                   min_value=date.today(), key="add_remind")
-        else:
-            remind = None
-
-        # ── תצוגה חיה ──
-        if amount > 0:
-            fee, days = calc_fee(amount, due, single_rate, single_basis)
-            net = amount - fee
-            st.markdown(
-                f"<div style='background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);"
-                f"border-radius:18px;padding:14px 16px;backdrop-filter:blur(14px);"
-                f"-webkit-backdrop-filter:blur(14px);"
-                f"margin:8px 0;display:flex;justify-content:space-between;'>"
-                f"<div style='text-align:center;'>"
-                f"<div style='font-size:11px;font-weight:700;color:rgba(244,245,248,0.6);'>{days} ימים</div>"
-                f"<div style='font-weight:900;font-size:1rem;color:#FF6FA5;direction:ltr;'>{fmt_ils(fee)}</div>"
-                f"<div style='font-size:11px;color:rgba(244,245,248,0.6);'>שכ\u05dcט</div></div>"
-                f"<div style='text-align:center;'>"
-                f"<div style='font-size:11px;font-weight:700;color:rgba(79,227,161,0.9);'>נטו מזומן</div>"
-                f"<div style='font-weight:900;font-size:1.2rem;color:#4FE3A1;direction:ltr;'>{fmt_ils(net)}</div>"
-                f"<div style='font-size:11px;color:rgba(79,227,161,0.9);'>מתקבל</div></div>"
-                f"</div>",
-                unsafe_allow_html=True
-            )
-
-        if st.button("💾 שמירת צ'ק", use_container_width=True, key="save_single"):
-            cid = add_client(new_name or "") if sel == "— חדש —" else                   next((c["id"] for c in clients if c["name"] == sel), None)
-            if not cid:
-                st.error("נא לבחור או להזין שם לקוח.")
-            elif amount <= 0:
-                st.error("נא להזין סכום גדול מאפס.")
-            else:
-                add_check(cid, amount, due, status, remind)
-                st.session_state.add_mode = None
-                st.rerun()
-
-    # ════════════════════
-    # מסלול ב׳ — מקבץ
-    # ════════════════════
-    elif mode == "batch":
-        import pandas as pd
-
-        # שורה 1: סכום + תאריך ראשון
-        bx, by = st.columns(2)
-        with bx:
-            amount_base = st.number_input("סכום (₪)", min_value=0.0, step=100.0,
-                                          format="%.0f", key="batch_amount")
-        with by:
-            first_date = st.date_input("תאריך ראשון",
-                                       value=date.today() + timedelta(days=30),
-                                       min_value=date.today(), key="batch_first")
-
-        # שורה 2: כמות + קפיצה + סטטוס
-        b1, b2, b3 = st.columns(3)
-        with b1:
-            count = st.number_input("כמות", min_value=2, max_value=36,
-                                    value=4, step=1, key="batch_count", format="%d")
-        with b2:
-            gap = st.number_input("קפיצה (י')", min_value=1, max_value=90,
-                                  value=30, step=1, key="batch_gap", format="%d")
-        with b3:
-            status = st.selectbox("סטטוס", STATUSES, key="batch_status")
-
-        # שורה 3: שכ"ט + בסיס
-        ba, bb = st.columns(2)
-        with ba:
-            batch_rate = st.number_input("שכ\"ט (%)", min_value=0.0, max_value=100.0,
-                                         value=float(st.session_state.get("fixed_rate", 12.0)),
-                                         step=0.1, format="%.2f", key="batch_rate")
-        with bb:
-            cur_bb = st.session_state.get("rate_basis", "שנתי")
-            bb1, bb2 = st.columns(2)
-            with bb1:
-                if st.button(f"{'✓ ' if cur_bb=='חודשי' else ''}חודשי",
-                             key="batch_basis_m", use_container_width=True):
-                    st.session_state.rate_basis = "חודשי"
-                    st.rerun()
-            with bb2:
-                if st.button(f"{'✓ ' if cur_bb=='שנתי' else ''}שנתי",
-                             key="batch_basis_y", use_container_width=True):
-                    st.session_state.rate_basis = "שנתי"
-                    st.rerun()
-            batch_basis = st.session_state.get("rate_basis", "שנתי")
-        st.session_state.fixed_rate = batch_rate
-        st.session_state.rate_basis = batch_basis
-
-        # בניית הטבלה
-        if st.button("🔄 צור טבלת עריכה", use_container_width=True, key="gen_table"):
-            rows = []
-            for i in range(int(count)):
-                d = first_date + timedelta(days=int(gap) * i)
-                rows.append({
-                    "#": i+1,
-                    "סכום (₪)": float(amount_base),
-                    "תאריך": d.isoformat(),
-                })
-            # סדר עמודות RTL: # ימין, סכום אמצע, תאריך שמאל
-            st.session_state.batch_df = pd.DataFrame(rows)[["#", "סכום (₪)", "תאריך"]]
-
-        if "batch_df" in st.session_state and st.session_state.batch_df is not None:
-            df = st.session_state.batch_df.reset_index(drop=True)
-
-            # CSS לטבלת מקבץ מינימלית
-            st.markdown("""
-            <style>
-            .batch-table { width:100%; border-collapse:separate; border-spacing:0 4px; direction:rtl; }
-            .batch-table th {
-                font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
-                color:rgba(244,245,248,0.5); padding:4px 10px; text-align:right;
-            }
-            .batch-table td {
-                background:rgba(255,255,255,0.07); padding:11px 12px;
-                font-size:0.95rem; font-weight:700; color:#F4F5F8;
-                border-top:1px solid rgba(255,255,255,0.10);
-                border-bottom:1px solid rgba(255,255,255,0.10);
-            }
-            .batch-table td:first-child { border-radius:14px 0 0 14px; border-right:1px solid rgba(255,255,255,0.10); }
-            .batch-table td:last-child  { border-radius:0 14px 14px 0; border-left:1px solid rgba(255,255,255,0.10); text-align:left; direction:ltr; }
-            .batch-table .num-col { color:#9D8BFF; font-size:0.82rem; font-weight:800; }
-            .batch-table .date-col { color:#FFC857; cursor:pointer; }
-            .batch-table .amt-col  { color:#4FE3A1; font-family:'Outfit',sans-serif; letter-spacing:-0.3px; cursor:pointer; }
-            .edit-panel { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
-                border-radius:16px; padding:12px 14px; margin:2px 0 6px; }
-            </style>
-            """, unsafe_allow_html=True)
-
-            # render table header
-            st.markdown(
-                "<table class='batch-table'>"
-                "<tr><th>#</th><th>תאריך 📅</th><th>סכום</th></tr>",
-                unsafe_allow_html=True
-            )
-            # render rows (HTML only — Streamlit buttons outside table)
-            for idx in range(len(df)):
-                row      = df.iloc[idx]
-                num      = int(row["#"])
-                amt_val  = float(row["סכום (₪)"])
-                date_val = str(row["תאריך"])
-                try:
-                    d_obj = datetime.fromisoformat(date_val).date()
-                    date_disp = d_obj.strftime("%d.%m.%Y")
-                except Exception:
-                    d_obj = date.today()
-                    date_disp = date_val
-
-                st.markdown(
-                    f"<tr>"
-                    f"<td class='num-col'>#{num}</td>"
-                    f"<td class='date-col'>{date_disp}</td>"
-                    f"<td class='amt-col'>{fmt_ils(amt_val)}</td>"
-                    f"</tr>",
-                    unsafe_allow_html=True
-                )
-            st.markdown("</table>", unsafe_allow_html=True)
-
-            # עורך שורה — נפתח בלחיצה על הכפתור לצד כל שורה
-            st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-            st.markdown(
-                "<div style='font-size:11px;font-weight:700;letter-spacing:1px;"
-                "color:rgba(244,245,248,0.45);text-align:right;margin-bottom:6px;'>"
-                "לחץ על שורה לעריכה 👇</div>",
-                unsafe_allow_html=True
-            )
-
-            for idx in range(len(df)):
-                row      = df.iloc[idx]
-                num      = int(row["#"])
-                amt_val  = float(row["סכום (₪)"])
-                date_val = str(row["תאריך"])
-                try:
-                    d_obj = datetime.fromisoformat(date_val).date()
-                    date_disp = d_obj.strftime("%d.%m.%Y")
-                except Exception:
-                    d_obj = date.today()
-                    date_disp = date_val
-
-                open_key = f"batch_edit_open_{idx}"
-                is_open  = st.session_state.get(open_key, False)
-                lbl      = f"{'▲' if is_open else '▼'} צ'ק #{num} — {date_disp} | {fmt_ils(amt_val)}"
-
-                st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
-                if st.button(lbl, key=f"batch_row_btn_{idx}", use_container_width=True):
-                    # סגור כל שאר השורות, פתח/סגור את הנוכחית
-                    for j in range(len(df)):
-                        if j != idx:
-                            st.session_state[f"batch_edit_open_{j}"] = False
-                    st.session_state[open_key] = not is_open
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-
-                if is_open:
-                    st.markdown("<div class='edit-panel'>", unsafe_allow_html=True)
-
-                    # ── תאריך ──
-                    st.markdown(
-                        "<div style='font-size:10px;font-weight:700;letter-spacing:1px;"
-                        "text-transform:uppercase;color:#FFC857;margin-bottom:4px;'>📅 תאריך</div>",
-                        unsafe_allow_html=True
-                    )
-                    dcol1, dcol2 = st.columns(2)
-                    with dcol1:
-                        if st.button("− יום", key=f"dm_{idx}", use_container_width=True):
-                            df.at[idx, "תאריך"] = (d_obj - timedelta(days=1)).isoformat()
-                            st.session_state.batch_df = df
-                            st.rerun()
-                    with dcol2:
-                        if st.button("+ יום", key=f"dp_{idx}", use_container_width=True):
-                            df.at[idx, "תאריך"] = (d_obj + timedelta(days=1)).isoformat()
-                            st.session_state.batch_df = df
-                            st.rerun()
-
-                    # ── סכום ──
-                    st.markdown(
-                        "<div style='font-size:10px;font-weight:700;letter-spacing:1px;"
-                        "text-transform:uppercase;color:#4FE3A1;margin:10px 0 4px;'>₪ סכום</div>",
-                        unsafe_allow_html=True
-                    )
-                    new_amt = st.number_input(
-                        "סכום חדש (₪)", min_value=0.0, step=50.0,
-                        value=amt_val, format="%.0f",
-                        key=f"amt_input_{idx}", label_visibility="collapsed"
-                    )
-                    acol1, acol2, acol3 = st.columns(3)
-                    with acol1:
-                        if st.button("− 100", key=f"am_{idx}", use_container_width=True):
-                            df.at[idx, "סכום (₪)"] = max(0.0, amt_val - 100)
-                            st.session_state.batch_df = df
-                            st.rerun()
-                    with acol2:
-                        if st.button("+ 100", key=f"ap_{idx}", use_container_width=True):
-                            df.at[idx, "סכום (₪)"] = amt_val + 100
-                            st.session_state.batch_df = df
-                            st.rerun()
-                    with acol3:
-                        if st.button("✓ שמור", key=f"amt_save_{idx}", use_container_width=True):
-                            df.at[idx, "סכום (₪)"] = float(new_amt)
-                            st.session_state.batch_df = df
-                            st.session_state[open_key] = False
-                            st.rerun()
-
-                    st.markdown("</div>", unsafe_allow_html=True)
-
-            edited = df
-
-            st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-            if st.button("💾 שמור את כל הצ'קים", use_container_width=True, key="save_batch"):
-                cid = add_client(new_name or "") if sel == "— חדש —" else                       next((c["id"] for c in clients if c["name"] == sel), None)
-                if not cid:
-                    st.error("נא לבחור או להזין שם לקוח.")
-                else:
-                    amounts   = edited["סכום (₪)"].tolist()
-                    due_dates = [datetime.fromisoformat(str(d)).date() for d in edited["תאריך"].tolist()]
-                    add_checks_batch(cid, amounts, due_dates, status)
-                    saved = len(amounts)
-
-                    # ── סיכום שכר טרחה לפי שיעור קבוע ──
-                    rate_val   = st.session_state.get("fixed_rate", 12.0)
-                    rate_basis = st.session_state.get("rate_basis", "שנתית")
-                    today = date.today()
-                    summary_rows = []
-                    total_fee = 0.0
-                    total_net = 0.0
-                    for amt, dd in zip(amounts, due_dates):
-                        days = max((dd - today).days + 1, 0)
-                        if rate_basis in ("חודשית", "חודשי"):
-                            fee = float(amt) * (rate_val / 100.0) * (days / 30.0)
-                        else:
-                            fee = float(amt) * (rate_val / 100.0) * (days / 365.0)
-                        net = float(amt) - fee
-                        total_fee += fee
-                        total_net += net
-                        summary_rows.append({
-                            "תאריך": fmt_date(dd),
-                            "סכום": fmt_ils(amt),
-                            "שכר טרחה": fmt_ils(fee),
-                            "נטו": fmt_ils(net),
-                        })
-
-                    st.session_state.batch_summary = {
-                        "rows": summary_rows,
-                        "total_fee": total_fee,
-                        "total_net": total_net,
-                        "count": saved,
-                        "rate_val": rate_val,
-                        "rate_basis": rate_basis,
-                    }
-                    st.session_state.add_mode = None
-                    st.session_state.batch_df = None
-                    st.rerun()
-
-# ─────────────────────────────────────────────
-# רשימת לקוחות
-# ─────────────────────────────────────────────
-# פלטת צבעי פסטל ללקוחות
-CLIENT_PALETTE = [
-    ("rgba(157,139,255,0.16)", "rgba(189,176,255,0.95)"),
-    ("rgba(79,227,161,0.16)",  "rgba(143,239,196,0.95)"),
-    ("rgba(255,111,165,0.16)", "rgba(255,166,199,0.95)"),
-    ("rgba(255,200,87,0.16)",  "rgba(255,219,143,0.95)"),
-    ("rgba(77,141,255,0.16)",  "rgba(155,193,255,0.95)"),
-    ("rgba(95,224,224,0.16)",  "rgba(160,239,239,0.95)"),
-    ("rgba(232,140,184,0.16)", "rgba(245,186,216,0.95)"),
-]
-
-def render_clients():
-    st.markdown('<div class="section-title">הלקוחות שלי</div>', unsafe_allow_html=True)
-    st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
-
-    rows = [r for r in get_client_obligo() if r["cnt"] > 0]
-    if not rows:
-        st.markdown('<div class="glass">אין עדיין צ\'קים ⬆️</div>', unsafe_allow_html=True)
-        return
-
-    for i, r in enumerate(rows):
-        bg, txt = CLIENT_PALETTE[i % len(CLIENT_PALETTE)]
-        st.markdown(f"""
-        <div class="client-card" style="background:{bg};">
-            <div>
-                <div class="client-name">{r['name']}</div>
-                <div style="font-size:.82rem;color:{txt};font-weight:600;">{r['cnt']} צ'קים</div>
-            </div>
-            <div class="client-obligo">{fmt_ils(r['obligo'])}</div>
-        </div>""", unsafe_allow_html=True)
-
-        open_key = f"client_open_{r['id']}"
-        is_open  = st.session_state.get(open_key, False)
-        btn_lbl  = "✖ סגור פירוט" if is_open else "📋 צפייה בצ'קים"
-        if st.button(btn_lbl, key=f"client_toggle_{r['id']}", use_container_width=True):
-            st.session_state[open_key] = not is_open
-            st.rerun()
-
-        if is_open:
-            for ch in get_checks(r["id"]):
-                color = STATUS_COLORS.get(ch["status"], "#888")
-                remind_str = f" | תזכורת: {ch['remind_on']}" if ch["remind_on"] else ""
-                cc1, cc2 = st.columns([3, 2])
-                with cc1:
-                    st.markdown(f"""
-                    <div style="padding:6px 0;">
-                        <span style="font-family:'Outfit';font-weight:800;direction:ltr;font-size:1.05rem;color:#F4F5F8;">
-                            {fmt_ils(ch['amount'])}</span><br>
-                        <span style="font-size:.8rem;color:rgba(255,255,255,0.75);">
-                            פירעון: {fmt_date(ch['due_date'])}{remind_str}</span>
-                        <span class="pill" style="background:{color}22;color:{color};
-                            border:1px solid {color}66;">{ch['status']}</span>
-                    </div>""", unsafe_allow_html=True)
-                with cc2:
-                    new_st = st.selectbox("סטטוס", STATUSES,
-                                          index=STATUSES.index(ch["status"]),
-                                          key=f"st_{ch['id']}", label_visibility="collapsed")
-                    st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
-                    b1, b2 = st.columns(2)
-                    with b1:
-                        if st.button("✓", key=f"upd_{ch['id']}", use_container_width=True):
-                            update_status(ch["id"], new_st)
-                            st.rerun()
-                    with b2:
-                        if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
-                            delete_check(ch["id"])
-                            st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────
-# מחשבון פריטה
-# ─────────────────────────────────────────────
-def render_calculator():
-    # כותרת קומפקטית — לא תופסת מקום
-    st.markdown(
-        "<div style='display:flex;align-items:center;gap:10px;margin:6px 0 12px;'>"
-        "<div style='width:3px;height:22px;border-radius:2px;"
-        "background:linear-gradient(180deg,#4D8DFF,#9D8BFF);flex-shrink:0;'></div>"
-        "<span style='font-family:Outfit,sans-serif;font-size:1.1rem;font-weight:800;"
-        "color:#F4F5F8;letter-spacing:-0.3px;'>מחשבון פריטה</span>"
-        "</div>",
-        unsafe_allow_html=True
-    )
-
-    if "fixed_rate"    not in st.session_state: st.session_state.fixed_rate    = 12.0
-    if "rate_basis"    not in st.session_state: st.session_state.rate_basis    = "שנתי"
-    if "rate_edit_open" not in st.session_state: st.session_state.rate_edit_open = False
-
-    checks  = get_checks()
-    options = ["— הזנה ידנית —"] + [
-        f"{c['client_name']} | {fmt_ils(c['amount'])} | {c['due_date']}" for c in checks
-    ]
-    pick = st.selectbox("בחר צ'ק קיים (או הזנה ידנית)", options, key="calc_pick")
-
-    default_amount = 10000.0
-    default_due    = date.today() + timedelta(days=30)
-    if pick != "— הזנה ידנית —":
-        idx = options.index(pick) - 1
-        ch  = checks[idx]
-        default_amount = float(ch["amount"])
-        try:    default_due = datetime.fromisoformat(ch["due_date"]).date()
-        except: default_due = date.today() + timedelta(days=30)
-
-    # כשמשנים צ'ק — מאפסים את המפתח כדי לאלץ עדכון הסכום
-    if st.session_state.get("_last_pick") != pick:
-        st.session_state.calc_due    = default_due
-        st.session_state.calc_amount = default_amount
-        st.session_state._last_pick  = pick
-
-    # ── סכום + תאריך — חצי-חצי ──
-    ca, cb = st.columns(2)
-    with ca:
-        amount = st.number_input("סכום (₪)", min_value=0.0, step=100.0,
-                                 value=st.session_state.get("calc_amount", default_amount),
-                                 format="%.0f", key="calc_amount")
-    with cb:
-        due_date = st.date_input("תאריך פירעון", key="calc_due",
-                                 min_value=date.today())
-
-    # ── ימים + בסיס — שורה אחת ──
-    days = max((due_date - date.today()).days + 1, 0)
-    cur_basis_c = st.session_state.get("rate_basis", "שנתי")
-
-    di, bm, by_ = st.columns([2, 1, 1])
-    with di:
-        st.markdown(
-            f"<div style='background:rgba(157,139,255,0.16);border:1px solid rgba(157,139,255,0.30);"
-            f"border-radius:14px;padding:8px;text-align:center;"
-            f"backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);'>"
-            f"<div style='font-size:9px;font-weight:700;color:rgba(244,245,248,0.5);"
-            f"text-transform:uppercase;letter-spacing:1px;'>ימי זיכוי</div>"
-            f"<div style='font-family:Outfit,sans-serif;font-size:1.7rem;font-weight:900;"
-            f"color:#9D8BFF;letter-spacing:-1px;line-height:1;'>{days}</div>"
-            f"</div>", unsafe_allow_html=True)
-    with bm:
-        st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
-        if st.button(f"{'✓ ' if cur_basis_c=='חודשי' else ''}חודשי",
-                     key="calc_basis_m", use_container_width=True):
-            st.session_state.rate_basis = "חודשי"
-            st.rerun()
-    with by_:
-        st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
-        if st.button(f"{'✓ ' if cur_basis_c=='שנתי' else ''}שנתי",
-                     key="calc_basis_y", use_container_width=True):
-            st.session_state.rate_basis = "שנתי"
-            st.rerun()
-
-    basis = st.session_state.get("rate_basis", "שנתי")
-
-    # ── שכר טרחה + כפתור עריכה — שורה אחת ──
-    rate_val = st.session_state.fixed_rate
-    rr1, rr2 = st.columns([3, 1])
-    with rr1:
-        st.markdown(
-            f"<div style='background:rgba(255,200,87,0.14);border:1px solid rgba(255,200,87,0.30);"
-            f"border-radius:16px;padding:10px 14px;display:flex;align-items:center;"
-            f"justify-content:space-between;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);'>"
-            f"<span style='font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(244,245,248,0.55);"
-            f"text-transform:uppercase;'>שכ\"ט קבוע ({basis})</span>"
-            f"<span style='font-family:Outfit,sans-serif;font-size:1.6rem;font-weight:900;"
-            f"color:#FFC857;letter-spacing:-0.5px;'>{rate_val:.2f}%</span>"
-            f"</div>", unsafe_allow_html=True)
-    with rr2:
-        st.write("")
-        if st.button("✏️ עריכה", use_container_width=True, key="edit_rate"):
-            st.session_state.rate_edit_open = not st.session_state.rate_edit_open
-
-    if st.session_state.rate_edit_open:
-        er1, er2 = st.columns([2, 1])
-        with er1:
-            new_rate = st.number_input("שכר טרחה (%)", min_value=0.0, max_value=100.0,
-                                       value=float(rate_val), step=0.1, format="%.2f",
-                                       key="rate_input_manual")
-        with er2:
-            st.write("")
-            if st.button("💾 שמור", use_container_width=True, key="save_rate"):
-                st.session_state.fixed_rate    = new_rate
-                st.session_state.rate_edit_open = False
-                st.rerun()
-
-    fee = amount * (rate_val/100.0) * (days/30.0 if basis == "חודשי" else days/365.0)
-    net = amount - fee
-
-    if days <= 0:
-        st.markdown("<div style='background:rgba(255,111,165,0.16);border:1px solid rgba(255,111,165,0.30);"
-                    "border-radius:16px;padding:12px;backdrop-filter:blur(14px);"
-                    "-webkit-backdrop-filter:blur(14px);"
-                    "text-align:center;font-size:13px;font-weight:700;color:#FF9FC2;"
-                    "margin:8px 0;'>⚠️ תאריך הפירעון עבר — אין ימי זיכוי.</div>",
-                    unsafe_allow_html=True)
-
-    fee_pct  = (fee / amount * 100) if amount > 0 else 0
-    st.markdown(f"""
-    <div class="calc-out fee"><div class="lbl">סך שכר הטרחה שיורד</div>
-        <div class="big">{fmt_ils(fee)}</div>
-        <div style="font-size:11px;color:rgba(255,111,165,0.7);margin-top:4px;">{days} ימים × {rate_val:.2f}% = {fee_pct:.3f}%</div>
-    </div>
-    <div class="calc-out net"><div class="lbl">נטו מזומן שמתקבל</div>
-        <div class="big">{fmt_ils(net)}</div></div>
-    """, unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────
-# Main
-# ─────────────────────────────────────────────
-def main():
-    init_db()
-    inject_css()
-
-    # כניסה חופשית — ללא אימות
-    if "current_user" not in st.session_state:
-        st.session_state.current_user = "admin"
-
-    # pushState לתמיכה בכפתור חזור
-    screen = st.session_state.get("screen", "home")
-    st.components.v1.html(f"""
-    <script>
-    (function(){{
-        var s = "{screen}";
-        var cur = new URLSearchParams(window.location.search).get("s");
-        if(cur !== s) window.history.pushState({{screen:s}},"","?s="+s);
-    }})();
-    </script>""", height=0)
-
-    if "screen" not in st.session_state:
-        st.session_state.screen = "home"
-
-    if screen == "home":
-        render_home_screen()
-    elif screen == "calc":
-        render_back_button()
-        render_calculator()
-    elif screen == "mgmt":
-        render_back_button()
-        render_kpi()
-        render_upcoming_reminder()
-        render_add_check_form()
-        render_clients()
-
-
-if __name__ == "__main__":
-    main()
