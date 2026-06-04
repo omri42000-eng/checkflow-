@@ -501,27 +501,34 @@ def inject_css():
     .stNumberInput input,
     .stDateInput input,
     [data-baseweb="input"] input,
-    [data-baseweb="base-input"] input {
-        color: var(--text-primary) !important;
-        background-color: var(--glass-bg-2) !important;
-        -webkit-text-fill-color: var(--text-primary) !important;
+    [data-baseweb="base-input"] input,
+    textarea {
+        color: #F4F5F8 !important;
+        background-color: rgba(20,23,30,0.65) !important;
+        -webkit-text-fill-color: #F4F5F8 !important;
         caret-color: var(--accent-blue) !important;
         border-radius: 14px !important;
         border: 1px solid var(--glass-border) !important;
         font-weight: 600 !important;
         font-size: 1rem !important;
-        direction: ltr !important;
-        text-align: right !important;
     }
     .stTextInput div[data-baseweb="input"],
     .stNumberInput div[data-baseweb="input"],
     .stDateInput div[data-baseweb="input"],
+    div[data-baseweb="base-input"],
     div[data-baseweb="select"] > div {
-        background-color: var(--glass-bg-2) !important;
+        background-color: rgba(20,23,30,0.65) !important;
         border: 1px solid var(--glass-border) !important;
         border-radius: 14px !important;
     }
-    div[data-baseweb="select"] div { color: var(--text-primary) !important; font-weight: 600 !important; }
+    /* כפתורי +/- של number_input */
+    .stNumberInput button {
+        background-color: rgba(20,23,30,0.65) !important;
+        color: #F4F5F8 !important;
+        border: 1px solid var(--glass-border) !important;
+    }
+    .stNumberInput button svg { fill: #F4F5F8 !important; }
+    div[data-baseweb="select"] div { color: #F4F5F8 !important; font-weight: 600 !important; }
     input::placeholder { color: var(--text-muted) !important; opacity: 1 !important; }
 
     /* ─── RTL בטפסים ─── */
@@ -540,6 +547,17 @@ def inject_css():
     ul[role="listbox"] li { color: var(--text-primary) !important; font-weight: 600 !important; }
     label { color: var(--text-secondary) !important; font-weight: 700 !important; font-size: 0.85rem !important; }
 
+    /* ─── לוח שנה (date picker) ─── */
+    div[data-baseweb="calendar"], div[data-baseweb="datepicker"] {
+        background-color: var(--bg-dark-2) !important;
+        color: #F4F5F8 !important;
+    }
+    div[data-baseweb="calendar"] * { color: #F4F5F8 !important; }
+    div[data-baseweb="calendar"] [aria-selected="true"] {
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet)) !important;
+        color: #fff !important;
+    }
+
     /* ─── רדיו שכר טרחה ─── */
     div[data-testid="stRadio"] > div { gap: 10px !important; justify-content: center !important; }
     div[data-testid="stRadio"] label {
@@ -549,11 +567,30 @@ def inject_css():
         padding: 10px 28px !important;
         font-size: 1rem !important;
         font-weight: 800 !important;
-        color: var(--text-primary) !important;
         cursor: pointer;
         transition: background .12s ease;
     }
+    /* הכרחת צבע טקסט לבן בכל צאצא של תווית הרדיו */
+    div[data-testid="stRadio"] label,
+    div[data-testid="stRadio"] label *,
+    div[data-testid="stRadio"] label p,
+    div[data-testid="stRadio"] label div,
+    div[data-testid="stRadio"] label span {
+        color: var(--text-primary) !important;
+        -webkit-text-fill-color: var(--text-primary) !important;
+    }
     div[data-testid="stRadio"] label:hover { background: rgba(157,139,255,0.25) !important; }
+    /* הבחירה הפעילה — מודגשת */
+    div[data-testid="stRadio"] label:has(input:checked) {
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet)) !important;
+        border: 1px solid transparent !important;
+    }
+    div[data-testid="stRadio"] label:has(input:checked) *,
+    div[data-testid="stRadio"] label:has(input:checked) p,
+    div[data-testid="stRadio"] label:has(input:checked) span {
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
+    }
     div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
     div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
 
@@ -765,21 +802,14 @@ def render_home_screen():
         st.rerun()
 
     st.markdown(
-        "<div style='height:40px'></div>"
-        "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
-        "color:rgba(244,245,248,0.55);text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
+        "<div style='height:44px'></div>"
         "<h1 style='text-align:center;font-family:Outfit,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;line-height:1;margin-bottom:4px;"
+        "font-size:3rem;letter-spacing:-2px;line-height:1;margin-bottom:24px;"
         "background:linear-gradient(120deg,#fff,#9D8BFF 60%,#4D8DFF);"
         "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;'>"
-        "CHECKFLOW</h1>"
-        "<p style='text-align:center;color:rgba(244,245,248,0.55);font-size:0.9rem;margin-bottom:28px;"
-        "font-weight:500;'>ניהול צ׳קים ופריטה</p>",
+        "CHECKFLOW</h1>",
         unsafe_allow_html=True,
     )
-
-    render_kpi()
-    render_home_calendar()
 
     st.markdown('<div class="home-nav-btn home-nav-green">', unsafe_allow_html=True)
     if st.button("🧮  מחשבון פריטה", key="go_calc", use_container_width=True):
@@ -791,7 +821,10 @@ def render_home_screen():
     if st.button("📋  ניהול צ׳קים", key="go_mgmt", use_container_width=True):
         st.session_state.screen = "mgmt"
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div><div style="height:20px"></div>', unsafe_allow_html=True)
+
+    render_kpi()
+    render_home_calendar()
 
 
 def render_home_calendar():
@@ -1199,61 +1232,83 @@ def render_add_check_form():
             st.session_state.batch_df = pd.DataFrame(rows)[["#", "סכום (₪)", "תאריך"]]
 
         if "batch_df" in st.session_state and st.session_state.batch_df is not None:
-            st.markdown("**ערוך לפי הצורך — לחץ על תא לשינוי:**")
-            # RTL wrapper
-            st.markdown("<div style='direction:rtl;'>", unsafe_allow_html=True)
-            edited = st.data_editor(
-                st.session_state.batch_df,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "#": st.column_config.NumberColumn(disabled=True, width="small"),
-                    "סכום (₪)": st.column_config.NumberColumn(min_value=0, format="%.0f"),
-                    "תאריך": st.column_config.TextColumn(),
-                },
-                key="batch_editor"
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
+            df = st.session_state.batch_df.reset_index(drop=True)
 
-            # כוונון עדין — כפתורי +/- קומפקטיים
             st.markdown(
-                "<div style='font-size:11px;font-weight:700;letter-spacing:1px;"
-                "text-transform:uppercase;color:rgba(255,255,255,0.5);"
-                "margin:10px 0 4px;text-align:right;'>כוונון תאריך</div>",
+                "<div style='font-size:12px;font-weight:700;letter-spacing:1px;"
+                "text-transform:uppercase;color:rgba(244,245,248,0.6);"
+                "margin:10px 0 8px;text-align:right;'>📝 ערוך כל שורה — לחץ +/− לתאריך ולסכום</div>",
                 unsafe_allow_html=True
             )
-            for idx, row in edited.iterrows():
+
+            for idx in range(len(df)):
+                row      = df.iloc[idx]
+                num      = int(row["#"])
+                amt_val  = float(row["סכום (₪)"])
                 date_val = str(row["תאריך"])
-                row_html = (
-                    f"<div style='display:flex;align-items:center;justify-content:space-between;"
-                    f"background:rgba(255,255,255,0.10);border-radius:12px;"
-                    f"padding:6px 10px;margin-bottom:4px;direction:rtl;'>"
-                    f"<span style='font-size:12px;font-weight:800;color:#fff;min-width:24px;'>"
-                    f"#{int(row['#'])}</span>"
-                    f"<span style='font-size:13px;font-weight:700;color:#fff;flex:1;text-align:center;'>"
-                    f"{date_val}</span>"
-                    f"</div>"
+                try:
+                    d_obj = datetime.fromisoformat(date_val).date()
+                    date_disp = d_obj.strftime("%d.%m.%Y")
+                except Exception:
+                    d_obj = date.today()
+                    date_disp = date_val
+
+                # כרטיס שורה
+                st.markdown(
+                    f"<div style='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.16);"
+                    f"border-radius:16px;padding:12px 14px 6px;margin-bottom:6px;direction:rtl;"
+                    f"backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);'>"
+                    f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;'>"
+                    f"<span style='font-size:13px;font-weight:800;color:#9D8BFF;'>צ'ק #{num}</span>"
+                    f"<div style='text-align:left;'>"
+                    f"<span style='font-family:Outfit,sans-serif;font-size:1.1rem;font-weight:800;"
+                    f"color:#F4F5F8;direction:ltr;'>{fmt_ils(amt_val)}</span>"
+                    f"<span style='font-size:0.8rem;color:rgba(244,245,248,0.6);margin-right:10px;'>📅 {date_disp}</span>"
+                    f"</div></div></div>",
+                    unsafe_allow_html=True
                 )
-                st.markdown(row_html, unsafe_allow_html=True)
-                ca, cb = st.columns([1, 1])
-                with ca:
-                    if st.button(f"− יום", key=f"dm_{idx}", use_container_width=True):
-                        try:
-                            d = datetime.fromisoformat(date_val).date()
-                        except Exception:
-                            d = date.today()
-                        edited.at[idx, "תאריך"] = (d - timedelta(days=1)).isoformat()
-                        st.session_state.batch_df = edited
+
+                # שורת כפתורים: תאריך (− / +) | סכום (− / +)
+                c1, c2, c3, c4 = st.columns(4)
+                st.markdown('<div class="btn-sm"></div>', unsafe_allow_html=True)
+                with c1:
+                    if st.button("− יום", key=f"dm_{idx}", use_container_width=True):
+                        df.at[idx, "תאריך"] = (d_obj - timedelta(days=1)).isoformat()
+                        st.session_state.batch_df = df
                         st.rerun()
-                with cb:
-                    if st.button(f"+ יום", key=f"dp_{idx}", use_container_width=True):
-                        try:
-                            d = datetime.fromisoformat(date_val).date()
-                        except Exception:
-                            d = date.today()
-                        edited.at[idx, "תאריך"] = (d + timedelta(days=1)).isoformat()
-                        st.session_state.batch_df = edited
+                with c2:
+                    if st.button("+ יום", key=f"dp_{idx}", use_container_width=True):
+                        df.at[idx, "תאריך"] = (d_obj + timedelta(days=1)).isoformat()
+                        st.session_state.batch_df = df
                         st.rerun()
+                with c3:
+                    if st.button("− ₪100", key=f"am_{idx}", use_container_width=True):
+                        df.at[idx, "סכום (₪)"] = max(0.0, amt_val - 100)
+                        st.session_state.batch_df = df
+                        st.rerun()
+                with c4:
+                    if st.button("+ ₪100", key=f"ap_{idx}", use_container_width=True):
+                        df.at[idx, "סכום (₪)"] = amt_val + 100
+                        st.session_state.batch_df = df
+                        st.rerun()
+
+                # עריכה ידנית מדויקת (אקורדיון)
+                with st.expander(f"✏️ עריכה מדויקת — צ'ק #{num}"):
+                    e1, e2 = st.columns(2)
+                    with e1:
+                        man_amt = st.number_input("סכום מדויק (₪)", min_value=0.0, step=100.0,
+                                                  value=amt_val, format="%.0f",
+                                                  key=f"man_amt_{idx}")
+                    with e2:
+                        man_date = st.date_input("תאריך מדויק", value=d_obj,
+                                                 key=f"man_date_{idx}")
+                    if st.button("עדכן שורה זו", key=f"man_upd_{idx}", use_container_width=True):
+                        df.at[idx, "סכום (₪)"] = float(man_amt)
+                        df.at[idx, "תאריך"]    = man_date.isoformat()
+                        st.session_state.batch_df = df
+                        st.rerun()
+
+            edited = df
 
             st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
             if st.button("💾 שמור את כל הצ'קים", use_container_width=True, key="save_batch"):
@@ -1335,7 +1390,14 @@ def render_clients():
             <div class="client-obligo">{fmt_ils(r['obligo'])}</div>
         </div>""", unsafe_allow_html=True)
 
-        with st.expander("צפייה בצ'קים"):
+        open_key = f"client_open_{r['id']}"
+        is_open  = st.session_state.get(open_key, False)
+        btn_lbl  = "✖ סגור פירוט" if is_open else "📋 צפייה בצ'קים"
+        if st.button(btn_lbl, key=f"client_toggle_{r['id']}", use_container_width=True):
+            st.session_state[open_key] = not is_open
+            st.rerun()
+
+        if is_open:
             for ch in get_checks(r["id"]):
                 color = STATUS_COLORS.get(ch["status"], "#888")
                 remind_str = f" | תזכורת: {ch['remind_on']}" if ch["remind_on"] else ""
