@@ -22,9 +22,9 @@ DB_PATH = "checks.db"
 
 STATUSES = ["ממתין למזומן", "להפקדה", "בפריטה"]
 STATUS_COLORS = {
-    "ממתין למזומן": "#FF9F1C",
-    "להפקדה": "#39FF14",
-    "בפריטה": "#FF2D95",
+    "ממתין למזומן": "#FFC857",
+    "להפקדה": "#4FE3A1",
+    "בפריטה": "#FF6FA5",
 }
 
 
@@ -186,15 +186,54 @@ def get_all_users_for_auth():
 def inject_css():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap');
+
+    :root {
+        /* רקע כהה */
+        --bg-dark-1: #1A1D24;
+        --bg-dark-2: #242832;
+
+        /* זוהר Aurora */
+        --aurora-warm:  rgba(232,184,144,0.22);
+        --aurora-cool:  rgba(63,167,255,0.20);
+        --aurora-violet: rgba(138,120,255,0.16);
+
+        /* זכוכית */
+        --glass-bg:      rgba(255,255,255,0.10);
+        --glass-bg-2:    rgba(255,255,255,0.07);
+        --glass-strong:  rgba(255,255,255,0.16);
+        --glass-border:  rgba(255,255,255,0.18);
+
+        /* טקסט */
+        --text-primary:   #F4F5F8;
+        --text-secondary: rgba(244,245,248,0.62);
+        --text-muted:     rgba(244,245,248,0.42);
+
+        /* גוונים */
+        --accent-blue:   #4D8DFF;
+        --accent-mint:   #4FE3A1;
+        --accent-pink:   #FF6FA5;
+        --accent-amber:  #FFC857;
+        --accent-violet: #9D8BFF;
+
+        --radius-card: 26px;
+        --radius-pill: 50px;
+        --shadow-soft: 0 16px 40px rgba(0,0,0,0.35);
+        --shadow-glow: 0 8px 28px rgba(77,141,255,0.28);
+    }
 
     html, body, [class*="css"] { direction: rtl; }
 
-    /* ─── רקע ─── */
+    /* ─── רקע Aurora ─── */
     .stApp {
-        background: #708D9F;
-        font-family: 'Inter', sans-serif;
-        color: #000000;
+        background:
+            radial-gradient(circle at 18% 12%, var(--aurora-warm), transparent 42%),
+            radial-gradient(circle at 85% 8%, var(--aurora-cool), transparent 40%),
+            radial-gradient(circle at 60% 95%, var(--aurora-violet), transparent 45%),
+            linear-gradient(160deg, var(--bg-dark-1), var(--bg-dark-2));
+        background-attachment: fixed;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        color: var(--text-primary);
     }
     #MainMenu, header, footer { visibility: hidden; }
     .block-container {
@@ -205,125 +244,169 @@ def inject_css():
 
     /* ─── KPI ─── */
     .kpi {
-        background: #C4CEFF;
-        border-radius: 32px;
+        background: var(--glass-bg);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 30px;
         padding: 28px 24px 22px;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
         text-align: center;
-        border: none;
+        box-shadow: var(--shadow-soft);
+        position: relative;
+        overflow: hidden;
+    }
+    .kpi::before {
+        content: "";
+        position: absolute; inset: 0;
+        background: linear-gradient(120deg, rgba(255,255,255,0.16), transparent 55%);
+        pointer-events: none;
     }
     .kpi-label {
-        font-size: 12px; font-weight: 600; letter-spacing: 1.5px;
-        color: #5A5AA3; text-transform: uppercase; margin-bottom: 6px;
+        font-size: 11px; font-weight: 700; letter-spacing: 1.8px;
+        color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;
+        position: relative;
     }
     .kpi-value {
-        font-family: 'Inter', sans-serif;
-        font-size: 3rem; font-weight: 900; line-height: 1;
-        color: #000000; direction: ltr; display: block;
-        letter-spacing: -2px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 3rem; font-weight: 800; line-height: 1;
+        color: var(--text-primary); direction: ltr; display: block;
+        letter-spacing: -2px; position: relative;
+        text-shadow: 0 2px 20px rgba(77,141,255,0.25);
     }
     .kpi-sub {
-        font-size: 13px; color: #6B6BA8; margin-top: 8px; font-weight: 500;
+        font-size: 13px; color: var(--text-secondary); margin-top: 8px;
+        font-weight: 500; position: relative;
     }
 
     /* ─── כרטיסים כלליים ─── */
     .glass {
-        background: rgba(255,255,255,0.15);
-        border-radius: 28px;
+        background: var(--glass-bg);
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        border-radius: 26px;
         padding: 20px 22px;
-        margin-bottom: 6px;
-        border: none;
+        margin-bottom: 8px;
+        box-shadow: var(--shadow-soft);
+        color: var(--text-primary);
     }
 
     /* ─── pill ─── */
     .pill {
-        display: inline-block; padding: 2px 10px; border-radius: 999px;
+        display: inline-block; padding: 3px 11px; border-radius: 999px;
         font-size: 11px; font-weight: 700; margin-inline-start: 6px;
         letter-spacing: 0.3px;
     }
 
     /* ─── כותרות סקשן ─── */
-    .section-title {
-        font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
-        color: #fff; margin: 20px 0 6px; text-align: right;
+    .section-title, .section-title-right {
+        font-family: 'Outfit', sans-serif;
+        font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+        color: var(--text-primary); margin: 22px 0 6px; text-align: right;
     }
-    .section-title-right {
-        font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
-        color: #fff; margin: 10px 0 6px; text-align: right;
-    }
+    .section-title-right { margin: 12px 0 6px; }
     .neon-bar, .neon-bar-right {
-        height: 3px; width: 36px; border-radius: 3px;
-        background: #fff; margin-bottom: 16px; margin-right: 0;
+        height: 3px; width: 40px; border-radius: 3px;
+        background: linear-gradient(90deg, var(--accent-blue), var(--accent-violet));
+        margin-bottom: 16px; margin-right: 0;
+        box-shadow: 0 0 12px rgba(77,141,255,0.6);
     }
     .neon-bar { margin-right: auto; margin-left: auto; }
 
     /* ─── כרטיס לקוח ─── */
     .client-card {
         display: flex; justify-content: space-between; align-items: center;
-        background: #F0F0F5;
-        border-radius: 22px; padding: 16px 18px; margin-bottom: 6px;
-        border: none;
+        background: var(--glass-bg);
+        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        border-radius: 22px; padding: 16px 18px; margin-bottom: 8px;
+        box-shadow: var(--shadow-soft);
+        transition: transform .2s ease;
     }
-    .client-name { font-weight: 800; font-size: 1rem; color: #000; }
+    .client-card:hover { transform: translateY(-2px); }
+    .client-name { font-weight: 700; font-size: 1rem; color: var(--text-primary); }
     .client-obligo {
-        font-weight: 900; font-size: 1.15rem;
-        color: #000; direction: ltr; letter-spacing: -0.5px;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800; font-size: 1.15rem;
+        color: var(--text-primary); direction: ltr; letter-spacing: -0.5px;
     }
 
     /* ─── פלט מחשבון ─── */
     .calc-out {
-        border-radius: 28px; padding: 20px 22px;
-        margin-top: 6px; text-align: center; border: none;
+        border-radius: 26px; padding: 20px 22px;
+        margin-top: 8px; text-align: center;
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow-soft);
     }
-    .calc-out.fee { background: #FFD6E8; }
-    .calc-out.net { background: #D6F5E0; margin-top: 6px; }
+    .calc-out.fee { background: rgba(255,111,165,0.16); }
+    .calc-out.net { background: rgba(79,227,161,0.16); margin-top: 8px; }
     .calc-out .lbl {
         font-size: 12px; font-weight: 600; letter-spacing: 1.2px;
-        text-transform: uppercase; color: #8A8A93; margin-bottom: 6px;
+        text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px;
     }
     .calc-out .big {
-        font-family: 'Inter', sans-serif; font-size: 2.6rem;
-        font-weight: 900; direction: ltr; line-height: 1.1;
-        letter-spacing: -1.5px; color: #000;
+        font-family: 'Outfit', sans-serif; font-size: 2.6rem;
+        font-weight: 800; direction: ltr; line-height: 1.1;
+        letter-spacing: -1.5px; color: var(--text-primary);
     }
+    .calc-out.fee .big { color: var(--accent-pink); }
+    .calc-out.net .big { color: var(--accent-mint); }
 
     /* ─── כפתורים כלליים ─── */
     .stButton > button {
         border-radius: 16px !important;
-        border: none !important;
-        background: #EFEFEF !important;
-        color: #000 !important;
+        border: 1px solid var(--glass-border) !important;
+        background: var(--glass-strong) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        backdrop-filter: blur(14px) !important;
+        color: var(--text-primary) !important;
         font-weight: 700 !important;
-        font-family: 'Inter', sans-serif !important;
-        transition: opacity .15s ease !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        transition: transform .15s ease, background .15s ease !important;
     }
-    .stButton > button:hover { opacity: 0.82 !important; }
+    .stButton > button:hover {
+        background: rgba(255,255,255,0.22) !important;
+        transform: translateY(-1px) !important;
+    }
 
     /* ─── כפתורי ניווט מסך הבית ─── */
     .home-nav-btn .stButton > button {
         border-radius: 28px !important;
+        font-family: 'Outfit', sans-serif !important;
         font-size: 1.25rem !important;
-        font-weight: 900 !important;
+        font-weight: 800 !important;
         min-height: 90px !important;
         height: auto !important;
         padding: 26px 24px !important;
         letter-spacing: -0.3px !important;
-        border: none !important;
+        box-shadow: var(--shadow-soft) !important;
     }
     .home-nav-green .stButton > button {
-        background: #D6F5E0 !important;
-        color: #000 !important;
+        background: linear-gradient(135deg, rgba(79,227,161,0.28), rgba(77,141,255,0.20)) !important;
+        border: 1px solid rgba(79,227,161,0.35) !important;
+        color: var(--text-primary) !important;
+    }
+    .home-nav-green .stButton > button:hover {
+        background: linear-gradient(135deg, rgba(79,227,161,0.40), rgba(77,141,255,0.30)) !important;
     }
     .home-nav-pink .stButton > button {
-        background: #E8E4FF !important;
-        color: #000 !important;
+        background: linear-gradient(135deg, rgba(157,139,255,0.28), rgba(255,111,165,0.20)) !important;
+        border: 1px solid rgba(157,139,255,0.35) !important;
+        color: var(--text-primary) !important;
+    }
+    .home-nav-pink .stButton > button:hover {
+        background: linear-gradient(135deg, rgba(157,139,255,0.40), rgba(255,111,165,0.30)) !important;
     }
 
     /* ─── כפתורי הוספת צ'ק ─── */
     .btn-single .stButton > button {
         border-radius: 50px !important;
-        background: #000 !important;
-        color: #fff !important;
+        background: var(--text-primary) !important;
+        color: var(--bg-dark-1) !important;
         font-size: 0.95rem !important;
         font-weight: 800 !important;
         padding: 12px 0 !important;
@@ -331,31 +414,35 @@ def inject_css():
     }
     .btn-batch .stButton > button {
         border-radius: 50px !important;
-        background: #E8E4FF !important;
-        color: #000 !important;
+        background: linear-gradient(135deg, rgba(157,139,255,0.35), rgba(77,141,255,0.30)) !important;
+        border: 1px solid var(--glass-border) !important;
+        color: var(--text-primary) !important;
         font-size: 0.95rem !important;
         font-weight: 800 !important;
         padding: 12px 0 !important;
-        border: none !important;
     }
-    .btn-single .stButton > button:hover,
-    .btn-batch .stButton > button:hover { opacity: 0.80 !important; }
+    .btn-single .stButton > button:hover { opacity: 0.88 !important; }
+    .btn-batch .stButton > button:hover { transform: translateY(-1px) !important; }
 
     /* ─── כרטיס תזכורת ─── */
     .reminder-card {
-        background: #FFF3C8;
+        background: rgba(255,200,87,0.14);
+        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255,200,87,0.30);
         border-radius: 22px;
         padding: 16px 18px;
         margin-bottom: 8px;
         cursor: pointer;
+        box-shadow: var(--shadow-soft);
     }
     .reminder-title {
         font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
-        text-transform: uppercase; color: #8A6A00; margin-bottom: 8px;
+        text-transform: uppercase; color: var(--accent-amber); margin-bottom: 8px;
     }
     .reminder-row {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,0.06);
+        padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.08);
     }
     .reminder-row:last-child { border-bottom: none; }
 
@@ -363,7 +450,7 @@ def inject_css():
     .btn-sm .stButton > button {
         padding: 3px 8px !important;
         font-size: 0.75rem !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         min-height: 0 !important;
         height: auto !important;
         font-weight: 700 !important;
@@ -384,26 +471,29 @@ def inject_css():
     }
     .back-btn .stButton > button {
         border-radius: 50px !important;
-        background: rgba(255,255,255,0.92) !important;
-        color: #000 !important;
+        background: var(--glass-strong) !important;
+        -webkit-backdrop-filter: blur(18px) !important;
+        backdrop-filter: blur(18px) !important;
+        border: 1px solid var(--glass-border) !important;
+        color: var(--text-primary) !important;
         font-size: 0.82rem !important;
         font-weight: 800 !important;
         padding: 10px 20px !important;
         height: auto !important;
         min-height: 0 !important;
         line-height: 1.4 !important;
-        border: none !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.18) !important;
+        box-shadow: var(--shadow-soft) !important;
     }
 
     /* ─── סכום צ'ק במחשבון — גדול ומרכז ─── */
     div[data-testid="stNumberInput"]:has(input[aria-label*="סכום"]) input,
     #calc_amount input {
         font-size: 1.8rem !important;
-        font-weight: 900 !important;
+        font-weight: 800 !important;
         text-align: center !important;
         letter-spacing: -1px !important;
         height: 64px !important;
+        font-family: 'Outfit', sans-serif !important;
     }
 
     /* ─── שדות קלט ─── */
@@ -412,12 +502,12 @@ def inject_css():
     .stDateInput input,
     [data-baseweb="input"] input,
     [data-baseweb="base-input"] input {
-        color: #000 !important;
-        background-color: #F0F0F5 !important;
-        -webkit-text-fill-color: #000 !important;
-        caret-color: #000 !important;
+        color: var(--text-primary) !important;
+        background-color: var(--glass-bg-2) !important;
+        -webkit-text-fill-color: var(--text-primary) !important;
+        caret-color: var(--accent-blue) !important;
         border-radius: 14px !important;
-        border: none !important;
+        border: 1px solid var(--glass-border) !important;
         font-weight: 600 !important;
         font-size: 1rem !important;
         direction: ltr !important;
@@ -427,12 +517,12 @@ def inject_css():
     .stNumberInput div[data-baseweb="input"],
     .stDateInput div[data-baseweb="input"],
     div[data-baseweb="select"] > div {
-        background-color: #F0F0F5 !important;
-        border: none !important;
+        background-color: var(--glass-bg-2) !important;
+        border: 1px solid var(--glass-border) !important;
         border-radius: 14px !important;
     }
-    div[data-baseweb="select"] div { color: #000 !important; font-weight: 600 !important; }
-    input::placeholder { color: #AEAEB8 !important; opacity: 1 !important; }
+    div[data-baseweb="select"] div { color: var(--text-primary) !important; font-weight: 600 !important; }
+    input::placeholder { color: var(--text-muted) !important; opacity: 1 !important; }
 
     /* ─── RTL בטפסים ─── */
     .stTextInput input, .stNumberInput input, .stDateInput input {
@@ -442,40 +532,45 @@ def inject_css():
     .stSelectbox label, .stNumberInput label,
     .stTextInput label, .stDateInput label,
     .stCheckbox label { text-align: right !important; display: block !important; }
-    ul[role="listbox"], div[data-baseweb="popover"] { background-color: #fff !important; border-radius: 16px !important; }
-    ul[role="listbox"] li { color: #000 !important; font-weight: 600 !important; }
-    label { color: #000 !important; font-weight: 700 !important; font-size: 0.85rem !important; }
+    ul[role="listbox"], div[data-baseweb="popover"] {
+        background-color: var(--bg-dark-2) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 16px !important;
+    }
+    ul[role="listbox"] li { color: var(--text-primary) !important; font-weight: 600 !important; }
+    label { color: var(--text-secondary) !important; font-weight: 700 !important; font-size: 0.85rem !important; }
 
     /* ─── רדיו שכר טרחה ─── */
     div[data-testid="stRadio"] > div { gap: 10px !important; justify-content: center !important; }
     div[data-testid="stRadio"] label {
-        background: #F0F0F5 !important;
-        border: none !important;
+        background: var(--glass-bg-2) !important;
+        border: 1px solid var(--glass-border) !important;
         border-radius: 14px !important;
         padding: 10px 28px !important;
         font-size: 1rem !important;
         font-weight: 800 !important;
-        color: #000 !important;
+        color: var(--text-primary) !important;
         cursor: pointer;
         transition: background .12s ease;
     }
-    div[data-testid="stRadio"] label:hover { background: #E8E4FF !important; }
+    div[data-testid="stRadio"] label:hover { background: rgba(157,139,255,0.25) !important; }
     div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
     div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
 
     /* ─── טאבים ─── */
     .stTabs [data-baseweb="tab-list"] { gap: 6px; justify-content: center; background: transparent !important; }
     .stTabs [data-baseweb="tab"] {
-        background: #EFEFEF !important; border-radius: 14px !important;
-        padding: 10px 24px !important; border: none !important;
+        background: var(--glass-bg-2) !important; border-radius: 14px !important;
+        padding: 10px 24px !important; border: 1px solid var(--glass-border) !important;
         font-size: 0.95rem !important; font-weight: 700 !important;
-        color: #8A8A93 !important; min-width: 130px; text-align: center;
+        color: var(--text-secondary) !important; min-width: 130px; text-align: center;
     }
     .stTabs [data-baseweb="tab"] p,
     .stTabs [data-baseweb="tab"] span,
-    .stTabs [data-baseweb="tab"] div { color: #8A8A93 !important; }
+    .stTabs [data-baseweb="tab"] div { color: var(--text-secondary) !important; }
     .stTabs [aria-selected="true"] {
-        background: #000 !important; color: #fff !important;
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet)) !important;
+        border: none !important;
     }
     .stTabs [aria-selected="true"] p,
     .stTabs [aria-selected="true"] span,
@@ -483,18 +578,24 @@ def inject_css():
 
     /* ─── expander ─── */
     .streamlit-expanderHeader {
-        background: #F0F0F5 !important;
+        background: var(--glass-bg-2) !important;
         border-radius: 14px !important;
-        font-weight: 700 !important; color: #000 !important;
-        border: none !important;
+        font-weight: 700 !important; color: var(--text-primary) !important;
+        border: 1px solid var(--glass-border) !important;
     }
     .streamlit-expanderContent {
-        background: #F7F7F9 !important;
-        border: none !important;
+        background: var(--glass-bg-2) !important;
+        border: 1px solid var(--glass-border) !important;
     }
+    details {
+        background: var(--glass-bg-2) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 14px !important;
+    }
+    details summary { color: var(--text-primary) !important; font-weight: 700 !important; }
 
     /* ─── checkbox ─── */
-    .stCheckbox label { color: #000 !important; font-weight: 700 !important; font-size: 0.95rem !important; }
+    .stCheckbox label { color: var(--text-primary) !important; font-weight: 700 !important; font-size: 0.95rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -595,11 +696,13 @@ def render_auth_screen(authenticator):
     st.markdown(
         "<div style='height:40px'></div>"
         "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
-        "color:rgba(255,255,255,0.7);text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
-        "<h1 style='text-align:center;font-family:Inter,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;color:#fff;line-height:1;margin-bottom:4px;'>"
+        "color:rgba(244,245,248,0.55);text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
+        "<h1 style='text-align:center;font-family:Outfit,sans-serif;font-weight:900;"
+        "font-size:3rem;letter-spacing:-2px;line-height:1;margin-bottom:4px;"
+        "background:linear-gradient(120deg,#fff,#9D8BFF 60%,#4D8DFF);"
+        "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;'>"
         "CHECKFLOW</h1>"
-        "<p style='text-align:center;color:rgba(255,255,255,0.7);font-size:0.9rem;"
+        "<p style='text-align:center;color:rgba(244,245,248,0.55);font-size:0.9rem;"
         "font-weight:500;margin-bottom:28px;'>ניהול צ׳קים ופריטה</p>",
         unsafe_allow_html=True,
     )
@@ -664,11 +767,13 @@ def render_home_screen():
     st.markdown(
         "<div style='height:40px'></div>"
         "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
-        "color:rgba(255,255,255,0.7);text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
-        "<h1 style='text-align:center;font-family:Inter,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;color:#fff;line-height:1;margin-bottom:4px;'>"
+        "color:rgba(244,245,248,0.55);text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
+        "<h1 style='text-align:center;font-family:Outfit,sans-serif;font-weight:900;"
+        "font-size:3rem;letter-spacing:-2px;line-height:1;margin-bottom:4px;"
+        "background:linear-gradient(120deg,#fff,#9D8BFF 60%,#4D8DFF);"
+        "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;'>"
         "CHECKFLOW</h1>"
-        "<p style='text-align:center;color:#8A8A93;font-size:0.9rem;margin-bottom:28px;"
+        "<p style='text-align:center;color:rgba(244,245,248,0.55);font-size:0.9rem;margin-bottom:28px;"
         "font-weight:500;'>ניהול צ׳קים ופריטה</p>",
         unsafe_allow_html=True,
     )
@@ -729,13 +834,13 @@ def render_home_calendar():
         return names[d.weekday()]
 
     PALETTE = [
-        ("linear-gradient(135deg,#E8E4FF 0%,#D0C8FF 100%)", "#4A3A9A", "#7060CC"),
-        ("linear-gradient(135deg,#FFF3C8 0%,#FFE8A0 100%)", "#6A5000", "#B38A00"),
+        ("rgba(157,139,255,0.16)", "rgba(157,139,255,0.32)", "#F4F5F8", "#BDB0FF"),
+        ("rgba(255,200,87,0.14)",  "rgba(255,200,87,0.30)",  "#F4F5F8", "#FFDB8F"),
     ]
 
     st.markdown(
         "<div style='font-size:10px;font-weight:700;letter-spacing:2px;"
-        "text-transform:uppercase;color:rgba(255,255,255,0.55);"
+        "text-transform:uppercase;color:rgba(244,245,248,0.55);"
         "margin:14px 0 8px;text-align:right;'>📅 פירעונות קרובים</div>",
         unsafe_allow_html=True
     )
@@ -745,22 +850,23 @@ def render_home_calendar():
         day_total   = sum(c["amount"] for c in checks_list)
         cnt         = len(checks_list)
         label       = day_label(d_str)
-        bg, txt_dark, txt_accent = PALETTE[i % len(PALETTE)]
+        bg, bd, txt_main, txt_accent = PALETTE[i % len(PALETTE)]
         d_fmt       = fmt_date(d_str)
         key_toggle  = f"cal_open_{d_str}"
 
         # כרטיס ראשי — תמיד גלוי
         st.markdown(
-            f"<div style='background:{bg};border-radius:20px;"
-            f"padding:14px 18px;margin-bottom:6px;'>"
+            f"<div style='background:{bg};border:1px solid {bd};border-radius:20px;"
+            f"padding:14px 18px;margin-bottom:6px;backdrop-filter:blur(16px);"
+            f"-webkit-backdrop-filter:blur(16px);box-shadow:0 12px 30px rgba(0,0,0,0.25);'>"
             f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
             f"<div>"
             f"<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;"
             f"text-transform:uppercase;color:{txt_accent};margin-bottom:2px;'>{label}</div>"
-            f"<div style='font-size:0.82rem;font-weight:600;color:{txt_dark};opacity:0.7;'>{d_fmt}</div>"
+            f"<div style='font-size:0.82rem;font-weight:600;color:{txt_main};opacity:0.6;'>{d_fmt}</div>"
             f"</div>"
             f"<div style='text-align:left;'>"
-            f"<div style='font-size:1.15rem;font-weight:900;color:{txt_dark};"
+            f"<div style='font-family:Outfit,sans-serif;font-size:1.15rem;font-weight:800;color:{txt_main};"
             f"letter-spacing:-0.5px;direction:ltr;'>{fmt_ils(day_total)}</div>"
             f"<div style='font-size:0.78rem;font-weight:600;color:{txt_accent};text-align:center;'>"
             f"{cnt} צ'קים</div>"
@@ -778,11 +884,12 @@ def render_home_calendar():
         if expanded:
             for ch in checks_list:
                 st.markdown(
-                    f"<div style='background:rgba(255,255,255,0.55);border-radius:14px;"
-                    f"padding:10px 14px;margin-bottom:4px;display:flex;"
+                    f"<div style='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);"
+                    f"border-radius:14px;padding:10px 14px;margin-bottom:4px;display:flex;"
+                    f"backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);"
                     f"justify-content:space-between;align-items:center;'>"
-                    f"<span style='font-weight:800;font-size:0.9rem;color:#000;'>{ch['client_name']}</span>"
-                    f"<span style='font-weight:900;font-size:0.9rem;color:#000;"
+                    f"<span style='font-weight:800;font-size:0.9rem;color:#F4F5F8;'>{ch['client_name']}</span>"
+                    f"<span style='font-weight:900;font-size:0.9rem;color:#F4F5F8;"
                     f"direction:ltr;'>{fmt_ils(ch['amount'])}</span>"
                     f"</div>",
                     unsafe_allow_html=True
@@ -837,8 +944,8 @@ def render_upcoming_reminder():
         "<div class='reminder-card'>"
         "<div class='reminder-title'>⏰ פירעונות קרובים</div>"
         "<div style='display:flex;justify-content:space-between;'>"
-        f"<span style='font-weight:800;font-size:1rem;color:#000;'>{total_checks} צ'קים</span>"
-        f"<span style='font-weight:900;font-size:1rem;color:#000;'>{fmt_ils(total_amount)}</span>"
+        f"<span style='font-weight:800;font-size:1rem;color:#F4F5F8;'>{total_checks} צ'קים</span>"
+        f"<span style='font-weight:900;font-size:1rem;color:#FFC857;direction:ltr;'>{fmt_ils(total_amount)}</span>"
         "</div></div>"
     )
     st.markdown(header, unsafe_allow_html=True)
@@ -856,26 +963,33 @@ def render_upcoming_reminder():
         label   = day_labels.get(d, d.strftime("%d.%m"))
         day_sum = sum(ch["amount"] for ch in checks)
         bg_map  = {
-            date.today():                     "#D6F5E0",
-            date.today() + timedelta(days=1): "#E8E4FF",
-            date.today() + timedelta(days=2): "#FFF3C8",
+            date.today():                     "rgba(79,227,161,0.16)",
+            date.today() + timedelta(days=1): "rgba(157,139,255,0.16)",
+            date.today() + timedelta(days=2): "rgba(255,200,87,0.16)",
         }
-        bg = bg_map.get(d, "#F0F0F5")
+        bd_map  = {
+            date.today():                     "rgba(79,227,161,0.30)",
+            date.today() + timedelta(days=1): "rgba(157,139,255,0.30)",
+            date.today() + timedelta(days=2): "rgba(255,200,87,0.30)",
+        }
+        bg = bg_map.get(d, "rgba(255,255,255,0.08)")
+        bd = bd_map.get(d, "rgba(255,255,255,0.18)")
         date_str   = d.strftime("%d.%m.%Y")
         total_str  = fmt_ils(day_sum)
         header_day = (
-            f"<div style='background:{bg};border-radius:18px;"
-            f"padding:14px 16px;margin-bottom:6px;'>"
+            f"<div style='background:{bg};border:1px solid {bd};border-radius:18px;"
+            f"padding:14px 16px;margin-bottom:6px;backdrop-filter:blur(14px);"
+            f"-webkit-backdrop-filter:blur(14px);'>"
             f"<div style='font-size:11px;font-weight:700;letter-spacing:1.2px;"
-            f"text-transform:uppercase;color:#555;margin-bottom:8px;'>"
+            f"text-transform:uppercase;color:rgba(244,245,248,0.7);margin-bottom:8px;'>"
             f"{label} — {date_str} | {total_str}</div>"
         )
         rows_html = ""
         for ch in checks:
             rows_html += (
                 "<div class='reminder-row'>"
-                f"<span style='font-weight:700;color:#000;'>{ch['client_name']}</span>"
-                f"<span style='font-weight:900;color:#000;'>{fmt_ils(ch['amount'])}</span>"
+                f"<span style='font-weight:700;color:#F4F5F8;'>{ch['client_name']}</span>"
+                f"<span style='font-weight:900;color:#F4F5F8;direction:ltr;'>{fmt_ils(ch['amount'])}</span>"
                 "</div>"
             )
         st.markdown(header_day + rows_html + "</div>", unsafe_allow_html=True)
@@ -1009,16 +1123,18 @@ def render_add_check_form():
             fee, days = calc_fee(amount, due, single_rate, single_basis)
             net = amount - fee
             st.markdown(
-                f"<div style='background:#FFF3C8;border-radius:18px;padding:14px 16px;"
+                f"<div style='background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);"
+                f"border-radius:18px;padding:14px 16px;backdrop-filter:blur(14px);"
+                f"-webkit-backdrop-filter:blur(14px);"
                 f"margin:8px 0;display:flex;justify-content:space-between;'>"
                 f"<div style='text-align:center;'>"
-                f"<div style='font-size:11px;font-weight:700;color:#8A6A00;'>{days} ימים</div>"
-                f"<div style='font-weight:900;font-size:1rem;color:#000;'>{fmt_ils(fee)}</div>"
-                f"<div style='font-size:11px;color:#8A6A00;'>שכ\u05dcט</div></div>"
+                f"<div style='font-size:11px;font-weight:700;color:rgba(244,245,248,0.6);'>{days} ימים</div>"
+                f"<div style='font-weight:900;font-size:1rem;color:#FF6FA5;direction:ltr;'>{fmt_ils(fee)}</div>"
+                f"<div style='font-size:11px;color:rgba(244,245,248,0.6);'>שכ\u05dcט</div></div>"
                 f"<div style='text-align:center;'>"
-                f"<div style='font-size:11px;font-weight:700;color:#2A7A4A;'>נטו מזומן</div>"
-                f"<div style='font-weight:900;font-size:1.2rem;color:#000;'>{fmt_ils(net)}</div>"
-                f"<div style='font-size:11px;color:#2A7A4A;'>מתקבל</div></div>"
+                f"<div style='font-size:11px;font-weight:700;color:rgba(79,227,161,0.9);'>נטו מזומן</div>"
+                f"<div style='font-weight:900;font-size:1.2rem;color:#4FE3A1;direction:ltr;'>{fmt_ils(net)}</div>"
+                f"<div style='font-size:11px;color:rgba(79,227,161,0.9);'>מתקבל</div></div>"
                 f"</div>",
                 unsafe_allow_html=True
             )
@@ -1190,13 +1306,13 @@ def render_add_check_form():
 # ─────────────────────────────────────────────
 # פלטת צבעי פסטל ללקוחות
 CLIENT_PALETTE = [
-    ("#E8E4FF", "#5A5AA3"),
-    ("#D6F5E0", "#2A7A4A"),
-    ("#FFD6E8", "#8A2A50"),
-    ("#E8F5A3", "#5A6800"),
-    ("#FFF3C8", "#8A6A00"),
-    ("#C8E8FF", "#1A5A8A"),
-    ("#FFE8D6", "#8A3A00"),
+    ("rgba(157,139,255,0.16)", "rgba(189,176,255,0.95)"),
+    ("rgba(79,227,161,0.16)",  "rgba(143,239,196,0.95)"),
+    ("rgba(255,111,165,0.16)", "rgba(255,166,199,0.95)"),
+    ("rgba(255,200,87,0.16)",  "rgba(255,219,143,0.95)"),
+    ("rgba(77,141,255,0.16)",  "rgba(155,193,255,0.95)"),
+    ("rgba(95,224,224,0.16)",  "rgba(160,239,239,0.95)"),
+    ("rgba(232,140,184,0.16)", "rgba(245,186,216,0.95)"),
 ]
 
 def render_clients():
@@ -1227,7 +1343,7 @@ def render_clients():
                 with cc1:
                     st.markdown(f"""
                     <div style="padding:6px 0;">
-                        <span style="font-family:'Orbitron';font-weight:700;direction:ltr;">
+                        <span style="font-family:'Outfit';font-weight:800;direction:ltr;font-size:1.05rem;color:#F4F5F8;">
                             {fmt_ils(ch['amount'])}</span><br>
                         <span style="font-size:.8rem;color:rgba(255,255,255,0.75);">
                             פירעון: {fmt_date(ch['due_date'])}{remind_str}</span>
@@ -1294,16 +1410,18 @@ def render_calculator():
 
     days = max((due_date - date.today()).days + 1, 0)
     st.markdown(
-        f"<div style='background:#E8F5A3;border-radius:22px;padding:16px;text-align:center;margin:6px 0 10px;'>"
-        f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:#5A6800;"
+        f"<div style='background:rgba(157,139,255,0.16);border:1px solid rgba(157,139,255,0.30);"
+        f"border-radius:22px;padding:16px;text-align:center;margin:6px 0 10px;"
+        f"backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);'>"
+        f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:rgba(244,245,248,0.6);"
         f"text-transform:uppercase;display:block;margin-bottom:2px;'>ימי זיכוי</span>"
-        f"<span style='font-family:Inter,sans-serif;font-size:2.4rem;font-weight:900;"
-        f"color:#000;letter-spacing:-1.5px;'>{days}</span>"
-        f"<span style='font-size:0.9rem;font-weight:600;color:#5A6800;'> ימים</span></div>",
+        f"<span style='font-family:Outfit,sans-serif;font-size:2.4rem;font-weight:900;"
+        f"color:#9D8BFF;letter-spacing:-1.5px;'>{days}</span>"
+        f"<span style='font-size:0.9rem;font-weight:600;color:rgba(244,245,248,0.6);'> ימים</span></div>",
         unsafe_allow_html=True)
 
     st.markdown("<div style='text-align:center;font-size:11px;font-weight:700;"
-                "letter-spacing:1.5px;color:#8A8A93;text-transform:uppercase;"
+                "letter-spacing:1.5px;color:rgba(244,245,248,0.5);text-transform:uppercase;"
                 "margin-bottom:8px;'>בסיס שכר הטרחה</div>", unsafe_allow_html=True)
     basis = st.radio("בסיס שכר הטרחה", ["חודשי", "שנתי"],
                      index=["חודשי", "שנתי"].index(st.session_state.rate_basis) if st.session_state.rate_basis in ["חודשי","שנתי"] else 1,
@@ -1314,11 +1432,13 @@ def render_calculator():
     r1, r2 = st.columns([2, 1])
     with r1:
         st.markdown(
-            f"<div style='background:#FFF3C8;border-radius:22px;padding:16px;text-align:center;margin-bottom:0;'>"
-            f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:#8A6A00;"
+            f"<div style='background:rgba(255,200,87,0.14);border:1px solid rgba(255,200,87,0.30);"
+            f"border-radius:22px;padding:16px;text-align:center;margin-bottom:0;"
+            f"backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);'>"
+            f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:rgba(244,245,248,0.6);"
             f"text-transform:uppercase;display:block;margin-bottom:4px;'>שכר טרחה קבוע ({basis})</span>"
-            f"<span style='font-family:Inter,sans-serif;font-size:2rem;font-weight:900;"
-            f"color:#000;letter-spacing:-1px;'>{rate_val:.2f}%</span>"
+            f"<span style='font-family:Outfit,sans-serif;font-size:2rem;font-weight:900;"
+            f"color:#FFC857;letter-spacing:-1px;'>{rate_val:.2f}%</span>"
             f"</div>", unsafe_allow_html=True)
     with r2:
         st.write(""); st.write("")
@@ -1338,8 +1458,10 @@ def render_calculator():
     net = amount - fee
 
     if days <= 0:
-        st.markdown("<div style='background:#FFE8D6;border-radius:16px;padding:12px;"
-                    "text-align:center;font-size:13px;font-weight:700;color:#8A3A00;"
+        st.markdown("<div style='background:rgba(255,111,165,0.16);border:1px solid rgba(255,111,165,0.30);"
+                    "border-radius:16px;padding:12px;backdrop-filter:blur(14px);"
+                    "-webkit-backdrop-filter:blur(14px);"
+                    "text-align:center;font-size:13px;font-weight:700;color:#FF9FC2;"
                     "margin:8px 0;'>⚠️ תאריך הפירעון עבר — אין ימי זיכוי.</div>",
                     unsafe_allow_html=True)
 
