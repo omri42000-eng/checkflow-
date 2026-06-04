@@ -519,6 +519,16 @@ def inject_css():
 def fmt_ils(x):
     return f"₪{x:,.0f}"
 
+def calc_fee(amount, due_date, rate_val, rate_basis):
+    """חישוב עמלת פריטה"""
+    days = max((due_date - date.today()).days + 1, 0)
+    if rate_basis == "חודשית":
+        fee = float(amount) * (rate_val / 100.0) * (days / 30.0)
+    else:
+        fee = float(amount) * (rate_val / 100.0) * (days / 365.0)
+    return fee, days
+
+
 def fmt_date(d):
     """ממיר תאריך לפורמט עברי DD.MM.YYYY"""
     if not d:
@@ -846,6 +856,41 @@ def render_add_check_form():
                                    min_value=date.today(), key="add_remind")
         status = st.selectbox("סטטוס", STATUSES, key="add_status")
 
+        # ── ריבית ──
+        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+        ra, rb = st.columns(2)
+        with ra:
+            single_rate = st.number_input("ריבית (%)", min_value=0.0, max_value=100.0,
+                                          value=float(st.session_state.get("fixed_rate", 12.0)),
+                                          step=0.1, format="%.2f", key="single_rate")
+        with rb:
+            single_basis = st.radio("בסיס", ["חודשית", "שנתית"],
+                                    index=["חודשית","שנתית"].index(
+                                        st.session_state.get("rate_basis","שנתית")),
+                                    key="single_basis", horizontal=True)
+        # שמירה בsession לשימוש במחשבון
+        st.session_state.fixed_rate = single_rate
+        st.session_state.rate_basis = single_basis
+
+        # ── תצוגה חיה ──
+        if amount > 0:
+            fee, days = calc_fee(amount, due, single_rate, single_basis)
+            net = amount - fee
+            st.markdown(
+                f"<div style='background:#FFF3C8;border-radius:18px;padding:14px 16px;"
+                f"margin:8px 0;display:flex;justify-content:space-between;'>"
+                f"<div style='text-align:center;'>"
+                f"<div style='font-size:11px;font-weight:700;color:#8A6A00;'>{days} ימים</div>"
+                f"<div style='font-weight:900;font-size:1rem;color:#000;'>{fmt_ils(fee)}</div>"
+                f"<div style='font-size:11px;color:#8A6A00;'>עמלה</div></div>"
+                f"<div style='text-align:center;'>"
+                f"<div style='font-size:11px;font-weight:700;color:#2A7A4A;'>נטו מזומן</div>"
+                f"<div style='font-weight:900;font-size:1.2rem;color:#000;'>{fmt_ils(net)}</div>"
+                f"<div style='font-size:11px;color:#2A7A4A;'>מתקבל</div></div>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
+
         if st.button("💾 שמירת צ'ק", use_container_width=True, key="save_single"):
             cid = add_client(new_name or "") if sel == "— חדש —" else                   next((c["id"] for c in clients if c["name"] == sel), None)
             if not cid:
@@ -854,7 +899,6 @@ def render_add_check_form():
                 st.error("נא להזין סכום גדול מאפס.")
             else:
                 add_check(cid, amount, due, status, remind)
-                st.success("הצ'ק נשמר ✅")
                 st.session_state.add_mode = None
                 st.rerun()
 
@@ -878,6 +922,20 @@ def render_add_check_form():
             gap = st.number_input("קפיצה (ימים)", min_value=1, max_value=90,
                                   value=30, step=1, key="batch_gap", format="%d")
         status = st.selectbox("סטטוס", STATUSES, key="batch_status")
+
+        # ── ריבית ──
+        ba, bb = st.columns(2)
+        with ba:
+            batch_rate = st.number_input("ריבית (%)", min_value=0.0, max_value=100.0,
+                                         value=float(st.session_state.get("fixed_rate", 12.0)),
+                                         step=0.1, format="%.2f", key="batch_rate")
+        with bb:
+            batch_basis = st.radio("בסיס", ["חודשית", "שנתית"],
+                                   index=["חודשית","שנתית"].index(
+                                       st.session_state.get("rate_basis","שנתית")),
+                                   key="batch_basis", horizontal=True)
+        st.session_state.fixed_rate = batch_rate
+        st.session_state.rate_basis = batch_basis
 
         # בניית הטבלה
         if st.button("🔄 צור טבלת עריכה", use_container_width=True, key="gen_table"):
@@ -961,7 +1019,7 @@ def render_add_check_form():
                     saved = len(amounts)
 
                     # ── סיכום עמלות לפי ריבית קבועה ──
-                    rate_val  = st.session_state.get("fixed_rate", 12.0)
+                    rate_val   = st.session_state.get("fixed_rate", 12.0)
                     rate_basis = st.session_state.get("rate_basis", "שנתית")
                     today = date.today()
                     summary_rows = []
