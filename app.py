@@ -22,9 +22,9 @@ DB_PATH = "checks.db"
 
 STATUSES = ["ממתין למזומן", "להפקדה", "בפריטה"]
 STATUS_COLORS = {
-    "ממתין למזומן": "#FFC857",
-    "להפקדה": "#4FE3A1",
-    "בפריטה": "#FF6FA5",
+    "ממתין למזומן": "#e59a65",
+    "להפקדה":       "#7de8a0",
+    "בפריטה":       "#f0c080",
 }
 
 
@@ -186,53 +186,42 @@ def get_all_users_for_auth():
 def inject_css():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Noto+Sans+Hebrew:wght@400;600;700;800&display=swap');
 
     :root {
-        /* רקע כהה */
-        --bg-dark-1: #1A1D24;
-        --bg-dark-2: #242832;
-
-        /* זוהר Aurora */
-        --aurora-warm:  rgba(232,184,144,0.22);
-        --aurora-cool:  rgba(63,167,255,0.20);
-        --aurora-violet: rgba(138,120,255,0.16);
-
-        /* זכוכית */
-        --glass-bg:      rgba(255,255,255,0.10);
-        --glass-bg-2:    rgba(255,255,255,0.07);
-        --glass-strong:  rgba(255,255,255,0.16);
-        --glass-border:  rgba(255,255,255,0.18);
-
-        /* טקסט */
-        --text-primary:   #F4F5F8;
-        --text-secondary: rgba(244,245,248,0.62);
-        --text-muted:     rgba(244,245,248,0.42);
-
-        /* גוונים */
-        --accent-blue:   #4D8DFF;
-        --accent-mint:   #4FE3A1;
-        --accent-pink:   #FF6FA5;
-        --accent-amber:  #FFC857;
-        --accent-violet: #9D8BFF;
-
-        --radius-card: 26px;
-        --radius-pill: 50px;
-        --shadow-soft: 0 16px 40px rgba(0,0,0,0.35);
-        --shadow-glow: 0 8px 28px rgba(77,141,255,0.28);
+        /* פלטת נחושת-שיש */
+        --bg-deep:       #041424;
+        --bg-navy:       #0b243a;
+        --bg-card:       rgba(30,35,42,0.92);
+        --copper-light:  #e59a65;
+        --copper-base:   #c07a45;
+        --copper-dark:   #8c4f2b;
+        --gold-text:     #dec599;
+        --stone-light:   #eae4dc;
+        --stone-base:    #ded4c9;
+        --text-on-stone: #704429;
+        --text-primary:  #f2e8d9;
+        --text-secondary: rgba(222,197,153,0.65);
+        --text-muted:    rgba(222,197,153,0.40);
+        --border-copper: rgba(229,154,101,0.40);
+        --border-copper-strong: rgba(229,154,101,0.70);
+        --radius-card:   22px;
+        --shadow-heavy:  0 16px 48px rgba(0,0,0,0.60);
+        --shadow-copper: 0 8px 24px rgba(140,79,43,0.35);
     }
 
     html, body, [class*="css"] { direction: rtl; }
 
-    /* ─── רקע Aurora ─── */
+    /* ─── רקע שיש ─── */
     .stApp {
-        background:
-            radial-gradient(circle at 18% 12%, var(--aurora-warm), transparent 42%),
-            radial-gradient(circle at 85% 8%, var(--aurora-cool), transparent 40%),
-            radial-gradient(circle at 60% 95%, var(--aurora-violet), transparent 45%),
-            linear-gradient(160deg, var(--bg-dark-1), var(--bg-dark-2));
+        background-color: var(--bg-deep);
+        background-image:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='600' height='600' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+            radial-gradient(ellipse at 30% 20%, rgba(14,52,88,0.8) 0%, transparent 55%),
+            radial-gradient(ellipse at 75% 80%, rgba(8,30,55,0.9) 0%, transparent 50%),
+            linear-gradient(160deg, #041424 0%, #0b243a 40%, #041424 100%);
         background-attachment: fixed;
-        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-family: 'Noto Sans Hebrew', sans-serif;
         color: var(--text-primary);
     }
     #MainMenu, header, footer { visibility: hidden; }
@@ -241,219 +230,222 @@ def inject_css():
         padding-bottom: 5rem;
         max-width: 480px;
     }
-    /* הסרת רווח עליון מהאלמנט הראשון */
-    .block-container > div:first-child { margin-top: 0 !important; padding-top: 0 !important; }
+    .block-container > div:first-child { margin-top: 0 !important; }
     [data-testid="stAppViewBlockContainer"] { padding-top: 0.5rem !important; }
 
-    /* ─── KPI ─── */
+    /* ─── KPI — כרטיס זכוכית מעושנת ─── */
     .kpi {
-        background: var(--glass-bg);
-        -webkit-backdrop-filter: blur(20px);
-        backdrop-filter: blur(20px);
-        border: 1px solid var(--glass-border);
-        border-radius: 30px;
-        padding: 28px 24px 22px;
-        margin-bottom: 8px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-copper);
+        border-radius: var(--radius-card);
+        padding: 24px 20px 20px;
+        margin-bottom: 10px;
         text-align: center;
-        box-shadow: var(--shadow-soft);
-        position: relative;
-        overflow: hidden;
+        box-shadow: var(--shadow-heavy), inset 0 1px 0 rgba(229,154,101,0.2);
+        position: relative; overflow: hidden;
     }
     .kpi::before {
         content: "";
-        position: absolute; inset: 0;
-        background: linear-gradient(120deg, rgba(255,255,255,0.16), transparent 55%);
-        pointer-events: none;
+        position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, var(--copper-light), transparent);
     }
     .kpi-label {
         font-size: 11px; font-weight: 700; letter-spacing: 1.8px;
         color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;
-        position: relative;
     }
     .kpi-value {
-        font-family: 'Outfit', sans-serif;
-        font-size: 3rem; font-weight: 800; line-height: 1;
-        color: var(--text-primary); direction: ltr; display: block;
-        letter-spacing: -2px; position: relative;
-        text-shadow: 0 2px 20px rgba(77,141,255,0.25);
+        font-family: 'Comfortaa', sans-serif;
+        font-size: 2.8rem; font-weight: 700; line-height: 1;
+        background: linear-gradient(135deg, #f0c080 0%, #e59a65 40%, #dec599 100%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent;
+        direction: ltr; display: block; letter-spacing: -1px;
     }
     .kpi-sub {
-        font-size: 13px; color: var(--text-secondary); margin-top: 8px;
-        font-weight: 500; position: relative;
+        font-size: 13px; color: var(--text-secondary); margin-top: 8px; font-weight: 500;
     }
 
     /* ─── כרטיסים כלליים ─── */
     .glass {
-        background: var(--glass-bg);
-        -webkit-backdrop-filter: blur(18px);
-        backdrop-filter: blur(18px);
-        border: 1px solid var(--glass-border);
-        border-radius: 26px;
-        padding: 20px 22px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-copper);
+        border-radius: var(--radius-card);
+        padding: 18px 20px;
         margin-bottom: 8px;
-        box-shadow: var(--shadow-soft);
+        box-shadow: var(--shadow-heavy);
         color: var(--text-primary);
     }
 
     /* ─── pill ─── */
     .pill {
-        display: inline-block; padding: 3px 11px; border-radius: 999px;
+        display: inline-block; padding: 3px 10px; border-radius: 999px;
         font-size: 11px; font-weight: 700; margin-inline-start: 6px;
-        letter-spacing: 0.3px;
     }
 
     /* ─── כותרות סקשן ─── */
     .section-title, .section-title-right {
-        font-family: 'Outfit', sans-serif;
-        font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
-        color: var(--text-primary); margin: 22px 0 6px; text-align: right;
+        font-family: 'Noto Sans Hebrew', sans-serif;
+        font-size: 20px; font-weight: 800;
+        color: var(--copper-light); margin: 18px 0 4px; text-align: right;
     }
-    .section-title-right { margin: 12px 0 6px; }
     .neon-bar, .neon-bar-right {
-        height: 3px; width: 40px; border-radius: 3px;
-        background: linear-gradient(90deg, var(--accent-blue), var(--accent-violet));
-        margin-bottom: 16px; margin-right: 0;
-        box-shadow: 0 0 12px rgba(77,141,255,0.6);
+        height: 2px; width: 36px; border-radius: 2px;
+        background: linear-gradient(90deg, var(--copper-light), var(--copper-dark));
+        margin-bottom: 14px; box-shadow: 0 0 8px rgba(229,154,101,0.5);
     }
     .neon-bar { margin-right: auto; margin-left: auto; }
 
     /* ─── כרטיס לקוח ─── */
     .client-card {
         display: flex; justify-content: space-between; align-items: center;
-        background: var(--glass-bg);
-        -webkit-backdrop-filter: blur(16px);
-        backdrop-filter: blur(16px);
-        border: 1px solid var(--glass-border);
-        border-radius: 22px; padding: 16px 18px; margin-bottom: 8px;
-        box-shadow: var(--shadow-soft);
+        background: var(--bg-card);
+        border: 1px solid var(--border-copper);
+        border-radius: 18px; padding: 14px 16px; margin-bottom: 8px;
+        box-shadow: var(--shadow-heavy);
         transition: transform .2s ease;
     }
     .client-card:hover { transform: translateY(-2px); }
     .client-name { font-weight: 700; font-size: 1rem; color: var(--text-primary); }
     .client-obligo {
-        font-family: 'Outfit', sans-serif;
-        font-weight: 800; font-size: 1.15rem;
-        color: var(--text-primary); direction: ltr; letter-spacing: -0.5px;
+        font-family: 'Comfortaa', sans-serif;
+        font-weight: 700; font-size: 1.1rem;
+        background: linear-gradient(135deg, #f0c080, #e59a65);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent;
+        direction: ltr; letter-spacing: -0.3px;
     }
 
     /* ─── פלט מחשבון ─── */
     .calc-out {
-        border-radius: 26px; padding: 20px 22px;
+        border-radius: 20px; padding: 18px 20px;
         margin-top: 8px; text-align: center;
-        -webkit-backdrop-filter: blur(18px);
-        backdrop-filter: blur(18px);
-        border: 1px solid var(--glass-border);
-        box-shadow: var(--shadow-soft);
+        border: 1px solid var(--border-copper);
+        box-shadow: var(--shadow-heavy);
     }
-    .calc-out.fee { background: rgba(255,111,165,0.16); }
-    .calc-out.net { background: rgba(79,227,161,0.16); margin-top: 8px; }
+    .calc-out.fee { background: rgba(140,79,43,0.25); border-color: rgba(229,154,101,0.35); }
+    .calc-out.net { background: rgba(20,60,40,0.40); border-color: rgba(100,200,120,0.30); margin-top: 8px; }
     .calc-out .lbl {
-        font-size: 12px; font-weight: 600; letter-spacing: 1.2px;
+        font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
         text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px;
     }
     .calc-out .big {
-        font-family: 'Outfit', sans-serif; font-size: 2.6rem;
-        font-weight: 800; direction: ltr; line-height: 1.1;
-        letter-spacing: -1.5px; color: var(--text-primary);
+        font-family: 'Comfortaa', sans-serif; font-size: 2.4rem;
+        font-weight: 700; direction: ltr; line-height: 1.1;
+        letter-spacing: -1px;
     }
-    .calc-out.fee .big { color: var(--accent-pink); }
-    .calc-out.net .big { color: var(--accent-mint); }
+    .calc-out.fee .big {
+        background: linear-gradient(135deg, #f0a370, #c07a45);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .calc-out.net .big { color: #7de8a0; }
 
-    /* ─── כפתורים כלליים ─── */
+    /* ─── כפתורים כלליים — גוון אבן ─── */
     .stButton > button {
         border-radius: 14px !important;
-        border: 1px solid var(--glass-border) !important;
-        background: var(--glass-strong) !important;
-        -webkit-backdrop-filter: blur(14px) !important;
-        backdrop-filter: blur(14px) !important;
-        color: var(--text-primary) !important;
+        background: linear-gradient(180deg, #d4cbc2 0%, #c8bfb6 100%) !important;
+        border: 1px solid rgba(255,255,255,0.35) !important;
+        box-shadow:
+            0 6px 16px rgba(0,0,0,0.45),
+            inset 0 2px 3px rgba(255,255,255,0.60),
+            inset 0 -3px 5px rgba(0,0,0,0.18) !important;
+        color: #5a3018 !important;
         font-weight: 700 !important;
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        transition: transform .15s ease, background .15s ease !important;
+        font-family: 'Noto Sans Hebrew', sans-serif !important;
+        transition: transform .15s ease, box-shadow .15s ease !important;
         min-height: 36px !important;
         padding: 6px 14px !important;
         font-size: 0.88rem !important;
         line-height: 1.3 !important;
     }
     .stButton > button:hover {
-        background: rgba(255,255,255,0.22) !important;
         transform: translateY(-1px) !important;
+        box-shadow:
+            0 8px 20px rgba(0,0,0,0.50),
+            inset 0 2px 3px rgba(255,255,255,0.60),
+            inset 0 -3px 5px rgba(0,0,0,0.18) !important;
+    }
+    .stButton > button:active {
+        transform: translateY(1px) !important;
+        box-shadow:
+            0 2px 8px rgba(0,0,0,0.40),
+            inset 0 2px 6px rgba(0,0,0,0.25) !important;
     }
 
     /* ─── כפתורי ניווט מסך הבית ─── */
     .home-nav-btn .stButton > button {
         border-radius: 24px !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-size: 1.15rem !important;
+        font-family: 'Noto Sans Hebrew', sans-serif !important;
+        font-size: 1.3rem !important;
         font-weight: 800 !important;
         min-height: 72px !important;
         height: auto !important;
         padding: 18px 20px !important;
-        letter-spacing: -0.3px !important;
-        box-shadow: var(--shadow-soft) !important;
+        background: linear-gradient(180deg, #eae4dc 0%, #ded4c9 100%) !important;
+        border: 1px solid rgba(255,255,255,0.45) !important;
+        box-shadow:
+            0 10px 24px rgba(0,0,0,0.50),
+            inset 0 2px 4px rgba(255,255,255,0.75),
+            inset 0 -4px 6px rgba(0,0,0,0.18) !important;
+        color: #704429 !important;
     }
-    .home-nav-green .stButton > button {
-        background: linear-gradient(135deg, rgba(79,227,161,0.28), rgba(77,141,255,0.20)) !important;
-        border: 1px solid rgba(79,227,161,0.35) !important;
-        color: var(--text-primary) !important;
+    .home-nav-btn .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow:
+            0 14px 30px rgba(0,0,0,0.55),
+            inset 0 2px 4px rgba(255,255,255,0.75),
+            inset 0 -4px 6px rgba(0,0,0,0.18) !important;
     }
-    .home-nav-green .stButton > button:hover {
-        background: linear-gradient(135deg, rgba(79,227,161,0.40), rgba(77,141,255,0.30)) !important;
+    .home-nav-btn .stButton > button:active {
+        transform: translateY(2px) !important;
+        box-shadow:
+            0 3px 10px rgba(0,0,0,0.45),
+            inset 0 3px 8px rgba(0,0,0,0.28) !important;
     }
-    .home-nav-pink .stButton > button {
-        background: linear-gradient(135deg, rgba(157,139,255,0.28), rgba(255,111,165,0.20)) !important;
-        border: 1px solid rgba(157,139,255,0.35) !important;
-        color: var(--text-primary) !important;
-    }
-    .home-nav-pink .stButton > button:hover {
-        background: linear-gradient(135deg, rgba(157,139,255,0.40), rgba(255,111,165,0.30)) !important;
+    /* הסרת override של green/pink — הכל אחיד עכשיו */
+    .home-nav-green .stButton > button,
+    .home-nav-pink  .stButton > button {
+        background: linear-gradient(180deg, #eae4dc 0%, #ded4c9 100%) !important;
+        border: 1px solid rgba(255,255,255,0.45) !important;
+        color: #704429 !important;
     }
 
     /* ─── כפתורי הוספת צ'ק ─── */
-    .btn-single .stButton > button {
+    .btn-single .stButton > button,
+    .btn-batch  .stButton > button {
         border-radius: 50px !important;
-        background: var(--text-primary) !important;
-        color: var(--bg-dark-1) !important;
-        font-size: 0.95rem !important;
+        font-size: 0.92rem !important;
         font-weight: 800 !important;
-        padding: 12px 0 !important;
+        padding: 10px 0 !important;
+    }
+    .btn-single .stButton > button {
+        background: linear-gradient(135deg, #e59a65, #8c4f2b) !important;
+        color: #fff1e0 !important;
         border: none !important;
     }
     .btn-batch .stButton > button {
-        border-radius: 50px !important;
-        background: linear-gradient(135deg, rgba(157,139,255,0.35), rgba(77,141,255,0.30)) !important;
-        border: 1px solid var(--glass-border) !important;
-        color: var(--text-primary) !important;
-        font-size: 0.95rem !important;
-        font-weight: 800 !important;
-        padding: 12px 0 !important;
+        background: linear-gradient(180deg, #d4cbc2 0%, #c8bfb6 100%) !important;
+        color: #5a3018 !important;
     }
-    .btn-single .stButton > button:hover { opacity: 0.88 !important; }
-    .btn-batch .stButton > button:hover { transform: translateY(-1px) !important; }
 
     /* ─── כרטיס תזכורת ─── */
     .reminder-card {
-        background: rgba(255,200,87,0.14);
-        -webkit-backdrop-filter: blur(16px);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(255,200,87,0.30);
-        border-radius: 22px;
-        padding: 16px 18px;
-        margin-bottom: 8px;
-        cursor: pointer;
-        box-shadow: var(--shadow-soft);
+        background: rgba(140,79,43,0.20);
+        border: 1px solid var(--border-copper);
+        border-radius: 18px; padding: 14px 16px; margin-bottom: 8px;
+        box-shadow: var(--shadow-heavy);
     }
     .reminder-title {
         font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
-        text-transform: uppercase; color: var(--accent-amber); margin-bottom: 8px;
+        text-transform: uppercase; color: var(--copper-light); margin-bottom: 8px;
     }
     .reminder-row {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding: 5px 0; border-bottom: 1px solid rgba(229,154,101,0.15);
     }
     .reminder-row:last-child { border-bottom: none; }
 
-    /* ─── כפתורי עדכן/מחק קטנים ─── */
+    /* ─── כפתורים קטנים ─── */
     .btn-sm .stButton > button {
         padding: 2px 6px !important;
         font-size: 0.72rem !important;
@@ -464,59 +456,40 @@ def inject_css():
         line-height: 1.4 !important;
     }
 
-    /* ─── data editor ─── */
+    /* ─── data frame ─── */
     .stDataFrame, [data-testid="stDataEditor"] {
-        border-radius: 16px !important;
-        overflow: hidden !important;
+        border-radius: 14px !important; overflow: hidden !important;
     }
 
     /* ─── כפתור חזרה צף ─── */
     .back-btn {
-        position: fixed !important;
-        bottom: 28px !important;
-        left: 20px !important;
-        z-index: 9999 !important;
+        position: fixed !important; bottom: 28px !important;
+        left: 20px !important; z-index: 9999 !important;
     }
     .back-btn .stButton > button {
         border-radius: 50px !important;
-        background: var(--glass-strong) !important;
-        -webkit-backdrop-filter: blur(18px) !important;
-        backdrop-filter: blur(18px) !important;
-        border: 1px solid var(--glass-border) !important;
-        color: var(--text-primary) !important;
+        background: linear-gradient(180deg, #d4cbc2 0%, #c0b8af 100%) !important;
+        border: 1px solid rgba(255,255,255,0.35) !important;
+        color: #5a3018 !important;
         font-size: 0.82rem !important;
         font-weight: 800 !important;
-        padding: 10px 20px !important;
+        padding: 8px 18px !important;
         height: auto !important;
         min-height: 0 !important;
-        line-height: 1.4 !important;
-        box-shadow: var(--shadow-soft) !important;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.50),
+                    inset 0 2px 3px rgba(255,255,255,0.60) !important;
     }
 
-    /* ─── סכום צ'ק במחשבון — גדול ומרכז ─── */
-    div[data-testid="stNumberInput"]:has(input[aria-label*="סכום"]) input,
-    #calc_amount input {
-        font-size: 1.8rem !important;
-        font-weight: 800 !important;
-        text-align: center !important;
-        letter-spacing: -1px !important;
-        height: 64px !important;
-        font-family: 'Outfit', sans-serif !important;
-    }
-
-    /* ─── שדות קלט — גובה קומפקטי ─── */
-    .stTextInput input,
-    .stNumberInput input,
-    .stDateInput input,
-    [data-baseweb="input"] input,
-    [data-baseweb="base-input"] input,
-    textarea {
-        color: #F4F5F8 !important;
-        background-color: rgba(20,23,30,0.65) !important;
-        -webkit-text-fill-color: #F4F5F8 !important;
-        caret-color: var(--accent-blue) !important;
+    /* ─── שדות קלט ─── */
+    .stTextInput input, .stNumberInput input,
+    .stDateInput input, [data-baseweb="input"] input,
+    [data-baseweb="base-input"] input, textarea {
+        color: var(--gold-text) !important;
+        background-color: rgba(4,20,36,0.80) !important;
+        -webkit-text-fill-color: var(--gold-text) !important;
+        caret-color: var(--copper-light) !important;
         border-radius: 12px !important;
-        border: 1px solid var(--glass-border) !important;
+        border: 1px solid var(--border-copper) !important;
         font-weight: 600 !important;
         font-size: 0.95rem !important;
         padding-top: 6px !important;
@@ -524,214 +497,167 @@ def inject_css():
         min-height: 0 !important;
         height: 38px !important;
     }
-    /* wrapper של שדה */
     .stTextInput div[data-baseweb="input"],
     .stNumberInput div[data-baseweb="input"],
     .stDateInput div[data-baseweb="input"],
     div[data-baseweb="base-input"],
     div[data-baseweb="select"] > div {
-        background-color: rgba(20,23,30,0.65) !important;
-        border: 1px solid var(--glass-border) !important;
+        background-color: rgba(4,20,36,0.80) !important;
+        border: 1px solid var(--border-copper) !important;
         border-radius: 12px !important;
         min-height: 0 !important;
     }
-    /* label מעל שדה — קטן יותר */
     .stTextInput label, .stNumberInput label,
     .stDateInput label, .stSelectbox label {
         font-size: 0.78rem !important;
         margin-bottom: 2px !important;
         padding-bottom: 0 !important;
     }
-    /* selectbox */
     div[data-baseweb="select"] > div {
         min-height: 38px !important;
-        padding-top: 4px !important;
-        padding-bottom: 4px !important;
+        padding-top: 4px !important; padding-bottom: 4px !important;
     }
-
-    /* כפתורי +/- של number_input */
     .stNumberInput button {
-        background-color: rgba(20,23,30,0.65) !important;
-        color: #F4F5F8 !important;
-        border: 1px solid var(--glass-border) !important;
-        padding: 2px 6px !important;
-        min-height: 0 !important;
+        background-color: rgba(4,20,36,0.80) !important;
+        color: var(--copper-light) !important;
+        border: 1px solid var(--border-copper) !important;
+        padding: 2px 6px !important; min-height: 0 !important;
     }
-    .stNumberInput button svg { fill: #F4F5F8 !important; }
-    div[data-baseweb="select"] div { color: #F4F5F8 !important; font-weight: 600 !important; }
+    .stNumberInput button svg { fill: var(--copper-light) !important; }
+    div[data-baseweb="select"] div { color: var(--gold-text) !important; font-weight: 600 !important; }
     input::placeholder { color: var(--text-muted) !important; opacity: 1 !important; }
 
-    /* ─── RTL בטפסים ─── */
+    /* ─── RTL ─── */
     .stTextInput input, .stNumberInput input, .stDateInput input {
-        text-align: right !important;
-        direction: rtl !important;
+        text-align: right !important; direction: rtl !important;
     }
     .stSelectbox label, .stNumberInput label,
     .stTextInput label, .stDateInput label,
     .stCheckbox label { text-align: right !important; display: block !important; }
-    ul[role="listbox"], div[data-baseweb="popover"]:not([data-baseweb="calendar"]) {
-        background-color: var(--bg-dark-2) !important;
-        border: 1px solid var(--glass-border) !important;
-        border-radius: 16px !important;
+    ul[role="listbox"] {
+        background-color: #0b1e30 !important;
+        border: 1px solid var(--border-copper) !important;
+        border-radius: 14px !important;
     }
-    ul[role="listbox"] li { color: var(--text-primary) !important; font-weight: 600 !important; }
+    ul[role="listbox"] li { color: var(--gold-text) !important; font-weight: 600 !important; }
     label { color: var(--text-secondary) !important; font-weight: 700 !important; font-size: 0.82rem !important; }
 
-    /* ─── לוח שנה (date picker) — כיסוי מלא ─── */
+    /* ─── לוח שנה ─── */
     div[data-baseweb="popover"],
     div[data-baseweb="popover"] > div,
     div[data-baseweb="calendar"],
     div[data-baseweb="datepicker"],
     [data-baseweb="calendar"],
     [data-baseweb="calendarheader"] {
-        background-color: #1E2230 !important;
-        color: #F4F5F8 !important;
-        border: 1px solid rgba(255,255,255,0.15) !important;
+        background-color: #0b1e30 !important;
+        color: var(--gold-text) !important;
+        border: 1px solid var(--border-copper) !important;
         border-radius: 18px !important;
     }
-    /* כל הטקסט בלוח — לבן */
     div[data-baseweb="calendar"] *,
     div[data-baseweb="popover"] * {
-        color: #F4F5F8 !important;
-        -webkit-text-fill-color: #F4F5F8 !important;
+        color: var(--gold-text) !important;
+        -webkit-text-fill-color: var(--gold-text) !important;
         background-color: transparent !important;
     }
-    /* header חודש/שנה */
-    div[data-baseweb="calendar"] [data-testid="stDateInputCalendarHeader"],
-    div[data-baseweb="calendar"] button[aria-label*="חודש"],
-    div[data-baseweb="calendar"] button[aria-label*="שנה"],
-    div[data-baseweb="calendar"] button[aria-label*="month"],
-    div[data-baseweb="calendar"] button[aria-label*="year"] {
-        background: #1E2230 !important;
-        color: #F4F5F8 !important;
-    }
-    /* ימים בלוח */
-    div[data-baseweb="calendar"] div[role="grid"] *,
-    div[data-baseweb="calendar"] button[aria-label] {
-        background: transparent !important;
-        color: #F4F5F8 !important;
-    }
-    /* יום נבחר */
     div[data-baseweb="calendar"] [aria-selected="true"],
     div[data-baseweb="calendar"] button[aria-selected="true"] {
-        background: linear-gradient(135deg,#4D8DFF,#9D8BFF) !important;
+        background: linear-gradient(135deg, #c07a45, #8c4f2b) !important;
         border-radius: 50% !important;
-        color: #fff !important;
+        color: #fff1e0 !important;
+        -webkit-text-fill-color: #fff1e0 !important;
     }
-    /* hover על יום */
     div[data-baseweb="calendar"] button:not([aria-selected="true"]):hover {
-        background: rgba(157,139,255,0.28) !important;
+        background: rgba(229,154,101,0.20) !important;
         border-radius: 50% !important;
-    }
-    /* כפתורי חץ ניווט חודש */
-    div[data-baseweb="calendar"] button[aria-label="Previous month"],
-    div[data-baseweb="calendar"] button[aria-label="Next month"],
-    div[data-baseweb="calendar"] button[aria-label*="חודש קודם"],
-    div[data-baseweb="calendar"] button[aria-label*="חודש הבא"] {
-        background: rgba(255,255,255,0.10) !important;
-        border-radius: 10px !important;
-        color: #F4F5F8 !important;
-    }
-    /* input של התאריך עצמו */
-    div[data-baseweb="datepicker"] div[data-baseweb="base-input"],
-    div[data-baseweb="datepicker"] input {
-        background-color: rgba(20,23,30,0.85) !important;
-        color: #F4F5F8 !important;
-        -webkit-text-fill-color: #F4F5F8 !important;
     }
 
-    /* ─── רדיו שכר טרחה ─── */
-    div[data-testid="stRadio"] > div { gap: 10px !important; justify-content: center !important; }
+    /* ─── רדיו / בסיס שכ"ט ─── */
+    div[data-testid="stRadio"] > div { gap: 8px !important; justify-content: center !important; }
     div[data-testid="stRadio"] label {
-        background: var(--glass-bg-2) !important;
-        border: 1px solid var(--glass-border) !important;
-        border-radius: 14px !important;
-        padding: 10px 28px !important;
-        font-size: 1rem !important;
-        font-weight: 800 !important;
-        cursor: pointer;
-        transition: background .12s ease;
+        background: rgba(4,20,36,0.80) !important;
+        border: 1px solid var(--border-copper) !important;
+        border-radius: 12px !important;
+        padding: 8px 22px !important;
+        font-size: 0.95rem !important; font-weight: 700 !important;
+        cursor: pointer; transition: background .12s ease;
     }
-    /* הכרחת צבע טקסט לבן בכל צאצא של תווית הרדיו */
     div[data-testid="stRadio"] label,
     div[data-testid="stRadio"] label *,
     div[data-testid="stRadio"] label p,
-    div[data-testid="stRadio"] label div,
     div[data-testid="stRadio"] label span {
-        color: var(--text-primary) !important;
-        -webkit-text-fill-color: var(--text-primary) !important;
+        color: var(--gold-text) !important;
+        -webkit-text-fill-color: var(--gold-text) !important;
     }
-    div[data-testid="stRadio"] label:hover { background: rgba(157,139,255,0.25) !important; }
-    /* הבחירה הפעילה — מודגשת */
     div[data-testid="stRadio"] label:has(input:checked) {
-        background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet)) !important;
-        border: 1px solid transparent !important;
+        background: linear-gradient(135deg, #c07a45, #8c4f2b) !important;
+        border-color: transparent !important;
     }
     div[data-testid="stRadio"] label:has(input:checked) *,
-    div[data-testid="stRadio"] label:has(input:checked) p,
     div[data-testid="stRadio"] label:has(input:checked) span {
-        color: #fff !important;
-        -webkit-text-fill-color: #fff !important;
+        color: #fff1e0 !important;
+        -webkit-text-fill-color: #fff1e0 !important;
     }
     div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
     div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
 
     /* ─── טאבים ─── */
-    .stTabs [data-baseweb="tab-list"] { gap: 6px; justify-content: center; background: transparent !important; }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px; justify-content: center;
+        background: transparent !important;
+    }
     .stTabs [data-baseweb="tab"] {
-        background: var(--glass-bg-2) !important; border-radius: 14px !important;
-        padding: 10px 24px !important; border: 1px solid var(--glass-border) !important;
-        font-size: 0.95rem !important; font-weight: 700 !important;
-        color: var(--text-secondary) !important; min-width: 130px; text-align: center;
+        background: rgba(4,20,36,0.80) !important;
+        border-radius: 12px !important;
+        padding: 8px 20px !important;
+        border: 1px solid var(--border-copper) !important;
+        font-size: 0.9rem !important; font-weight: 700 !important;
+        color: var(--text-secondary) !important;
+        min-width: 120px; text-align: center;
     }
     .stTabs [data-baseweb="tab"] p,
     .stTabs [data-baseweb="tab"] span,
     .stTabs [data-baseweb="tab"] div { color: var(--text-secondary) !important; }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet)) !important;
+        background: linear-gradient(135deg, #c07a45, #8c4f2b) !important;
         border: none !important;
     }
     .stTabs [aria-selected="true"] p,
     .stTabs [aria-selected="true"] span,
-    .stTabs [aria-selected="true"] div { color: #fff !important; }
+    .stTabs [aria-selected="true"] div { color: #fff1e0 !important; }
 
     /* ─── expander ─── */
-    .streamlit-expanderHeader {
-        background: var(--glass-bg-2) !important;
-        border-radius: 14px !important;
-        font-weight: 700 !important; color: var(--text-primary) !important;
-        border: 1px solid var(--glass-border) !important;
+    .streamlit-expanderHeader, details summary {
+        background: rgba(4,20,36,0.80) !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        color: var(--gold-text) !important;
+        border: 1px solid var(--border-copper) !important;
     }
-    .streamlit-expanderContent {
-        background: var(--glass-bg-2) !important;
-        border: 1px solid var(--glass-border) !important;
+    .streamlit-expanderContent, details {
+        background: rgba(4,20,36,0.60) !important;
+        border: 1px solid var(--border-copper) !important;
+        border-radius: 12px !important;
     }
-    details {
-        background: var(--glass-bg-2) !important;
-        border: 1px solid var(--glass-border) !important;
-        border-radius: 14px !important;
-    }
-    details summary { color: var(--text-primary) !important; font-weight: 700 !important; }
-
-    /* ─── כפתורי בסיס שכ"ט (toggle) — הנבחר מודגש ─── */
-    [data-testid="stButton"]:has(button p:first-child) button:has(p:contains("✓")) {
-        background: linear-gradient(135deg,#4D8DFF,#9D8BFF) !important;
-        border-color: transparent !important;
-        color: #fff !important;
-    }
+    details summary { color: var(--gold-text) !important; }
 
     /* ─── checkbox ─── */
-    .stCheckbox label { color: var(--text-primary) !important; font-weight: 700 !important; font-size: 0.88rem !important; }
-
-    /* ─── ריווח אנכי קומפקטי ─── */
-    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"],
-    div[data-testid="stVerticalBlock"] > div {
-        gap: 0 !important;
+    .stCheckbox label {
+        color: var(--gold-text) !important;
+        font-weight: 700 !important; font-size: 0.88rem !important;
     }
+
+    /* ─── ריווח אנכי ─── */
     .element-container { margin-bottom: 6px !important; }
     div[data-testid="column"] .element-container { margin-bottom: 4px !important; }
-    /* הורדת padding מעל/מתחת ל-stMarkdown */
     div[data-testid="stMarkdownContainer"] { margin-bottom: 2px !important; }
+
+    /* ─── כפתור ✓ פעיל (בסיס שכ"ט) ─── */
+    [data-testid="stButton"]:has(button p:contains("✓")) button {
+        background: linear-gradient(135deg, #c07a45, #8c4f2b) !important;
+        color: #fff1e0 !important;
+        border-color: transparent !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -833,16 +759,13 @@ def do_login(username, password):
 
 def render_auth_screen(authenticator):
     st.markdown(
-        "<div style='height:40px'></div>"
-        "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
-        "color:rgba(244,245,248,0.55);text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
-        "<h1 style='text-align:center;font-family:Outfit,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;line-height:1;margin-bottom:4px;"
-        "background:linear-gradient(120deg,#fff,#9D8BFF 60%,#4D8DFF);"
-        "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;'>"
-        "CHECKFLOW</h1>"
-        "<p style='text-align:center;color:rgba(244,245,248,0.55);font-size:0.9rem;"
-        "font-weight:500;margin-bottom:28px;'>ניהול צ׳קים ופריטה</p>",
+        "<div style='height:36px'></div>"
+        "<h1 style='text-align:center;font-family:Comfortaa,sans-serif;font-weight:700;"
+        "font-size:3.2rem;letter-spacing:2px;line-height:1;margin-bottom:28px;"
+        "background:linear-gradient(135deg,#f0c080 0%,#e59a65 40%,#8c4f2b 70%,#dec599 100%);"
+        "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;"
+        "filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.7));'>"
+        "CHECKFLOW</h1>",
         unsafe_allow_html=True,
     )
 
@@ -904,11 +827,12 @@ def render_home_screen():
         st.rerun()
 
     st.markdown(
-        "<div style='height:44px'></div>"
-        "<h1 style='text-align:center;font-family:Outfit,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;line-height:1;margin-bottom:24px;"
-        "background:linear-gradient(120deg,#fff,#9D8BFF 60%,#4D8DFF);"
-        "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;'>"
+        "<div style='height:36px'></div>"
+        "<h1 style='text-align:center;font-family:Comfortaa,sans-serif;font-weight:700;"
+        "font-size:3.2rem;letter-spacing:2px;line-height:1;margin-bottom:28px;"
+        "background:linear-gradient(135deg,#f0c080 0%,#e59a65 40%,#8c4f2b 70%,#dec599 100%);"
+        "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;"
+        "filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.7));'>"
         "CHECKFLOW</h1>",
         unsafe_allow_html=True,
     )
@@ -969,13 +893,13 @@ def render_home_calendar():
         return names[d.weekday()]
 
     PALETTE = [
-        ("rgba(157,139,255,0.16)", "rgba(157,139,255,0.32)", "#F4F5F8", "#BDB0FF"),
-        ("rgba(255,200,87,0.14)",  "rgba(255,200,87,0.30)",  "#F4F5F8", "#FFDB8F"),
+        ("rgba(140,79,43,0.22)", "rgba(229,154,101,0.35)", "#f2e8d9", "#BDB0FF"),
+        ("rgba(192,122,69,0.20)",  "rgba(229,154,101,0.35)",  "#f2e8d9", "#FFDB8F"),
     ]
 
     st.markdown(
         "<div style='font-size:10px;font-weight:700;letter-spacing:2px;"
-        "text-transform:uppercase;color:rgba(244,245,248,0.55);"
+        "text-transform:uppercase;color:rgba(242,232,217,0.55);"
         "margin:14px 0 8px;text-align:right;'>📅 פירעונות קרובים</div>",
         unsafe_allow_html=True
     )
@@ -1001,7 +925,7 @@ def render_home_calendar():
             f"<div style='font-size:0.82rem;font-weight:600;color:{txt_main};opacity:0.6;'>{d_fmt}</div>"
             f"</div>"
             f"<div style='text-align:left;'>"
-            f"<div style='font-family:Outfit,sans-serif;font-size:1.15rem;font-weight:800;color:{txt_main};"
+            f"<div style='font-family:Comfortaa,sans-serif;font-size:1.15rem;font-weight:800;color:{txt_main};"
             f"letter-spacing:-0.5px;direction:ltr;'>{fmt_ils(day_total)}</div>"
             f"<div style='font-size:0.78rem;font-weight:600;color:{txt_accent};text-align:center;'>"
             f"{cnt} צ'קים</div>"
@@ -1019,12 +943,12 @@ def render_home_calendar():
         if expanded:
             for ch in checks_list:
                 st.markdown(
-                    f"<div style='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);"
+                    f"<div style='background:rgba(4,20,36,0.60);border:1px solid rgba(229,154,101,0.25);"
                     f"border-radius:14px;padding:10px 14px;margin-bottom:4px;display:flex;"
                     f"backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);"
                     f"justify-content:space-between;align-items:center;'>"
-                    f"<span style='font-weight:800;font-size:0.9rem;color:#F4F5F8;'>{ch['client_name']}</span>"
-                    f"<span style='font-weight:900;font-size:0.9rem;color:#F4F5F8;"
+                    f"<span style='font-weight:800;font-size:0.9rem;color:#f2e8d9;'>{ch['client_name']}</span>"
+                    f"<span style='font-weight:900;font-size:0.9rem;color:#f2e8d9;"
                     f"direction:ltr;'>{fmt_ils(ch['amount'])}</span>"
                     f"</div>",
                     unsafe_allow_html=True
@@ -1079,8 +1003,8 @@ def render_upcoming_reminder():
         "<div class='reminder-card'>"
         "<div class='reminder-title'>⏰ פירעונות קרובים</div>"
         "<div style='display:flex;justify-content:space-between;'>"
-        f"<span style='font-weight:800;font-size:1rem;color:#F4F5F8;'>{total_checks} צ'קים</span>"
-        f"<span style='font-weight:900;font-size:1rem;color:#FFC857;direction:ltr;'>{fmt_ils(total_amount)}</span>"
+        f"<span style='font-weight:800;font-size:1rem;color:#f2e8d9;'>{total_checks} צ'קים</span>"
+        f"<span style='font-weight:900;font-size:1rem;color:#f0c080;direction:ltr;'>{fmt_ils(total_amount)}</span>"
         "</div></div>"
     )
     st.markdown(header, unsafe_allow_html=True)
@@ -1098,17 +1022,17 @@ def render_upcoming_reminder():
         label   = day_labels.get(d, d.strftime("%d.%m"))
         day_sum = sum(ch["amount"] for ch in checks)
         bg_map  = {
-            date.today():                     "rgba(79,227,161,0.16)",
-            date.today() + timedelta(days=1): "rgba(157,139,255,0.16)",
+            date.today():                     "rgba(40,100,65,0.25)",
+            date.today() + timedelta(days=1): "rgba(140,79,43,0.22)",
             date.today() + timedelta(days=2): "rgba(255,200,87,0.16)",
         }
         bd_map  = {
-            date.today():                     "rgba(79,227,161,0.30)",
-            date.today() + timedelta(days=1): "rgba(157,139,255,0.30)",
-            date.today() + timedelta(days=2): "rgba(255,200,87,0.30)",
+            date.today():                     "rgba(100,200,130,0.30)",
+            date.today() + timedelta(days=1): "rgba(229,154,101,0.35)",
+            date.today() + timedelta(days=2): "rgba(229,154,101,0.35)",
         }
-        bg = bg_map.get(d, "rgba(255,255,255,0.08)")
-        bd = bd_map.get(d, "rgba(255,255,255,0.18)")
+        bg = bg_map.get(d, "rgba(4,20,36,0.65)")
+        bd = bd_map.get(d, "rgba(229,154,101,0.35)")
         date_str   = d.strftime("%d.%m.%Y")
         total_str  = fmt_ils(day_sum)
         header_day = (
@@ -1116,15 +1040,15 @@ def render_upcoming_reminder():
             f"padding:14px 16px;margin-bottom:6px;backdrop-filter:blur(14px);"
             f"-webkit-backdrop-filter:blur(14px);'>"
             f"<div style='font-size:11px;font-weight:700;letter-spacing:1.2px;"
-            f"text-transform:uppercase;color:rgba(244,245,248,0.7);margin-bottom:8px;'>"
+            f"text-transform:uppercase;color:rgba(242,232,217,0.7);margin-bottom:8px;'>"
             f"{label} — {date_str} | {total_str}</div>"
         )
         rows_html = ""
         for ch in checks:
             rows_html += (
                 "<div class='reminder-row'>"
-                f"<span style='font-weight:700;color:#F4F5F8;'>{ch['client_name']}</span>"
-                f"<span style='font-weight:900;color:#F4F5F8;direction:ltr;'>{fmt_ils(ch['amount'])}</span>"
+                f"<span style='font-weight:700;color:#f2e8d9;'>{ch['client_name']}</span>"
+                f"<span style='font-weight:900;color:#f2e8d9;direction:ltr;'>{fmt_ils(ch['amount'])}</span>"
                 "</div>"
             )
         st.markdown(header_day + rows_html + "</div>", unsafe_allow_html=True)
@@ -1164,9 +1088,9 @@ def render_add_check_form():
             f"<div style='background:linear-gradient(135deg,#1A5A2A 0%,#2A7A4A 100%);"
             f"border-radius:24px;padding:20px 22px 16px;margin-bottom:6px;'>"
             f"<div style='font-size:10px;font-weight:700;letter-spacing:2px;"
-            f"text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px;'>"
+            f"text-transform:uppercase;color:rgba(222,197,153,0.65);margin-bottom:6px;'>"
             f"✅ סיכום מקבץ — {bs['count']} צ'קים נשמרו</div>"
-            f"<div style='font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);"
+            f"<div style='font-size:10px;font-weight:600;color:rgba(222,197,153,0.55);"
             f"margin-bottom:14px;'>שכר טרחה {bs['rate_val']:.2f}% {bs['rate_basis']}</div>"
             # שלושה KPI
             f"<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;'>"
@@ -1174,8 +1098,8 @@ def render_add_check_form():
             f"<div style='background:rgba(255,255,255,0.12);border-radius:16px;"
             f"padding:12px 8px;text-align:center;'>"
             f"<div style='font-size:9px;font-weight:700;letter-spacing:1px;"
-            f"text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:4px;'>סה\"כ</div>"
-            f"<div style='font-size:1.05rem;font-weight:900;color:#fff;"
+            f"text-transform:uppercase;color:rgba(222,197,153,0.60);margin-bottom:4px;'>סה\"כ</div>"
+            f"<div style='font-size:1.05rem;font-weight:900;color:#fff1e0;"
             f"letter-spacing:-0.5px;direction:ltr;'>{total_str}</div></div>"
             # שכר טרחה
             f"<div style='background:rgba(255,60,60,0.22);border-radius:16px;"
@@ -1247,7 +1171,7 @@ def render_add_check_form():
         with se:
             active_m = cur_basis == "חודשי"
             st.markdown(
-                f"<div style='font-size:0.75rem;color:rgba(244,245,248,0.5);"
+                f"<div style='font-size:0.75rem;color:rgba(242,232,217,0.5);"
                 f"text-align:right;margin-bottom:2px;'>בסיס</div>",
                 unsafe_allow_html=True)
             if st.button(f"{'✓ ' if active_m else ''}חודשי",
@@ -1280,17 +1204,17 @@ def render_add_check_form():
             fee, days = calc_fee(amount, due, single_rate, single_basis)
             net = amount - fee
             st.markdown(
-                f"<div style='background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);"
+                f"<div style='background:rgba(4,20,36,0.65);border:1px solid rgba(229,154,101,0.35);"
                 f"border-radius:18px;padding:14px 16px;backdrop-filter:blur(14px);"
                 f"-webkit-backdrop-filter:blur(14px);"
                 f"margin:8px 0;display:flex;justify-content:space-between;'>"
                 f"<div style='text-align:center;'>"
-                f"<div style='font-size:11px;font-weight:700;color:rgba(244,245,248,0.6);'>{days} ימים</div>"
-                f"<div style='font-weight:900;font-size:1rem;color:#FF6FA5;direction:ltr;'>{fmt_ils(fee)}</div>"
-                f"<div style='font-size:11px;color:rgba(244,245,248,0.6);'>שכ\u05dcט</div></div>"
+                f"<div style='font-size:11px;font-weight:700;color:rgba(242,232,217,0.6);'>{days} ימים</div>"
+                f"<div style='font-weight:900;font-size:1rem;color:#e59a65;direction:ltr;'>{fmt_ils(fee)}</div>"
+                f"<div style='font-size:11px;color:rgba(242,232,217,0.6);'>שכ\u05dcט</div></div>"
                 f"<div style='text-align:center;'>"
                 f"<div style='font-size:11px;font-weight:700;color:rgba(79,227,161,0.9);'>נטו מזומן</div>"
-                f"<div style='font-weight:900;font-size:1.2rem;color:#4FE3A1;direction:ltr;'>{fmt_ils(net)}</div>"
+                f"<div style='font-weight:900;font-size:1.2rem;color:#7de8a0;direction:ltr;'>{fmt_ils(net)}</div>"
                 f"<div style='font-size:11px;color:rgba(79,227,161,0.9);'>מתקבל</div></div>"
                 f"</div>",
                 unsafe_allow_html=True
@@ -1379,20 +1303,20 @@ def render_add_check_form():
             .batch-table { width:100%; border-collapse:separate; border-spacing:0 4px; direction:rtl; }
             .batch-table th {
                 font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
-                color:rgba(244,245,248,0.5); padding:4px 10px; text-align:right;
+                color:rgba(242,232,217,0.5); padding:4px 10px; text-align:right;
             }
             .batch-table td {
-                background:rgba(255,255,255,0.07); padding:11px 12px;
-                font-size:0.95rem; font-weight:700; color:#F4F5F8;
-                border-top:1px solid rgba(255,255,255,0.10);
-                border-bottom:1px solid rgba(255,255,255,0.10);
+                background:rgba(4,20,36,0.60); padding:11px 12px;
+                font-size:0.95rem; font-weight:700; color:#f2e8d9;
+                border-top:1px solid rgba(4,20,36,0.70);
+                border-bottom:1px solid rgba(4,20,36,0.70);
             }
-            .batch-table td:first-child { border-radius:14px 0 0 14px; border-right:1px solid rgba(255,255,255,0.10); }
-            .batch-table td:last-child  { border-radius:0 14px 14px 0; border-left:1px solid rgba(255,255,255,0.10); text-align:left; direction:ltr; }
-            .batch-table .num-col { color:#9D8BFF; font-size:0.82rem; font-weight:800; }
-            .batch-table .date-col { color:#FFC857; cursor:pointer; }
-            .batch-table .amt-col  { color:#4FE3A1; font-family:'Outfit',sans-serif; letter-spacing:-0.3px; cursor:pointer; }
-            .edit-panel { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+            .batch-table td:first-child { border-radius:14px 0 0 14px; border-right:1px solid rgba(4,20,36,0.70); }
+            .batch-table td:last-child  { border-radius:0 14px 14px 0; border-left:1px solid rgba(4,20,36,0.70); text-align:left; direction:ltr; }
+            .batch-table .num-col { color:#e59a65; font-size:0.82rem; font-weight:800; }
+            .batch-table .date-col { color:#f0c080; cursor:pointer; }
+            .batch-table .amt-col  { color:#7de8a0; font-family:'Outfit',sans-serif; letter-spacing:-0.3px; cursor:pointer; }
+            .edit-panel { background:rgba(255,255,255,0.06); border:1px solid rgba(229,154,101,0.25);
                 border-radius:16px; padding:12px 14px; margin:2px 0 6px; }
             </style>
             """, unsafe_allow_html=True)
@@ -1430,7 +1354,7 @@ def render_add_check_form():
             st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
             st.markdown(
                 "<div style='font-size:11px;font-weight:700;letter-spacing:1px;"
-                "color:rgba(244,245,248,0.45);text-align:right;margin-bottom:6px;'>"
+                "color:rgba(242,232,217,0.45);text-align:right;margin-bottom:6px;'>"
                 "לחץ על שורה לעריכה 👇</div>",
                 unsafe_allow_html=True
             )
@@ -1467,7 +1391,7 @@ def render_add_check_form():
                     # ── תאריך ──
                     st.markdown(
                         "<div style='font-size:10px;font-weight:700;letter-spacing:1px;"
-                        "text-transform:uppercase;color:#FFC857;margin-bottom:4px;'>📅 תאריך</div>",
+                        "text-transform:uppercase;color:#f0c080;margin-bottom:4px;'>📅 תאריך</div>",
                         unsafe_allow_html=True
                     )
                     dcol1, dcol2 = st.columns(2)
@@ -1485,7 +1409,7 @@ def render_add_check_form():
                     # ── סכום ──
                     st.markdown(
                         "<div style='font-size:10px;font-weight:700;letter-spacing:1px;"
-                        "text-transform:uppercase;color:#4FE3A1;margin:10px 0 4px;'>₪ סכום</div>",
+                        "text-transform:uppercase;color:#7de8a0;margin:10px 0 4px;'>₪ סכום</div>",
                         unsafe_allow_html=True
                     )
                     new_amt = st.number_input(
@@ -1566,13 +1490,13 @@ def render_add_check_form():
 # ─────────────────────────────────────────────
 # פלטת צבעי פסטל ללקוחות
 CLIENT_PALETTE = [
-    ("rgba(157,139,255,0.16)", "rgba(189,176,255,0.95)"),
-    ("rgba(79,227,161,0.16)",  "rgba(143,239,196,0.95)"),
-    ("rgba(255,111,165,0.16)", "rgba(255,166,199,0.95)"),
-    ("rgba(255,200,87,0.16)",  "rgba(255,219,143,0.95)"),
-    ("rgba(77,141,255,0.16)",  "rgba(155,193,255,0.95)"),
-    ("rgba(95,224,224,0.16)",  "rgba(160,239,239,0.95)"),
-    ("rgba(232,140,184,0.16)", "rgba(245,186,216,0.95)"),
+    ("rgba(229,154,101,0.18)", "rgba(240,192,128,0.95)"),
+    ("rgba(100,180,130,0.14)", "rgba(150,220,170,0.95)"),
+    ("rgba(180,120,80,0.18)",  "rgba(222,197,153,0.95)"),
+    ("rgba(140,100,180,0.14)", "rgba(190,160,220,0.95)"),
+    ("rgba(80,150,200,0.14)",  "rgba(140,200,230,0.95)"),
+    ("rgba(200,130,80,0.16)",  "rgba(235,185,130,0.95)"),
+    ("rgba(100,160,120,0.14)", "rgba(160,210,180,0.95)"),
 ]
 
 def render_clients():
@@ -1610,9 +1534,9 @@ def render_clients():
                 with cc1:
                     st.markdown(f"""
                     <div style="padding:6px 0;">
-                        <span style="font-family:'Outfit';font-weight:800;direction:ltr;font-size:1.05rem;color:#F4F5F8;">
+                        <span style="font-family:'Outfit';font-weight:800;direction:ltr;font-size:1.05rem;color:#f2e8d9;">
                             {fmt_ils(ch['amount'])}</span><br>
-                        <span style="font-size:.8rem;color:rgba(255,255,255,0.75);">
+                        <span style="font-size:.8rem;color:rgba(222,197,153,0.75);">
                             פירעון: {fmt_date(ch['due_date'])}{remind_str}</span>
                         <span class="pill" style="background:{color}22;color:{color};
                             border:1px solid {color}66;">{ch['status']}</span>
@@ -1643,8 +1567,8 @@ def render_calculator():
         "<div style='display:flex;align-items:center;gap:10px;margin:6px 0 12px;'>"
         "<div style='width:3px;height:22px;border-radius:2px;"
         "background:linear-gradient(180deg,#4D8DFF,#9D8BFF);flex-shrink:0;'></div>"
-        "<span style='font-family:Outfit,sans-serif;font-size:1.1rem;font-weight:800;"
-        "color:#F4F5F8;letter-spacing:-0.3px;'>מחשבון פריטה</span>"
+        "<span style='font-family:Comfortaa,sans-serif;font-size:1.1rem;font-weight:800;"
+        "color:#f2e8d9;letter-spacing:-0.3px;'>מחשבון פריטה</span>"
         "</div>",
         unsafe_allow_html=True
     )
@@ -1691,13 +1615,13 @@ def render_calculator():
     di, bm, by_ = st.columns([2, 1, 1])
     with di:
         st.markdown(
-            f"<div style='background:rgba(157,139,255,0.16);border:1px solid rgba(157,139,255,0.30);"
+            f"<div style='background:rgba(140,79,43,0.22);border:1px solid rgba(229,154,101,0.35);"
             f"border-radius:14px;padding:8px;text-align:center;"
             f"backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);'>"
-            f"<div style='font-size:9px;font-weight:700;color:rgba(244,245,248,0.5);"
+            f"<div style='font-size:9px;font-weight:700;color:rgba(242,232,217,0.5);"
             f"text-transform:uppercase;letter-spacing:1px;'>ימי זיכוי</div>"
-            f"<div style='font-family:Outfit,sans-serif;font-size:1.7rem;font-weight:900;"
-            f"color:#9D8BFF;letter-spacing:-1px;line-height:1;'>{days}</div>"
+            f"<div style='font-family:Comfortaa,sans-serif;font-size:1.7rem;font-weight:900;"
+            f"color:#e59a65;letter-spacing:-1px;line-height:1;'>{days}</div>"
             f"</div>", unsafe_allow_html=True)
     with bm:
         st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
@@ -1719,13 +1643,13 @@ def render_calculator():
     rr1, rr2 = st.columns([3, 1])
     with rr1:
         st.markdown(
-            f"<div style='background:rgba(255,200,87,0.14);border:1px solid rgba(255,200,87,0.30);"
+            f"<div style='background:rgba(192,122,69,0.20);border:1px solid rgba(229,154,101,0.35);"
             f"border-radius:16px;padding:10px 14px;display:flex;align-items:center;"
             f"justify-content:space-between;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);'>"
-            f"<span style='font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(244,245,248,0.55);"
+            f"<span style='font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(242,232,217,0.55);"
             f"text-transform:uppercase;'>שכ\"ט קבוע ({basis})</span>"
-            f"<span style='font-family:Outfit,sans-serif;font-size:1.6rem;font-weight:900;"
-            f"color:#FFC857;letter-spacing:-0.5px;'>{rate_val:.2f}%</span>"
+            f"<span style='font-family:Comfortaa,sans-serif;font-size:1.6rem;font-weight:900;"
+            f"color:#f0c080;letter-spacing:-0.5px;'>{rate_val:.2f}%</span>"
             f"</div>", unsafe_allow_html=True)
     with rr2:
         st.write("")
@@ -1749,10 +1673,10 @@ def render_calculator():
     net = amount - fee
 
     if days <= 0:
-        st.markdown("<div style='background:rgba(255,111,165,0.16);border:1px solid rgba(255,111,165,0.30);"
+        st.markdown("<div style='background:rgba(140,79,43,0.25);border:1px solid rgba(229,154,101,0.35);"
                     "border-radius:16px;padding:12px;backdrop-filter:blur(14px);"
                     "-webkit-backdrop-filter:blur(14px);"
-                    "text-align:center;font-size:13px;font-weight:700;color:#FF9FC2;"
+                    "text-align:center;font-size:13px;font-weight:700;color:#f0a060;"
                     "margin:8px 0;'>⚠️ תאריך הפירעון עבר — אין ימי זיכוי.</div>",
                     unsafe_allow_html=True)
 
