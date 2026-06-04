@@ -501,7 +501,7 @@ def inject_css():
         font-family: 'Outfit', sans-serif !important;
     }
 
-    /* ─── שדות קלט ─── */
+    /* ─── שדות קלט — גובה קומפקטי ─── */
     .stTextInput input,
     .stNumberInput input,
     .stDateInput input,
@@ -512,11 +512,16 @@ def inject_css():
         background-color: rgba(20,23,30,0.65) !important;
         -webkit-text-fill-color: #F4F5F8 !important;
         caret-color: var(--accent-blue) !important;
-        border-radius: 14px !important;
+        border-radius: 12px !important;
         border: 1px solid var(--glass-border) !important;
         font-weight: 600 !important;
-        font-size: 1rem !important;
+        font-size: 0.95rem !important;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+        min-height: 0 !important;
+        height: 38px !important;
     }
+    /* wrapper של שדה */
     .stTextInput div[data-baseweb="input"],
     .stNumberInput div[data-baseweb="input"],
     .stDateInput div[data-baseweb="input"],
@@ -524,13 +529,30 @@ def inject_css():
     div[data-baseweb="select"] > div {
         background-color: rgba(20,23,30,0.65) !important;
         border: 1px solid var(--glass-border) !important;
-        border-radius: 14px !important;
+        border-radius: 12px !important;
+        min-height: 0 !important;
     }
+    /* label מעל שדה — קטן יותר */
+    .stTextInput label, .stNumberInput label,
+    .stDateInput label, .stSelectbox label {
+        font-size: 0.78rem !important;
+        margin-bottom: 2px !important;
+        padding-bottom: 0 !important;
+    }
+    /* selectbox */
+    div[data-baseweb="select"] > div {
+        min-height: 38px !important;
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+    }
+
     /* כפתורי +/- של number_input */
     .stNumberInput button {
         background-color: rgba(20,23,30,0.65) !important;
         color: #F4F5F8 !important;
         border: 1px solid var(--glass-border) !important;
+        padding: 2px 6px !important;
+        min-height: 0 !important;
     }
     .stNumberInput button svg { fill: #F4F5F8 !important; }
     div[data-baseweb="select"] div { color: #F4F5F8 !important; font-weight: 600 !important; }
@@ -544,13 +566,13 @@ def inject_css():
     .stSelectbox label, .stNumberInput label,
     .stTextInput label, .stDateInput label,
     .stCheckbox label { text-align: right !important; display: block !important; }
-    ul[role="listbox"], div[data-baseweb="popover"] {
+    ul[role="listbox"], div[data-baseweb="popover"]:not([data-baseweb="calendar"]) {
         background-color: var(--bg-dark-2) !important;
         border: 1px solid var(--glass-border) !important;
         border-radius: 16px !important;
     }
     ul[role="listbox"] li { color: var(--text-primary) !important; font-weight: 600 !important; }
-    label { color: var(--text-secondary) !important; font-weight: 700 !important; font-size: 0.85rem !important; }
+    label { color: var(--text-secondary) !important; font-weight: 700 !important; font-size: 0.82rem !important; }
 
     /* ─── לוח שנה (date picker) — כיסוי מלא ─── */
     div[data-baseweb="popover"],
@@ -689,7 +711,17 @@ def inject_css():
     details summary { color: var(--text-primary) !important; font-weight: 700 !important; }
 
     /* ─── checkbox ─── */
-    .stCheckbox label { color: var(--text-primary) !important; font-weight: 700 !important; font-size: 0.95rem !important; }
+    .stCheckbox label { color: var(--text-primary) !important; font-weight: 700 !important; font-size: 0.88rem !important; }
+
+    /* ─── ריווח אנכי קומפקטי ─── */
+    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"],
+    div[data-testid="stVerticalBlock"] > div {
+        gap: 0 !important;
+    }
+    .element-container { margin-bottom: 6px !important; }
+    div[data-testid="column"] .element-container { margin-bottom: 4px !important; }
+    /* הורדת padding מעל/מתחת ל-stMarkdown */
+    div[data-testid="stMarkdownContainer"] { margin-bottom: 2px !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1179,7 +1211,7 @@ def render_add_check_form():
     # מסלול א׳ — צ'ק בודד
     # ════════════════════
     if mode == "single":
-        # סכום + תאריך — חצי-חצי
+        # שורה 1: סכום + תאריך
         sa, sb = st.columns(2)
         with sa:
             amount = st.number_input("סכום (₪)", min_value=0.0, step=100.0,
@@ -1189,31 +1221,36 @@ def render_add_check_form():
                                 value=date.today() + timedelta(days=30),
                                 min_value=date.today(), key="add_due")
 
-        # סטטוס + תזכורת — שורה אחת
-        sc, sd = st.columns([3, 2])
+        # שורה 2: סטטוס + שכ"ט %
+        sc, sd = st.columns(2)
         with sc:
             status = st.selectbox("סטטוס", STATUSES, key="add_status")
         with sd:
-            use_remind = st.checkbox("תזכורת", value=False, key="add_use_remind")
-        remind = None
+            single_rate = st.number_input("שכ\"ט (%)", min_value=0.0, max_value=100.0,
+                                          value=float(st.session_state.get("fixed_rate", 12.0)),
+                                          step=0.1, format="%.2f", key="single_rate")
+
+        # שורה 3: בסיס (חודשי/שנתי) + תזכורת — כפתורים זעירים
+        se, sf = st.columns(2)
+        with se:
+            single_basis = st.radio("בסיס", ["חודשי", "שנתי"],
+                                    index=["חודשי","שנתי"].index(
+                                        st.session_state.get("rate_basis","שנתי"))
+                                          if st.session_state.get("rate_basis","שנתי") in ["חודשי","שנתי"] else 1,
+                                    key="single_basis", horizontal=True,
+                                    label_visibility="collapsed")
+        with sf:
+            use_remind = st.checkbox("תזכורת 🔔", value=False, key="add_use_remind")
+
+        st.session_state.fixed_rate = single_rate
+        st.session_state.rate_basis = single_basis
+
         if use_remind:
             remind = st.date_input("תאריך תזכורת",
                                    value=date.today() + timedelta(days=30),
                                    min_value=date.today(), key="add_remind")
-
-        # שכר טרחה — שורה אחת
-        ra, rb = st.columns(2)
-        with ra:
-            single_rate = st.number_input("שכר טרחה (%)", min_value=0.0, max_value=100.0,
-                                          value=float(st.session_state.get("fixed_rate", 12.0)),
-                                          step=0.1, format="%.2f", key="single_rate")
-        with rb:
-            single_basis = st.radio("בסיס", ["חודשי", "שנתי"],
-                                    index=["חודשי","שנתי"].index(
-                                        st.session_state.get("rate_basis","שנתי")) if st.session_state.get("rate_basis","שנתי") in ["חודשי","שנתי"] else 1,
-                                    key="single_basis", horizontal=True)
-        st.session_state.fixed_rate = single_rate
-        st.session_state.rate_basis = single_basis
+        else:
+            remind = None
 
         # ── תצוגה חיה ──
         if amount > 0:
@@ -1253,32 +1290,39 @@ def render_add_check_form():
     elif mode == "batch":
         import pandas as pd
 
-        amount_base = st.number_input("סכום לכל צ'ק (₪)", min_value=0.0, step=100.0,
-                                      format="%.0f", key="batch_amount")
-        b1, b2, b3 = st.columns(3)
-        with b1:
+        # שורה 1: סכום + תאריך ראשון
+        bx, by = st.columns(2)
+        with bx:
+            amount_base = st.number_input("סכום (₪)", min_value=0.0, step=100.0,
+                                          format="%.0f", key="batch_amount")
+        with by:
             first_date = st.date_input("תאריך ראשון",
                                        value=date.today() + timedelta(days=30),
                                        min_value=date.today(), key="batch_first")
-        with b2:
-            count = st.number_input("מספר צ'קים", min_value=2, max_value=36,
-                                    value=4, step=1, key="batch_count", format="%d")
-        with b3:
-            gap = st.number_input("קפיצה (ימים)", min_value=1, max_value=90,
-                                  value=30, step=1, key="batch_gap", format="%d")
-        status = st.selectbox("סטטוס", STATUSES, key="batch_status")
 
-        # ── שכר טרחה ──
+        # שורה 2: כמות + קפיצה + סטטוס
+        b1, b2, b3 = st.columns(3)
+        with b1:
+            count = st.number_input("כמות", min_value=2, max_value=36,
+                                    value=4, step=1, key="batch_count", format="%d")
+        with b2:
+            gap = st.number_input("קפיצה (י')", min_value=1, max_value=90,
+                                  value=30, step=1, key="batch_gap", format="%d")
+        with b3:
+            status = st.selectbox("סטטוס", STATUSES, key="batch_status")
+
+        # שורה 3: שכ"ט + בסיס
         ba, bb = st.columns(2)
         with ba:
-            batch_rate = st.number_input("שכר טרחה (%)", min_value=0.0, max_value=100.0,
+            batch_rate = st.number_input("שכ\"ט (%)", min_value=0.0, max_value=100.0,
                                          value=float(st.session_state.get("fixed_rate", 12.0)),
                                          step=0.1, format="%.2f", key="batch_rate")
         with bb:
             batch_basis = st.radio("בסיס", ["חודשי", "שנתי"],
                                    index=["חודשי","שנתי"].index(
                                        st.session_state.get("rate_basis","שנתי")) if st.session_state.get("rate_basis","שנתי") in ["חודשי","שנתי"] else 1,
-                                   key="batch_basis", horizontal=True)
+                                   key="batch_basis", horizontal=True,
+                                   label_visibility="collapsed")
         st.session_state.fixed_rate = batch_rate
         st.session_state.rate_basis = batch_basis
 
