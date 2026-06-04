@@ -446,7 +446,7 @@ def inject_css():
     ul[role="listbox"] li { color: #000 !important; font-weight: 600 !important; }
     label { color: #000 !important; font-weight: 700 !important; font-size: 0.85rem !important; }
 
-    /* ─── רדיו ריבית ─── */
+    /* ─── רדיו שכר טרחה ─── */
     div[data-testid="stRadio"] > div { gap: 10px !important; justify-content: center !important; }
     div[data-testid="stRadio"] label {
         background: #F0F0F5 !important;
@@ -520,9 +520,9 @@ def fmt_ils(x):
     return f"₪{x:,.0f}"
 
 def calc_fee(amount, due_date, rate_val, rate_basis):
-    """חישוב עמלת פריטה"""
+    """חישוב שכר טרחה"""
     days = max((due_date - date.today()).days + 1, 0)
-    if rate_basis == "חודשית":
+    if rate_basis in ("חודשית", "חודשי"):
         fee = float(amount) * (rate_val / 100.0) * (days / 30.0)
     else:
         fee = float(amount) * (rate_val / 100.0) * (days / 365.0)
@@ -674,6 +674,7 @@ def render_home_screen():
     )
 
     render_kpi()
+    render_home_calendar()
 
     st.markdown('<div class="home-nav-btn home-nav-green">', unsafe_allow_html=True)
     if st.button("🧮  מחשבון פריטה", key="go_calc", use_container_width=True):
@@ -686,6 +687,107 @@ def render_home_screen():
         st.session_state.screen = "mgmt"
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
+
+
+def render_home_calendar():
+    """יומן 2 הימים הקרובים עם צ'קים — מסך הבית"""
+    u = current_user()
+    today = date.today()
+
+    # מצא את 2 התאריכים הקרובים ביותר שיש בהם צ'קים
+    with closing(get_conn()) as conn:
+        rows = conn.execute("""
+            SELECT ch.id, ch.amount, ch.due_date, cl.name AS client_name
+            FROM checks ch JOIN clients cl ON cl.id=ch.client_id
+            WHERE cl.username=? AND DATE(ch.due_date) >= DATE(?)
+            ORDER BY ch.due_date
+        """, (u, today.isoformat())).fetchall()
+
+    if not rows:
+        return  # אין צ'קים קרובים בכלל — לא מציגים כלום
+
+    # קיבוץ לפי תאריך
+    from collections import defaultdict
+    by_date = defaultdict(list)
+    for r in rows:
+        by_date[r["due_date"][:10]].append(dict(r))
+
+    # 2 התאריכים הקרובים בלבד
+    upcoming_dates = sorted(by_date.keys())[:2]
+    if not upcoming_dates:
+        return
+
+    # תוויות ימים
+    def day_label(d_str):
+        d = date.fromisoformat(d_str)
+        delta = (d - today).days
+        if delta == 0:   return "היום"
+        if delta == 1:   return "מחר"
+        if delta == 2:   return "מחרתיים"
+        # שמות ימי שבוע בעברית
+        names = ["שני","שלישי","רביעי","חמישי","שישי","שבת","ראשון"]
+        return names[d.weekday()]
+
+    PALETTE = [
+        ("linear-gradient(135deg,#E8E4FF 0%,#D0C8FF 100%)", "#4A3A9A", "#7060CC"),
+        ("linear-gradient(135deg,#FFF3C8 0%,#FFE8A0 100%)", "#6A5000", "#B38A00"),
+    ]
+
+    st.markdown(
+        "<div style='font-size:10px;font-weight:700;letter-spacing:2px;"
+        "text-transform:uppercase;color:rgba(255,255,255,0.55);"
+        "margin:14px 0 8px;text-align:right;'>📅 פירעונות קרובים</div>",
+        unsafe_allow_html=True
+    )
+
+    for i, d_str in enumerate(upcoming_dates):
+        checks_list = by_date[d_str]
+        day_total   = sum(c["amount"] for c in checks_list)
+        cnt         = len(checks_list)
+        label       = day_label(d_str)
+        bg, txt_dark, txt_accent = PALETTE[i % len(PALETTE)]
+        d_fmt       = fmt_date(d_str)
+        key_toggle  = f"cal_open_{d_str}"
+
+        # כרטיס ראשי — תמיד גלוי
+        st.markdown(
+            f"<div style='background:{bg};border-radius:20px;"
+            f"padding:14px 18px;margin-bottom:6px;'>"
+            f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
+            f"<div>"
+            f"<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;"
+            f"text-transform:uppercase;color:{txt_accent};margin-bottom:2px;'>{label}</div>"
+            f"<div style='font-size:0.82rem;font-weight:600;color:{txt_dark};opacity:0.7;'>{d_fmt}</div>"
+            f"</div>"
+            f"<div style='text-align:left;'>"
+            f"<div style='font-size:1.15rem;font-weight:900;color:{txt_dark};"
+            f"letter-spacing:-0.5px;direction:ltr;'>{fmt_ils(day_total)}</div>"
+            f"<div style='font-size:0.78rem;font-weight:600;color:{txt_accent};text-align:center;'>"
+            f"{cnt} צ'קים</div>"
+            f"</div></div></div>",
+            unsafe_allow_html=True
+        )
+
+        # כפתור פרטים
+        expanded = st.session_state.get(key_toggle, False)
+        lbl_btn  = "▲ סגור" if expanded else f"▼ מי ומה ({cnt})"
+        if st.button(lbl_btn, key=f"cal_btn_{d_str}", use_container_width=True):
+            st.session_state[key_toggle] = not expanded
+            st.rerun()
+
+        if expanded:
+            for ch in checks_list:
+                st.markdown(
+                    f"<div style='background:rgba(255,255,255,0.55);border-radius:14px;"
+                    f"padding:10px 14px;margin-bottom:4px;display:flex;"
+                    f"justify-content:space-between;align-items:center;'>"
+                    f"<span style='font-weight:800;font-size:0.9rem;color:#000;'>{ch['client_name']}</span>"
+                    f"<span style='font-weight:900;font-size:0.9rem;color:#000;"
+                    f"direction:ltr;'>{fmt_ils(ch['amount'])}</span>"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
+        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────
@@ -799,25 +901,55 @@ def render_add_check_form():
     # הצגת סיכום אחרי שמירת מקבץ
     if "batch_summary" in st.session_state and st.session_state.batch_summary:
         bs = st.session_state.batch_summary
+        import pandas as pd
+
+        total_checks_amount = sum(
+            float(r["סכום"].replace("₪","").replace(",","")) for r in bs["rows"]
+        )
+        fee_str   = fmt_ils(bs["total_fee"])
+        net_str   = fmt_ils(bs["total_net"])
+        total_str = fmt_ils(total_checks_amount)
+
+        # כותרת סיכום
         st.markdown(
-            f"<div style='background:#D6F5E0;border-radius:22px;padding:18px 20px;margin-bottom:10px;'>"
-            f"<div style='font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;"
-            f"color:#2A7A4A;margin-bottom:10px;'>✅ {bs['count']} צ\'קים נשמרו | ריבית {bs['rate_val']:.2f}% {bs['rate_basis']}</div>",
+            f"<div style='background:linear-gradient(135deg,#1A5A2A 0%,#2A7A4A 100%);"
+            f"border-radius:24px;padding:20px 22px 16px;margin-bottom:6px;'>"
+            f"<div style='font-size:10px;font-weight:700;letter-spacing:2px;"
+            f"text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px;'>"
+            f"✅ סיכום מקבץ — {bs['count']} צ'קים נשמרו</div>"
+            f"<div style='font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);"
+            f"margin-bottom:14px;'>שכר טרחה {bs['rate_val']:.2f}% {bs['rate_basis']}</div>"
+            # שלושה KPI
+            f"<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;'>"
+            # סה"כ צ'קים
+            f"<div style='background:rgba(255,255,255,0.12);border-radius:16px;"
+            f"padding:12px 8px;text-align:center;'>"
+            f"<div style='font-size:9px;font-weight:700;letter-spacing:1px;"
+            f"text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:4px;'>סה\"כ</div>"
+            f"<div style='font-size:1.05rem;font-weight:900;color:#fff;"
+            f"letter-spacing:-0.5px;direction:ltr;'>{total_str}</div></div>"
+            # שכר טרחה
+            f"<div style='background:rgba(255,60,60,0.22);border-radius:16px;"
+            f"padding:12px 8px;text-align:center;'>"
+            f"<div style='font-size:9px;font-weight:700;letter-spacing:1px;"
+            f"text-transform:uppercase;color:rgba(255,180,180,0.8);margin-bottom:4px;'>שכ\"ט</div>"
+            f"<div style='font-size:1.05rem;font-weight:900;color:#FFB3B3;"
+            f"letter-spacing:-0.5px;direction:ltr;'>{fee_str}</div></div>"
+            # נטו ללקוח
+            f"<div style='background:rgba(80,255,160,0.15);border-radius:16px;"
+            f"padding:12px 8px;text-align:center;'>"
+            f"<div style='font-size:9px;font-weight:700;letter-spacing:1px;"
+            f"text-transform:uppercase;color:rgba(180,255,210,0.8);margin-bottom:4px;'>ללקוח</div>"
+            f"<div style='font-size:1.05rem;font-weight:900;color:#B3FFDA;"
+            f"letter-spacing:-0.5px;direction:ltr;'>{net_str}</div></div>"
+            f"</div></div>",
             unsafe_allow_html=True
         )
-        import pandas as pd
+
+        # טבלת פירוט
         df_sum = pd.DataFrame(bs["rows"])
         st.dataframe(df_sum, use_container_width=True, hide_index=True)
-        fee_str = fmt_ils(bs["total_fee"])
-        net_str = fmt_ils(bs["total_net"])
-        st.markdown(
-            "<div style='display:flex;justify-content:space-between;"
-            "padding:10px 4px 4px;font-weight:800;font-size:1rem;color:#000;'>"
-            f"<span>סהכ עמלות: {fee_str}</span>"
-            f"<span>סהכ נטו: {net_str}</span>"
-            "</div></div>",
-            unsafe_allow_html=True
-        )
+
         if st.button("✖ סגור סיכום", key="close_summary"):
             st.session_state.batch_summary = None
             st.rerun()
@@ -856,17 +988,17 @@ def render_add_check_form():
                                    min_value=date.today(), key="add_remind")
         status = st.selectbox("סטטוס", STATUSES, key="add_status")
 
-        # ── ריבית ──
+        # ── שכר טרחה ──
         st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
         ra, rb = st.columns(2)
         with ra:
-            single_rate = st.number_input("ריבית (%)", min_value=0.0, max_value=100.0,
+            single_rate = st.number_input("שכר טרחה (%)", min_value=0.0, max_value=100.0,
                                           value=float(st.session_state.get("fixed_rate", 12.0)),
                                           step=0.1, format="%.2f", key="single_rate")
         with rb:
-            single_basis = st.radio("בסיס", ["חודשית", "שנתית"],
-                                    index=["חודשית","שנתית"].index(
-                                        st.session_state.get("rate_basis","שנתית")),
+            single_basis = st.radio("בסיס", ["חודשי", "שנתי"],
+                                    index=["חודשי","שנתי"].index(
+                                        st.session_state.get("rate_basis","שנתי")) if st.session_state.get("rate_basis","שנתי") in ["חודשי","שנתי"] else 1,
                                     key="single_basis", horizontal=True)
         # שמירה בsession לשימוש במחשבון
         st.session_state.fixed_rate = single_rate
@@ -882,7 +1014,7 @@ def render_add_check_form():
                 f"<div style='text-align:center;'>"
                 f"<div style='font-size:11px;font-weight:700;color:#8A6A00;'>{days} ימים</div>"
                 f"<div style='font-weight:900;font-size:1rem;color:#000;'>{fmt_ils(fee)}</div>"
-                f"<div style='font-size:11px;color:#8A6A00;'>עמלה</div></div>"
+                f"<div style='font-size:11px;color:#8A6A00;'>שכ\u05dcט</div></div>"
                 f"<div style='text-align:center;'>"
                 f"<div style='font-size:11px;font-weight:700;color:#2A7A4A;'>נטו מזומן</div>"
                 f"<div style='font-weight:900;font-size:1.2rem;color:#000;'>{fmt_ils(net)}</div>"
@@ -923,16 +1055,16 @@ def render_add_check_form():
                                   value=30, step=1, key="batch_gap", format="%d")
         status = st.selectbox("סטטוס", STATUSES, key="batch_status")
 
-        # ── ריבית ──
+        # ── שכר טרחה ──
         ba, bb = st.columns(2)
         with ba:
-            batch_rate = st.number_input("ריבית (%)", min_value=0.0, max_value=100.0,
+            batch_rate = st.number_input("שכר טרחה (%)", min_value=0.0, max_value=100.0,
                                          value=float(st.session_state.get("fixed_rate", 12.0)),
                                          step=0.1, format="%.2f", key="batch_rate")
         with bb:
-            batch_basis = st.radio("בסיס", ["חודשית", "שנתית"],
-                                   index=["חודשית","שנתית"].index(
-                                       st.session_state.get("rate_basis","שנתית")),
+            batch_basis = st.radio("בסיס", ["חודשי", "שנתי"],
+                                   index=["חודשי","שנתי"].index(
+                                       st.session_state.get("rate_basis","שנתי")) if st.session_state.get("rate_basis","שנתי") in ["חודשי","שנתי"] else 1,
                                    key="batch_basis", horizontal=True)
         st.session_state.fixed_rate = batch_rate
         st.session_state.rate_basis = batch_basis
@@ -1018,7 +1150,7 @@ def render_add_check_form():
                     add_checks_batch(cid, amounts, due_dates, status)
                     saved = len(amounts)
 
-                    # ── סיכום עמלות לפי ריבית קבועה ──
+                    # ── סיכום שכר טרחה לפי שיעור קבוע ──
                     rate_val   = st.session_state.get("fixed_rate", 12.0)
                     rate_basis = st.session_state.get("rate_basis", "שנתית")
                     today = date.today()
@@ -1027,7 +1159,7 @@ def render_add_check_form():
                     total_net = 0.0
                     for amt, dd in zip(amounts, due_dates):
                         days = max((dd - today).days + 1, 0)
-                        if rate_basis == "חודשית":
+                        if rate_basis in ("חודשית", "חודשי"):
                             fee = float(amt) * (rate_val / 100.0) * (days / 30.0)
                         else:
                             fee = float(amt) * (rate_val / 100.0) * (days / 365.0)
@@ -1037,7 +1169,7 @@ def render_add_check_form():
                         summary_rows.append({
                             "תאריך": fmt_date(dd),
                             "סכום": fmt_ils(amt),
-                            "עמלה": fmt_ils(fee),
+                            "שכר טרחה": fmt_ils(fee),
                             "נטו": fmt_ils(net),
                         })
 
@@ -1128,7 +1260,7 @@ def render_calculator():
     st.markdown('<div class="neon-bar-right"></div>', unsafe_allow_html=True)
 
     if "fixed_rate"    not in st.session_state: st.session_state.fixed_rate    = 12.0
-    if "rate_basis"    not in st.session_state: st.session_state.rate_basis    = "שנתית"
+    if "rate_basis"    not in st.session_state: st.session_state.rate_basis    = "שנתי"
     if "rate_edit_open" not in st.session_state: st.session_state.rate_edit_open = False
 
     checks  = get_checks()
@@ -1172,9 +1304,9 @@ def render_calculator():
 
     st.markdown("<div style='text-align:center;font-size:11px;font-weight:700;"
                 "letter-spacing:1.5px;color:#8A8A93;text-transform:uppercase;"
-                "margin-bottom:8px;'>סוג הריבית</div>", unsafe_allow_html=True)
-    basis = st.radio("סוג הריבית", ["חודשית", "שנתית"],
-                     index=["חודשית", "שנתית"].index(st.session_state.rate_basis),
+                "margin-bottom:8px;'>בסיס שכר הטרחה</div>", unsafe_allow_html=True)
+    basis = st.radio("בסיס שכר הטרחה", ["חודשי", "שנתי"],
+                     index=["חודשי", "שנתי"].index(st.session_state.rate_basis) if st.session_state.rate_basis in ["חודשי","שנתי"] else 1,
                      horizontal=True, key="basis_radio", label_visibility="collapsed")
     st.session_state.rate_basis = basis
 
@@ -1184,25 +1316,25 @@ def render_calculator():
         st.markdown(
             f"<div style='background:#FFF3C8;border-radius:22px;padding:16px;text-align:center;margin-bottom:0;'>"
             f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:#8A6A00;"
-            f"text-transform:uppercase;display:block;margin-bottom:4px;'>ריבית קבועה ({basis})</span>"
+            f"text-transform:uppercase;display:block;margin-bottom:4px;'>שכר טרחה קבוע ({basis})</span>"
             f"<span style='font-family:Inter,sans-serif;font-size:2rem;font-weight:900;"
             f"color:#000;letter-spacing:-1px;'>{rate_val:.2f}%</span>"
             f"</div>", unsafe_allow_html=True)
     with r2:
         st.write(""); st.write("")
-        if st.button("✏️ שינוי ריבית", use_container_width=True, key="edit_rate"):
+        if st.button("✏️ שינוי שכר טרחה", use_container_width=True, key="edit_rate"):
             st.session_state.rate_edit_open = not st.session_state.rate_edit_open
 
     if st.session_state.rate_edit_open:
-        new_rate = st.number_input("הזן ריבית (%)", min_value=0.0, max_value=100.0,
+        new_rate = st.number_input("הזן שכר טרחה (%)", min_value=0.0, max_value=100.0,
                                    value=float(rate_val), step=0.1, format="%.2f",
                                    key="rate_input_manual")
-        if st.button("💾 שמירת הריבית", use_container_width=True, key="save_rate"):
+        if st.button("💾 שמירת שכר הטרחה", use_container_width=True, key="save_rate"):
             st.session_state.fixed_rate    = new_rate
             st.session_state.rate_edit_open = False
             st.rerun()
 
-    fee = amount * (rate_val/100.0) * (days/30.0 if basis == "חודשית" else days/365.0)
+    fee = amount * (rate_val/100.0) * (days/30.0 if basis == "חודשי" else days/365.0)
     net = amount - fee
 
     if days <= 0:
@@ -1212,7 +1344,7 @@ def render_calculator():
                     unsafe_allow_html=True)
 
     st.markdown(f"""
-    <div class="calc-out fee"><div class="lbl">סך העמלה שיורדת</div>
+    <div class="calc-out fee"><div class="lbl">סך שכר הטרחה שיורד</div>
         <div class="big">{fmt_ils(fee)}</div></div>
     <div class="calc-out net"><div class="lbl">נטו מזומן שמתקבל</div>
         <div class="big">{fmt_ils(net)}</div></div>
