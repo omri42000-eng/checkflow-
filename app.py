@@ -444,7 +444,7 @@ def inject_css():
     .stCheckbox label { text-align: right !important; display: block !important; }
     ul[role="listbox"], div[data-baseweb="popover"] { background-color: #fff !important; border-radius: 16px !important; }
     ul[role="listbox"] li { color: #000 !important; font-weight: 600 !important; }
-    label { color: #8A8A93 !important; font-weight: 600 !important; font-size: 0.82rem !important; }
+    label { color: #000 !important; font-weight: 700 !important; font-size: 0.85rem !important; }
 
     /* ─── רדיו ריבית ─── */
     div[data-testid="stRadio"] > div { gap: 10px !important; justify-content: center !important; }
@@ -527,17 +527,18 @@ def get_upcoming_checks(days_ahead=2):
     """צ'קים שפורעים היום + הימים הקרובים"""
     u = current_user()
     results = {}
+    today = date.today()
     for i in range(days_ahead + 1):
-        d = date.today() + timedelta(days=i)
+        d = today + timedelta(days=i)
         with closing(get_conn()) as conn:
             rows = conn.execute("""
                 SELECT ch.id, ch.amount, ch.due_date, ch.status, cl.name AS client_name
                 FROM checks ch JOIN clients cl ON cl.id=ch.client_id
-                WHERE cl.username=? AND ch.due_date=?
+                WHERE cl.username=? AND DATE(ch.due_date)=DATE(?)
                 ORDER BY cl.name
             """, (u, d.isoformat())).fetchall()
         if rows:
-            results[d] = rows
+            results[d] = [dict(r) for r in rows]
     return results
 
 
@@ -547,7 +548,7 @@ def add_checks_batch(client_id, amounts, due_dates, status):
         for amt, dd in zip(amounts, due_dates):
             conn.execute(
                 "INSERT INTO checks (client_id,amount,due_date,status,remind_on) VALUES (?,?,?,?,NULL)",
-                (client_id, amt, dd)
+                (client_id, float(amt), dd.isoformat() if hasattr(dd, "isoformat") else str(dd))
             )
 
 
@@ -697,7 +698,7 @@ def render_kpi():
 def render_upcoming_reminder():
     upcoming = get_upcoming_checks(days_ahead=2)
     if not upcoming:
-        return
+        return  # אין פירעונות — לא מציג כלום
 
     day_labels = {
         date.today():                     "היום",
@@ -851,6 +852,8 @@ def render_add_check_form():
 
         if "batch_df" in st.session_state and st.session_state.batch_df is not None:
             st.markdown("**ערוך לפי הצורך — לחץ על תא לשינוי:**")
+            # RTL wrapper
+            st.markdown("<div style='direction:rtl;'>", unsafe_allow_html=True)
             edited = st.data_editor(
                 st.session_state.batch_df,
                 use_container_width=True,
@@ -862,24 +865,44 @@ def render_add_check_form():
                 },
                 key="batch_editor"
             )
+            st.markdown("</div>", unsafe_allow_html=True)
 
-            # כפתורי +/- יום לכל שורה
-            st.markdown("<div style='font-size:12px;color:rgba(255,255,255,0.6);margin:4px 0 8px;'>כוונון תאריך לפי שורה:</div>", unsafe_allow_html=True)
+            # כוונון עדין — כפתורי +/- קומפקטיים
+            st.markdown(
+                "<div style='font-size:11px;font-weight:700;letter-spacing:1px;"
+                "text-transform:uppercase;color:rgba(255,255,255,0.5);"
+                "margin:10px 0 4px;text-align:right;'>כוונון תאריך</div>",
+                unsafe_allow_html=True
+            )
             for idx, row in edited.iterrows():
-                dc1, dc2, dc3, dc4 = st.columns([1, 1, 3, 1])
-                with dc1:
-                    st.markdown(f"<div style='font-size:12px;font-weight:700;padding-top:8px;'>#{int(row['#'])}</div>", unsafe_allow_html=True)
-                with dc2:
-                    if st.button("−", key=f"dm_{idx}"):
-                        d = datetime.fromisoformat(edited.at[idx, "תאריך פירעון"]).date()
+                date_val = str(row["תאריך פירעון"])
+                row_html = (
+                    f"<div style='display:flex;align-items:center;justify-content:space-between;"
+                    f"background:rgba(255,255,255,0.10);border-radius:12px;"
+                    f"padding:6px 10px;margin-bottom:4px;direction:rtl;'>"
+                    f"<span style='font-size:12px;font-weight:800;color:#fff;min-width:24px;'>"
+                    f"#{int(row['#'])}</span>"
+                    f"<span style='font-size:13px;font-weight:700;color:#fff;flex:1;text-align:center;'>"
+                    f"{date_val}</span>"
+                    f"</div>"
+                )
+                st.markdown(row_html, unsafe_allow_html=True)
+                ca, cb = st.columns([1, 1])
+                with ca:
+                    if st.button(f"− יום", key=f"dm_{idx}", use_container_width=True):
+                        try:
+                            d = datetime.fromisoformat(date_val).date()
+                        except Exception:
+                            d = date.today()
                         edited.at[idx, "תאריך פירעון"] = (d - timedelta(days=1)).isoformat()
                         st.session_state.batch_df = edited
                         st.rerun()
-                with dc3:
-                    st.markdown(f"<div style='font-size:13px;font-weight:600;padding-top:8px;text-align:center;'>{row['תאריך פירעון']}</div>", unsafe_allow_html=True)
-                with dc4:
-                    if st.button("+", key=f"dp_{idx}"):
-                        d = datetime.fromisoformat(edited.at[idx, "תאריך פירעון"]).date()
+                with cb:
+                    if st.button(f"+ יום", key=f"dp_{idx}", use_container_width=True):
+                        try:
+                            d = datetime.fromisoformat(date_val).date()
+                        except Exception:
+                            d = date.today()
                         edited.at[idx, "תאריך פירעון"] = (d + timedelta(days=1)).isoformat()
                         st.session_state.batch_df = edited
                         st.rerun()
@@ -1072,44 +1095,9 @@ def main():
     init_db()
     inject_css()
 
-    credentials   = get_all_users_for_auth()
-    authenticator = stauth.Authenticate(
-        credentials,
-        cookie_name="checkflow_auth",
-        key="checkflow_secret_key_2025",
-        cookie_expiry_days=30,
-    )
-
-    # אם אין משתמשים בכלל — מסך הרשמה בלבד
-    with closing(get_conn()) as conn:
-        user_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-
-    auth_status = st.session_state.get("authentication_status")
-
-    if auth_status is not True:
-        render_auth_screen(authenticator)
-        return
-
-    # מחובר
-    st.session_state.current_user = st.session_state.get("username", "admin")
-
-    # סיידבר — רק אייקון אווטאר וכפתור התנתקות
-    with st.sidebar:
-        name = st.session_state.get('name', '')
-        initial = name[0].upper() if name else '?'
-        st.markdown(
-            f"<div style='text-align:center;padding:10px 0;'>"
-            f"<div style='width:52px;height:52px;border-radius:50%;"
-            f"background:#E8E4FF;display:flex;align-items:center;"
-            f"justify-content:center;font-size:1.4rem;font-weight:900;"
-            f"color:#5A5AA3;margin:0 auto;'>{initial}</div>"
-            f"</div>",
-            unsafe_allow_html=True
-        )
-        if st.button("🚪 התנתק", use_container_width=True):
-            for k in ["authentication_status","username","name","current_user","screen"]:
-                st.session_state.pop(k, None)
-            st.rerun()
+    # כניסה חופשית — ללא אימות
+    if "current_user" not in st.session_state:
+        st.session_state.current_user = "admin"
 
     # pushState לתמיכה בכפתור חזור
     screen = st.session_state.get("screen", "home")
