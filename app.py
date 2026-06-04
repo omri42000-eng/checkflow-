@@ -761,7 +761,8 @@ def render_auth_screen(authenticator):
     st.markdown(
         "<div style='height:36px'></div>"
         "<h1 style='text-align:center;font-family:Comfortaa,sans-serif;font-weight:700;"
-        "font-size:3.2rem;letter-spacing:2px;line-height:1;margin-bottom:28px;"
+        "font-size:2.5rem;letter-spacing:0px;line-height:1;margin-bottom:28px;"
+        "white-space:nowrap;"
         "background:linear-gradient(135deg,#f0c080 0%,#e59a65 40%,#8c4f2b 70%,#dec599 100%);"
         "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;"
         "filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.7));'>"
@@ -829,7 +830,8 @@ def render_home_screen():
     st.markdown(
         "<div style='height:36px'></div>"
         "<h1 style='text-align:center;font-family:Comfortaa,sans-serif;font-weight:700;"
-        "font-size:3.2rem;letter-spacing:2px;line-height:1;margin-bottom:28px;"
+        "font-size:2.5rem;letter-spacing:0px;line-height:1;margin-bottom:28px;"
+        "white-space:nowrap;"
         "background:linear-gradient(135deg,#f0c080 0%,#e59a65 40%,#8c4f2b 70%,#dec599 100%);"
         "-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;"
         "filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.7));'>"
