@@ -358,7 +358,7 @@ def inject_css():
 
     /* ─── כפתורים כלליים ─── */
     .stButton > button {
-        border-radius: 16px !important;
+        border-radius: 14px !important;
         border: 1px solid var(--glass-border) !important;
         background: var(--glass-strong) !important;
         -webkit-backdrop-filter: blur(14px) !important;
@@ -367,6 +367,10 @@ def inject_css():
         font-weight: 700 !important;
         font-family: 'Plus Jakarta Sans', sans-serif !important;
         transition: transform .15s ease, background .15s ease !important;
+        min-height: 36px !important;
+        padding: 6px 14px !important;
+        font-size: 0.88rem !important;
+        line-height: 1.3 !important;
     }
     .stButton > button:hover {
         background: rgba(255,255,255,0.22) !important;
@@ -375,13 +379,13 @@ def inject_css():
 
     /* ─── כפתורי ניווט מסך הבית ─── */
     .home-nav-btn .stButton > button {
-        border-radius: 28px !important;
+        border-radius: 24px !important;
         font-family: 'Outfit', sans-serif !important;
-        font-size: 1.25rem !important;
+        font-size: 1.15rem !important;
         font-weight: 800 !important;
-        min-height: 90px !important;
+        min-height: 72px !important;
         height: auto !important;
-        padding: 26px 24px !important;
+        padding: 18px 20px !important;
         letter-spacing: -0.3px !important;
         box-shadow: var(--shadow-soft) !important;
     }
@@ -448,12 +452,13 @@ def inject_css():
 
     /* ─── כפתורי עדכן/מחק קטנים ─── */
     .btn-sm .stButton > button {
-        padding: 3px 8px !important;
-        font-size: 0.75rem !important;
-        border-radius: 10px !important;
+        padding: 2px 6px !important;
+        font-size: 0.72rem !important;
+        border-radius: 9px !important;
         min-height: 0 !important;
         height: auto !important;
         font-weight: 700 !important;
+        line-height: 1.4 !important;
     }
 
     /* ─── data editor ─── */
@@ -547,15 +552,67 @@ def inject_css():
     ul[role="listbox"] li { color: var(--text-primary) !important; font-weight: 600 !important; }
     label { color: var(--text-secondary) !important; font-weight: 700 !important; font-size: 0.85rem !important; }
 
-    /* ─── לוח שנה (date picker) ─── */
-    div[data-baseweb="calendar"], div[data-baseweb="datepicker"] {
-        background-color: var(--bg-dark-2) !important;
+    /* ─── לוח שנה (date picker) — כיסוי מלא ─── */
+    div[data-baseweb="popover"],
+    div[data-baseweb="popover"] > div,
+    div[data-baseweb="calendar"],
+    div[data-baseweb="datepicker"],
+    [data-baseweb="calendar"],
+    [data-baseweb="calendarheader"] {
+        background-color: #1E2230 !important;
+        color: #F4F5F8 !important;
+        border: 1px solid rgba(255,255,255,0.15) !important;
+        border-radius: 18px !important;
+    }
+    /* כל הטקסט בלוח — לבן */
+    div[data-baseweb="calendar"] *,
+    div[data-baseweb="popover"] * {
+        color: #F4F5F8 !important;
+        -webkit-text-fill-color: #F4F5F8 !important;
+        background-color: transparent !important;
+    }
+    /* header חודש/שנה */
+    div[data-baseweb="calendar"] [data-testid="stDateInputCalendarHeader"],
+    div[data-baseweb="calendar"] button[aria-label*="חודש"],
+    div[data-baseweb="calendar"] button[aria-label*="שנה"],
+    div[data-baseweb="calendar"] button[aria-label*="month"],
+    div[data-baseweb="calendar"] button[aria-label*="year"] {
+        background: #1E2230 !important;
         color: #F4F5F8 !important;
     }
-    div[data-baseweb="calendar"] * { color: #F4F5F8 !important; }
-    div[data-baseweb="calendar"] [aria-selected="true"] {
-        background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet)) !important;
+    /* ימים בלוח */
+    div[data-baseweb="calendar"] div[role="grid"] *,
+    div[data-baseweb="calendar"] button[aria-label] {
+        background: transparent !important;
+        color: #F4F5F8 !important;
+    }
+    /* יום נבחר */
+    div[data-baseweb="calendar"] [aria-selected="true"],
+    div[data-baseweb="calendar"] button[aria-selected="true"] {
+        background: linear-gradient(135deg,#4D8DFF,#9D8BFF) !important;
+        border-radius: 50% !important;
         color: #fff !important;
+    }
+    /* hover על יום */
+    div[data-baseweb="calendar"] button:not([aria-selected="true"]):hover {
+        background: rgba(157,139,255,0.28) !important;
+        border-radius: 50% !important;
+    }
+    /* כפתורי חץ ניווט חודש */
+    div[data-baseweb="calendar"] button[aria-label="Previous month"],
+    div[data-baseweb="calendar"] button[aria-label="Next month"],
+    div[data-baseweb="calendar"] button[aria-label*="חודש קודם"],
+    div[data-baseweb="calendar"] button[aria-label*="חודש הבא"] {
+        background: rgba(255,255,255,0.10) !important;
+        border-radius: 10px !important;
+        color: #F4F5F8 !important;
+    }
+    /* input של התאריך עצמו */
+    div[data-baseweb="datepicker"] div[data-baseweb="base-input"],
+    div[data-baseweb="datepicker"] input {
+        background-color: rgba(20,23,30,0.85) !important;
+        color: #F4F5F8 !important;
+        -webkit-text-fill-color: #F4F5F8 !important;
     }
 
     /* ─── רדיו שכר טרחה ─── */
@@ -655,6 +712,9 @@ def inject_css():
     """, height=0)
 
 def fmt_ils(x):
+    """פורמט שקלים — שלמים לסכומים גדולים, עשרוניים לסכומים קטנים"""
+    if abs(x) < 10:
+        return f"₪{x:,.2f}"
     return f"₪{x:,.0f}"
 
 def calc_fee(amount, due_date, rate_val, rate_basis):
@@ -1119,24 +1179,29 @@ def render_add_check_form():
     # מסלול א׳ — צ'ק בודד
     # ════════════════════
     if mode == "single":
-        amount = st.number_input("סכום הצ'ק (₪)", min_value=0.0, step=100.0,
-                                 format="%.0f", key="add_amount")
-        c1, c2 = st.columns(2)
-        with c1:
+        # סכום + תאריך — חצי-חצי
+        sa, sb = st.columns(2)
+        with sa:
+            amount = st.number_input("סכום (₪)", min_value=0.0, step=100.0,
+                                     format="%.0f", key="add_amount")
+        with sb:
             due = st.date_input("תאריך פירעון",
                                 value=date.today() + timedelta(days=30),
                                 min_value=date.today(), key="add_due")
-        with c2:
-            use_remind = st.checkbox("הוסף תזכורת", value=False, key="add_use_remind")
+
+        # סטטוס + תזכורת — שורה אחת
+        sc, sd = st.columns([3, 2])
+        with sc:
+            status = st.selectbox("סטטוס", STATUSES, key="add_status")
+        with sd:
+            use_remind = st.checkbox("תזכורת", value=False, key="add_use_remind")
         remind = None
         if use_remind:
             remind = st.date_input("תאריך תזכורת",
                                    value=date.today() + timedelta(days=30),
                                    min_value=date.today(), key="add_remind")
-        status = st.selectbox("סטטוס", STATUSES, key="add_status")
 
-        # ── שכר טרחה ──
-        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+        # שכר טרחה — שורה אחת
         ra, rb = st.columns(2)
         with ra:
             single_rate = st.number_input("שכר טרחה (%)", min_value=0.0, max_value=100.0,
@@ -1147,7 +1212,6 @@ def render_add_check_form():
                                     index=["חודשי","שנתי"].index(
                                         st.session_state.get("rate_basis","שנתי")) if st.session_state.get("rate_basis","שנתי") in ["חודשי","שנתי"] else 1,
                                     key="single_basis", horizontal=True)
-        # שמירה בsession לשימוש במחשבון
         st.session_state.fixed_rate = single_rate
         st.session_state.rate_basis = single_basis
 
@@ -1234,10 +1298,65 @@ def render_add_check_form():
         if "batch_df" in st.session_state and st.session_state.batch_df is not None:
             df = st.session_state.batch_df.reset_index(drop=True)
 
+            # CSS לטבלת מקבץ מינימלית
+            st.markdown("""
+            <style>
+            .batch-table { width:100%; border-collapse:separate; border-spacing:0 4px; direction:rtl; }
+            .batch-table th {
+                font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+                color:rgba(244,245,248,0.5); padding:4px 10px; text-align:right;
+            }
+            .batch-table td {
+                background:rgba(255,255,255,0.07); padding:11px 12px;
+                font-size:0.95rem; font-weight:700; color:#F4F5F8;
+                border-top:1px solid rgba(255,255,255,0.10);
+                border-bottom:1px solid rgba(255,255,255,0.10);
+            }
+            .batch-table td:first-child { border-radius:14px 0 0 14px; border-right:1px solid rgba(255,255,255,0.10); }
+            .batch-table td:last-child  { border-radius:0 14px 14px 0; border-left:1px solid rgba(255,255,255,0.10); text-align:left; direction:ltr; }
+            .batch-table .num-col { color:#9D8BFF; font-size:0.82rem; font-weight:800; }
+            .batch-table .date-col { color:#FFC857; cursor:pointer; }
+            .batch-table .amt-col  { color:#4FE3A1; font-family:'Outfit',sans-serif; letter-spacing:-0.3px; cursor:pointer; }
+            .edit-panel { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+                border-radius:16px; padding:12px 14px; margin:2px 0 6px; }
+            </style>
+            """, unsafe_allow_html=True)
+
+            # render table header
             st.markdown(
-                "<div style='font-size:12px;font-weight:700;letter-spacing:1px;"
-                "text-transform:uppercase;color:rgba(244,245,248,0.6);"
-                "margin:10px 0 8px;text-align:right;'>📝 ערוך כל שורה — לחץ +/− לתאריך ולסכום</div>",
+                "<table class='batch-table'>"
+                "<tr><th>#</th><th>תאריך 📅</th><th>סכום</th></tr>",
+                unsafe_allow_html=True
+            )
+            # render rows (HTML only — Streamlit buttons outside table)
+            for idx in range(len(df)):
+                row      = df.iloc[idx]
+                num      = int(row["#"])
+                amt_val  = float(row["סכום (₪)"])
+                date_val = str(row["תאריך"])
+                try:
+                    d_obj = datetime.fromisoformat(date_val).date()
+                    date_disp = d_obj.strftime("%d.%m.%Y")
+                except Exception:
+                    d_obj = date.today()
+                    date_disp = date_val
+
+                st.markdown(
+                    f"<tr>"
+                    f"<td class='num-col'>#{num}</td>"
+                    f"<td class='date-col'>{date_disp}</td>"
+                    f"<td class='amt-col'>{fmt_ils(amt_val)}</td>"
+                    f"</tr>",
+                    unsafe_allow_html=True
+                )
+            st.markdown("</table>", unsafe_allow_html=True)
+
+            # עורך שורה — נפתח בלחיצה על הכפתור לצד כל שורה
+            st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div style='font-size:11px;font-weight:700;letter-spacing:1px;"
+                "color:rgba(244,245,248,0.45);text-align:right;margin-bottom:6px;'>"
+                "לחץ על שורה לעריכה 👇</div>",
                 unsafe_allow_html=True
             )
 
@@ -1253,64 +1372,75 @@ def render_add_check_form():
                     d_obj = date.today()
                     date_disp = date_val
 
-                # כרטיס שורה
-                st.markdown(
-                    f"<div style='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.16);"
-                    f"border-radius:16px;padding:12px 14px 6px;margin-bottom:6px;direction:rtl;"
-                    f"backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);'>"
-                    f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;'>"
-                    f"<span style='font-size:13px;font-weight:800;color:#9D8BFF;'>צ'ק #{num}</span>"
-                    f"<div style='text-align:left;'>"
-                    f"<span style='font-family:Outfit,sans-serif;font-size:1.1rem;font-weight:800;"
-                    f"color:#F4F5F8;direction:ltr;'>{fmt_ils(amt_val)}</span>"
-                    f"<span style='font-size:0.8rem;color:rgba(244,245,248,0.6);margin-right:10px;'>📅 {date_disp}</span>"
-                    f"</div></div></div>",
-                    unsafe_allow_html=True
-                )
+                open_key = f"batch_edit_open_{idx}"
+                is_open  = st.session_state.get(open_key, False)
+                lbl      = f"{'▲' if is_open else '▼'} צ'ק #{num} — {date_disp} | {fmt_ils(amt_val)}"
 
-                # שורת כפתורים: תאריך (− / +) | סכום (− / +)
-                c1, c2, c3, c4 = st.columns(4)
-                st.markdown('<div class="btn-sm"></div>', unsafe_allow_html=True)
-                with c1:
-                    if st.button("− יום", key=f"dm_{idx}", use_container_width=True):
-                        df.at[idx, "תאריך"] = (d_obj - timedelta(days=1)).isoformat()
-                        st.session_state.batch_df = df
-                        st.rerun()
-                with c2:
-                    if st.button("+ יום", key=f"dp_{idx}", use_container_width=True):
-                        df.at[idx, "תאריך"] = (d_obj + timedelta(days=1)).isoformat()
-                        st.session_state.batch_df = df
-                        st.rerun()
-                with c3:
-                    if st.button("− ₪100", key=f"am_{idx}", use_container_width=True):
-                        df.at[idx, "סכום (₪)"] = max(0.0, amt_val - 100)
-                        st.session_state.batch_df = df
-                        st.rerun()
-                with c4:
-                    if st.button("+ ₪100", key=f"ap_{idx}", use_container_width=True):
-                        df.at[idx, "סכום (₪)"] = amt_val + 100
-                        st.session_state.batch_df = df
-                        st.rerun()
+                st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
+                if st.button(lbl, key=f"batch_row_btn_{idx}", use_container_width=True):
+                    # סגור כל שאר השורות, פתח/סגור את הנוכחית
+                    for j in range(len(df)):
+                        if j != idx:
+                            st.session_state[f"batch_edit_open_{j}"] = False
+                    st.session_state[open_key] = not is_open
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
-                # עריכה ידנית מדויקת (אקורדיון)
-                with st.expander(f"✏️ עריכה מדויקת — צ'ק #{num}"):
-                    e1, e2 = st.columns(2)
-                    with e1:
-                        man_amt = st.number_input("סכום מדויק (₪)", min_value=0.0, step=100.0,
-                                                  value=amt_val, format="%.0f",
-                                                  key=f"man_amt_{idx}")
-                    with e2:
-                        man_date = st.date_input("תאריך מדויק", value=d_obj,
-                                                 key=f"man_date_{idx}")
-                    if st.button("עדכן שורה זו", key=f"man_upd_{idx}", use_container_width=True):
-                        df.at[idx, "סכום (₪)"] = float(man_amt)
-                        df.at[idx, "תאריך"]    = man_date.isoformat()
-                        st.session_state.batch_df = df
-                        st.rerun()
+                if is_open:
+                    st.markdown("<div class='edit-panel'>", unsafe_allow_html=True)
+
+                    # ── תאריך ──
+                    st.markdown(
+                        "<div style='font-size:10px;font-weight:700;letter-spacing:1px;"
+                        "text-transform:uppercase;color:#FFC857;margin-bottom:4px;'>📅 תאריך</div>",
+                        unsafe_allow_html=True
+                    )
+                    dcol1, dcol2 = st.columns(2)
+                    with dcol1:
+                        if st.button("− יום", key=f"dm_{idx}", use_container_width=True):
+                            df.at[idx, "תאריך"] = (d_obj - timedelta(days=1)).isoformat()
+                            st.session_state.batch_df = df
+                            st.rerun()
+                    with dcol2:
+                        if st.button("+ יום", key=f"dp_{idx}", use_container_width=True):
+                            df.at[idx, "תאריך"] = (d_obj + timedelta(days=1)).isoformat()
+                            st.session_state.batch_df = df
+                            st.rerun()
+
+                    # ── סכום ──
+                    st.markdown(
+                        "<div style='font-size:10px;font-weight:700;letter-spacing:1px;"
+                        "text-transform:uppercase;color:#4FE3A1;margin:10px 0 4px;'>₪ סכום</div>",
+                        unsafe_allow_html=True
+                    )
+                    new_amt = st.number_input(
+                        "סכום חדש (₪)", min_value=0.0, step=50.0,
+                        value=amt_val, format="%.0f",
+                        key=f"amt_input_{idx}", label_visibility="collapsed"
+                    )
+                    acol1, acol2, acol3 = st.columns(3)
+                    with acol1:
+                        if st.button("− 100", key=f"am_{idx}", use_container_width=True):
+                            df.at[idx, "סכום (₪)"] = max(0.0, amt_val - 100)
+                            st.session_state.batch_df = df
+                            st.rerun()
+                    with acol2:
+                        if st.button("+ 100", key=f"ap_{idx}", use_container_width=True):
+                            df.at[idx, "סכום (₪)"] = amt_val + 100
+                            st.session_state.batch_df = df
+                            st.rerun()
+                    with acol3:
+                        if st.button("✓ שמור", key=f"amt_save_{idx}", use_container_width=True):
+                            df.at[idx, "סכום (₪)"] = float(new_amt)
+                            st.session_state.batch_df = df
+                            st.session_state[open_key] = False
+                            st.rerun()
+
+                    st.markdown("</div>", unsafe_allow_html=True)
 
             edited = df
 
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
             if st.button("💾 שמור את כל הצ'קים", use_container_width=True, key="save_batch"):
                 cid = add_client(new_name or "") if sel == "— חדש —" else                       next((c["id"] for c in clients if c["name"] == sel), None)
                 if not cid:
@@ -1462,59 +1592,73 @@ def render_calculator():
         st.session_state.calc_amount = default_amount
         st.session_state._last_pick  = pick
 
-    amount = st.number_input("סכום הצ'ק (₪)", min_value=0.0, step=100.0,
-                             value=st.session_state.get("calc_amount", default_amount),
-                             format="%.0f", key="calc_amount")
+    # ── סכום + תאריך — חצי-חצי ──
+    ca, cb = st.columns(2)
+    with ca:
+        amount = st.number_input("סכום (₪)", min_value=0.0, step=100.0,
+                                 value=st.session_state.get("calc_amount", default_amount),
+                                 format="%.0f", key="calc_amount")
+    with cb:
+        due_date = st.date_input("תאריך פירעון", key="calc_due",
+                                 min_value=date.today())
 
-    due_date = st.date_input("תאריך פירעון הצ'ק", key="calc_due",
-                             min_value=date.today(),
-                             help="החישוב מתחיל ממחר וכולל את יום הפירעון")
-
+    # ── ימים + בסיס שכר טרחה — באותה שורה ──
     days = max((due_date - date.today()).days + 1, 0)
-    st.markdown(
-        f"<div style='background:rgba(157,139,255,0.16);border:1px solid rgba(157,139,255,0.30);"
-        f"border-radius:22px;padding:16px;text-align:center;margin:6px 0 10px;"
-        f"backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);'>"
-        f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:rgba(244,245,248,0.6);"
-        f"text-transform:uppercase;display:block;margin-bottom:2px;'>ימי זיכוי</span>"
-        f"<span style='font-family:Outfit,sans-serif;font-size:2.4rem;font-weight:900;"
-        f"color:#9D8BFF;letter-spacing:-1.5px;'>{days}</span>"
-        f"<span style='font-size:0.9rem;font-weight:600;color:rgba(244,245,248,0.6);'> ימים</span></div>",
-        unsafe_allow_html=True)
+    di, ri = st.columns([1, 1])
+    with di:
+        st.markdown(
+            f"<div style='background:rgba(157,139,255,0.16);border:1px solid rgba(157,139,255,0.30);"
+            f"border-radius:16px;padding:10px 8px;text-align:center;"
+            f"backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);height:72px;"
+            f"display:flex;flex-direction:column;justify-content:center;'>"
+            f"<span style='font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(244,245,248,0.55);"
+            f"text-transform:uppercase;'>ימי זיכוי</span>"
+            f"<span style='font-family:Outfit,sans-serif;font-size:1.9rem;font-weight:900;"
+            f"color:#9D8BFF;letter-spacing:-1px;line-height:1.1;'>{days}</span>"
+            f"</div>",
+            unsafe_allow_html=True)
+    with ri:
+        st.markdown(
+            "<div style='font-size:10px;font-weight:700;letter-spacing:1px;"
+            "color:rgba(244,245,248,0.5);text-transform:uppercase;margin-bottom:4px;"
+            "text-align:center;'>בסיס שכ\"ט</div>",
+            unsafe_allow_html=True)
+        basis = st.radio("בסיס שכר הטרחה", ["חודשי", "שנתי"],
+                         index=["חודשי", "שנתי"].index(st.session_state.rate_basis)
+                               if st.session_state.rate_basis in ["חודשי","שנתי"] else 1,
+                         horizontal=True, key="basis_radio", label_visibility="collapsed")
+        st.session_state.rate_basis = basis
 
-    st.markdown("<div style='text-align:center;font-size:11px;font-weight:700;"
-                "letter-spacing:1.5px;color:rgba(244,245,248,0.5);text-transform:uppercase;"
-                "margin-bottom:8px;'>בסיס שכר הטרחה</div>", unsafe_allow_html=True)
-    basis = st.radio("בסיס שכר הטרחה", ["חודשי", "שנתי"],
-                     index=["חודשי", "שנתי"].index(st.session_state.rate_basis) if st.session_state.rate_basis in ["חודשי","שנתי"] else 1,
-                     horizontal=True, key="basis_radio", label_visibility="collapsed")
-    st.session_state.rate_basis = basis
-
+    # ── שכר טרחה + כפתור עריכה — שורה אחת ──
     rate_val = st.session_state.fixed_rate
-    r1, r2 = st.columns([2, 1])
-    with r1:
+    rr1, rr2 = st.columns([3, 1])
+    with rr1:
         st.markdown(
             f"<div style='background:rgba(255,200,87,0.14);border:1px solid rgba(255,200,87,0.30);"
-            f"border-radius:22px;padding:16px;text-align:center;margin-bottom:0;"
-            f"backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);'>"
-            f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:rgba(244,245,248,0.6);"
-            f"text-transform:uppercase;display:block;margin-bottom:4px;'>שכר טרחה קבוע ({basis})</span>"
-            f"<span style='font-family:Outfit,sans-serif;font-size:2rem;font-weight:900;"
-            f"color:#FFC857;letter-spacing:-1px;'>{rate_val:.2f}%</span>"
+            f"border-radius:16px;padding:10px 14px;display:flex;align-items:center;"
+            f"justify-content:space-between;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);'>"
+            f"<span style='font-size:10px;font-weight:700;letter-spacing:1px;color:rgba(244,245,248,0.55);"
+            f"text-transform:uppercase;'>שכ\"ט קבוע ({basis})</span>"
+            f"<span style='font-family:Outfit,sans-serif;font-size:1.6rem;font-weight:900;"
+            f"color:#FFC857;letter-spacing:-0.5px;'>{rate_val:.2f}%</span>"
             f"</div>", unsafe_allow_html=True)
-    with r2:
-        st.write(""); st.write("")
-        if st.button("✏️ שינוי שכר טרחה", use_container_width=True, key="edit_rate"):
+    with rr2:
+        st.write("")
+        if st.button("✏️ עריכה", use_container_width=True, key="edit_rate"):
             st.session_state.rate_edit_open = not st.session_state.rate_edit_open
 
     if st.session_state.rate_edit_open:
-        new_rate = st.number_input("הזן שכר טרחה (%)", min_value=0.0, max_value=100.0,
-                                   value=float(rate_val), step=0.1, format="%.2f",
-                                   key="rate_input_manual")
-        if st.button("💾 שמירת שכר הטרחה", use_container_width=True, key="save_rate"):
-            st.session_state.fixed_rate    = new_rate
-            st.session_state.rate_edit_open = False
-            st.rerun()
+        er1, er2 = st.columns([2, 1])
+        with er1:
+            new_rate = st.number_input("שכר טרחה (%)", min_value=0.0, max_value=100.0,
+                                       value=float(rate_val), step=0.1, format="%.2f",
+                                       key="rate_input_manual")
+        with er2:
+            st.write("")
+            if st.button("💾 שמור", use_container_width=True, key="save_rate"):
+                st.session_state.fixed_rate    = new_rate
+                st.session_state.rate_edit_open = False
+                st.rerun()
 
     fee = amount * (rate_val/100.0) * (days/30.0 if basis == "חודשי" else days/365.0)
     net = amount - fee
@@ -1527,9 +1671,12 @@ def render_calculator():
                     "margin:8px 0;'>⚠️ תאריך הפירעון עבר — אין ימי זיכוי.</div>",
                     unsafe_allow_html=True)
 
+    fee_pct  = (fee / amount * 100) if amount > 0 else 0
     st.markdown(f"""
     <div class="calc-out fee"><div class="lbl">סך שכר הטרחה שיורד</div>
-        <div class="big">{fmt_ils(fee)}</div></div>
+        <div class="big">{fmt_ils(fee)}</div>
+        <div style="font-size:11px;color:rgba(255,111,165,0.7);margin-top:4px;">{days} ימים × {rate_val:.2f}% = {fee_pct:.3f}%</div>
+    </div>
     <div class="calc-out net"><div class="lbl">נטו מזומן שמתקבל</div>
         <div class="big">{fmt_ils(net)}</div></div>
     """, unsafe_allow_html=True)
