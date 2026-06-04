@@ -519,6 +519,18 @@ def inject_css():
 def fmt_ils(x):
     return f"₪{x:,.0f}"
 
+def fmt_date(d):
+    """ממיר תאריך לפורמט עברי DD.MM.YYYY"""
+    if not d:
+        return ""
+    try:
+        if isinstance(d, str):
+            d = datetime.fromisoformat(d).date()
+        return d.strftime("%d.%m.%Y")
+    except Exception:
+        return str(d)
+
+
 
 # ─────────────────────────────────────────────
 # מסך התחברות / הרשמה
@@ -548,7 +560,7 @@ def add_checks_batch(client_id, amounts, due_dates, status):
         for amt, dd in zip(amounts, due_dates):
             conn.execute(
                 "INSERT INTO checks (client_id,amount,due_date,status,remind_on) VALUES (?,?,?,?,NULL)",
-                (client_id, float(amt), dd.isoformat() if hasattr(dd, "isoformat") else str(dd))
+                (client_id, float(amt), dd.isoformat() if hasattr(dd, "isoformat") else str(dd), status)
             )
 
 
@@ -737,7 +749,7 @@ def render_upcoming_reminder():
             date.today() + timedelta(days=2): "#FFF3C8",
         }
         bg = bg_map.get(d, "#F0F0F5")
-        date_str   = d.strftime("%d.%m")
+        date_str   = d.strftime("%d.%m.%Y")
         total_str  = fmt_ils(day_sum)
         header_day = (
             f"<div style='background:{bg};border-radius:18px;"
@@ -773,6 +785,32 @@ def render_add_check_form():
         if st.button("📦 מקבץ צ'קים", key="open_batch", use_container_width=True):
             st.session_state.add_mode = "batch" if st.session_state.get("add_mode") != "batch" else None
         st.markdown('</div>', unsafe_allow_html=True)
+
+    # הצגת סיכום אחרי שמירת מקבץ
+    if "batch_summary" in st.session_state and st.session_state.batch_summary:
+        bs = st.session_state.batch_summary
+        st.markdown(
+            f"<div style='background:#D6F5E0;border-radius:22px;padding:18px 20px;margin-bottom:10px;'>"
+            f"<div style='font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;"
+            f"color:#2A7A4A;margin-bottom:10px;'>✅ {bs['count']} צ\'קים נשמרו | ריבית {bs['rate_val']:.2f}% {bs['rate_basis']}</div>",
+            unsafe_allow_html=True
+        )
+        import pandas as pd
+        df_sum = pd.DataFrame(bs["rows"])
+        st.dataframe(df_sum, use_container_width=True, hide_index=True)
+        fee_str = fmt_ils(bs["total_fee"])
+        net_str = fmt_ils(bs["total_net"])
+        st.markdown(
+            "<div style='display:flex;justify-content:space-between;"
+            "padding:10px 4px 4px;font-weight:800;font-size:1rem;color:#000;'>"
+            f"<span>סהכ עמלות: {fee_str}</span>"
+            f"<span>סהכ נטו: {net_str}</span>"
+            "</div></div>",
+            unsafe_allow_html=True
+        )
+        if st.button("✖ סגור סיכום", key="close_summary"):
+            st.session_state.batch_summary = None
+            st.rerun()
 
     mode = st.session_state.get("add_mode")
     if not mode:
@@ -846,9 +884,13 @@ def render_add_check_form():
             rows = []
             for i in range(int(count)):
                 d = first_date + timedelta(days=int(gap) * i)
-                rows.append({"#": i+1, "סכום (₪)": float(amount_base),
-                              "תאריך פירעון": d.isoformat()})
-            st.session_state.batch_df = pd.DataFrame(rows)
+                rows.append({
+                    "#": i+1,
+                    "סכום (₪)": float(amount_base),
+                    "תאריך": d.isoformat(),
+                })
+            # סדר עמודות RTL: # ימין, סכום אמצע, תאריך שמאל
+            st.session_state.batch_df = pd.DataFrame(rows)[["#", "סכום (₪)", "תאריך"]]
 
         if "batch_df" in st.session_state and st.session_state.batch_df is not None:
             st.markdown("**ערוך לפי הצורך — לחץ על תא לשינוי:**")
@@ -861,7 +903,7 @@ def render_add_check_form():
                 column_config={
                     "#": st.column_config.NumberColumn(disabled=True, width="small"),
                     "סכום (₪)": st.column_config.NumberColumn(min_value=0, format="%.0f"),
-                    "תאריך פירעון": st.column_config.TextColumn(),
+                    "תאריך": st.column_config.TextColumn(),
                 },
                 key="batch_editor"
             )
@@ -875,7 +917,7 @@ def render_add_check_form():
                 unsafe_allow_html=True
             )
             for idx, row in edited.iterrows():
-                date_val = str(row["תאריך פירעון"])
+                date_val = str(row["תאריך"])
                 row_html = (
                     f"<div style='display:flex;align-items:center;justify-content:space-between;"
                     f"background:rgba(255,255,255,0.10);border-radius:12px;"
@@ -894,7 +936,7 @@ def render_add_check_form():
                             d = datetime.fromisoformat(date_val).date()
                         except Exception:
                             d = date.today()
-                        edited.at[idx, "תאריך פירעון"] = (d - timedelta(days=1)).isoformat()
+                        edited.at[idx, "תאריך"] = (d - timedelta(days=1)).isoformat()
                         st.session_state.batch_df = edited
                         st.rerun()
                 with cb:
@@ -903,7 +945,7 @@ def render_add_check_form():
                             d = datetime.fromisoformat(date_val).date()
                         except Exception:
                             d = date.today()
-                        edited.at[idx, "תאריך פירעון"] = (d + timedelta(days=1)).isoformat()
+                        edited.at[idx, "תאריך"] = (d + timedelta(days=1)).isoformat()
                         st.session_state.batch_df = edited
                         st.rerun()
 
@@ -914,10 +956,41 @@ def render_add_check_form():
                     st.error("נא לבחור או להזין שם לקוח.")
                 else:
                     amounts   = edited["סכום (₪)"].tolist()
-                    due_dates = [datetime.fromisoformat(d).date() for d in edited["תאריך פירעון"].tolist()]
+                    due_dates = [datetime.fromisoformat(str(d)).date() for d in edited["תאריך"].tolist()]
                     add_checks_batch(cid, amounts, due_dates, status)
                     saved = len(amounts)
-                    st.success(f"{saved} צ'קים נשמרו ✅")
+
+                    # ── סיכום עמלות לפי ריבית קבועה ──
+                    rate_val  = st.session_state.get("fixed_rate", 12.0)
+                    rate_basis = st.session_state.get("rate_basis", "שנתית")
+                    today = date.today()
+                    summary_rows = []
+                    total_fee = 0.0
+                    total_net = 0.0
+                    for amt, dd in zip(amounts, due_dates):
+                        days = max((dd - today).days + 1, 0)
+                        if rate_basis == "חודשית":
+                            fee = float(amt) * (rate_val / 100.0) * (days / 30.0)
+                        else:
+                            fee = float(amt) * (rate_val / 100.0) * (days / 365.0)
+                        net = float(amt) - fee
+                        total_fee += fee
+                        total_net += net
+                        summary_rows.append({
+                            "תאריך": fmt_date(dd),
+                            "סכום": fmt_ils(amt),
+                            "עמלה": fmt_ils(fee),
+                            "נטו": fmt_ils(net),
+                        })
+
+                    st.session_state.batch_summary = {
+                        "rows": summary_rows,
+                        "total_fee": total_fee,
+                        "total_net": total_net,
+                        "count": saved,
+                        "rate_val": rate_val,
+                        "rate_basis": rate_basis,
+                    }
                     st.session_state.add_mode = None
                     st.session_state.batch_df = None
                     st.rerun()
@@ -967,7 +1040,7 @@ def render_clients():
                         <span style="font-family:'Orbitron';font-weight:700;direction:ltr;">
                             {fmt_ils(ch['amount'])}</span><br>
                         <span style="font-size:.8rem;color:rgba(255,255,255,0.75);">
-                            פירעון: {ch['due_date']}{remind_str}</span>
+                            פירעון: {fmt_date(ch['due_date'])}{remind_str}</span>
                         <span class="pill" style="background:{color}22;color:{color};
                             border:1px solid {color}66;">{ch['status']}</span>
                     </div>""", unsafe_allow_html=True)
