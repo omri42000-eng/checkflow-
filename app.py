@@ -662,7 +662,7 @@ def inject_css():
     """, unsafe_allow_html=True)
 
     # JS — סימון אוטומטי בלחיצה על שדה מספר
-    st.components.v1.html("""
+    st.iframe("""
     <script>
     function attachSelectAll() {
         var inputs = window.parent.document.querySelectorAll('input[type="number"]');
@@ -776,7 +776,7 @@ def render_auth_screen(authenticator):
         with st.form("login_form", clear_on_submit=False):
             l_user = st.text_input("שם משתמש", key="l_user")
             l_pass = st.text_input("סיסמה", type="password", key="l_pass")
-            login_btn = st.form_submit_button("כניסה →", use_container_width=True)
+            login_btn = st.form_submit_button("כניסה →", width='stretch')
         if login_btn:
             ok, msg = do_login(l_user, l_pass)
             if ok:
@@ -792,7 +792,7 @@ def render_auth_screen(authenticator):
             r_email = st.text_input("אימייל", key="r_email")
             r_pass  = st.text_input("סיסמה (6+ תווים)", type="password", key="r_pass")
             r_pass2 = st.text_input("אימות סיסמה", type="password", key="r_pass2")
-            submitted = st.form_submit_button("הרשמה ✅", use_container_width=True)
+            submitted = st.form_submit_button("הרשמה ✅", width='stretch')
 
         if submitted:
             r_user = r_user.strip(); r_name = r_name.strip(); r_email = r_email.strip()
@@ -821,12 +821,6 @@ def render_auth_screen(authenticator):
 # מסך ראשי
 # ─────────────────────────────────────────────
 def render_home_screen():
-    # בדיקת query param לתמיכה בכפתור חזור
-    qp = st.query_params.get("s", None)
-    if qp in ("calc", "mgmt"):
-        st.session_state.screen = qp
-        st.rerun()
-
     st.markdown(
         "<div style='height:36px'></div>"
         "<h1 style='text-align:center;font-family:Comfortaa,sans-serif;font-weight:700;"
@@ -840,13 +834,13 @@ def render_home_screen():
     )
 
     st.markdown('<div class="home-nav-btn home-nav-green">', unsafe_allow_html=True)
-    if st.button("🧮  מחשבון פריטה", key="go_calc", use_container_width=True):
+    if st.button("🧮  מחשבון פריטה", key="go_calc", width='stretch'):
         st.session_state.screen = "calc"
         st.rerun()
     st.markdown('</div><div style="height:14px"></div>', unsafe_allow_html=True)
 
     st.markdown('<div class="home-nav-btn home-nav-pink">', unsafe_allow_html=True)
-    if st.button("📋  ניהול צ׳קים", key="go_mgmt", use_container_width=True):
+    if st.button("📋  ניהול צ׳קים", key="go_mgmt", width='stretch'):
         st.session_state.screen = "mgmt"
         st.rerun()
     st.markdown('</div><div style="height:20px"></div>', unsafe_allow_html=True)
@@ -938,7 +932,7 @@ def render_home_calendar():
         # כפתור פרטים
         expanded = st.session_state.get(key_toggle, False)
         lbl_btn  = "▲ סגור" if expanded else f"▼ מי ומה ({cnt})"
-        if st.button(lbl_btn, key=f"cal_btn_{d_str}", use_container_width=True):
+        if st.button(lbl_btn, key=f"cal_btn_{d_str}", width='stretch'):
             st.session_state[key_toggle] = not expanded
             st.rerun()
 
@@ -1064,12 +1058,12 @@ def render_add_check_form():
     c1, c2 = st.columns(2)
     with c1:
         st.markdown('<div class="btn-single">', unsafe_allow_html=True)
-        if st.button("➕ צ'ק בודד", key="open_single", use_container_width=True):
+        if st.button("➕ צ'ק בודד", key="open_single", width='stretch'):
             st.session_state.add_mode = "single" if st.session_state.get("add_mode") != "single" else None
         st.markdown('</div>', unsafe_allow_html=True)
     with c2:
         st.markdown('<div class="btn-batch">', unsafe_allow_html=True)
-        if st.button("📦 מקבץ צ'קים", key="open_batch", use_container_width=True):
+        if st.button("📦 מקבץ צ'קים", key="open_batch", width='stretch'):
             st.session_state.add_mode = "batch" if st.session_state.get("add_mode") != "batch" else None
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -1123,7 +1117,7 @@ def render_add_check_form():
 
         # טבלת פירוט
         df_sum = pd.DataFrame(bs["rows"])
-        st.dataframe(df_sum, use_container_width=True, hide_index=True)
+        st.dataframe(df_sum, width='stretch', hide_index=True)
 
         if st.button("✖ סגור סיכום", key="close_summary"):
             st.session_state.batch_summary = None
@@ -1177,14 +1171,14 @@ def render_add_check_form():
                 f"text-align:right;margin-bottom:2px;'>בסיס</div>",
                 unsafe_allow_html=True)
             if st.button(f"{'✓ ' if active_m else ''}חודשי",
-                         key="basis_monthly", use_container_width=True):
+                         key="basis_monthly", width='stretch'):
                 st.session_state.rate_basis = "חודשי"
                 st.rerun()
         with sf:
             active_y = cur_basis == "שנתי"
             st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
             if st.button(f"{'✓ ' if active_y else ''}שנתי",
-                         key="basis_yearly", use_container_width=True):
+                         key="basis_yearly", width='stretch'):
                 st.session_state.rate_basis = "שנתי"
                 st.rerun()
         with sg:
@@ -1222,7 +1216,7 @@ def render_add_check_form():
                 unsafe_allow_html=True
             )
 
-        if st.button("💾 שמירת צ'ק", use_container_width=True, key="save_single"):
+        if st.button("💾 שמירת צ'ק", width='stretch', key="save_single"):
             cid = add_client(new_name or "") if sel == "— חדש —" else                   next((c["id"] for c in clients if c["name"] == sel), None)
             if not cid:
                 st.error("נא לבחור או להזין שם לקוח.")
@@ -1271,12 +1265,12 @@ def render_add_check_form():
             bb1, bb2 = st.columns(2)
             with bb1:
                 if st.button(f"{'✓ ' if cur_bb=='חודשי' else ''}חודשי",
-                             key="batch_basis_m", use_container_width=True):
+                             key="batch_basis_m", width='stretch'):
                     st.session_state.rate_basis = "חודשי"
                     st.rerun()
             with bb2:
                 if st.button(f"{'✓ ' if cur_bb=='שנתי' else ''}שנתי",
-                             key="batch_basis_y", use_container_width=True):
+                             key="batch_basis_y", width='stretch'):
                     st.session_state.rate_basis = "שנתי"
                     st.rerun()
             batch_basis = st.session_state.get("rate_basis", "שנתי")
@@ -1284,7 +1278,7 @@ def render_add_check_form():
         st.session_state.rate_basis = batch_basis
 
         # בניית הטבלה
-        if st.button("🔄 צור טבלת עריכה", use_container_width=True, key="gen_table"):
+        if st.button("🔄 צור טבלת עריכה", width='stretch', key="gen_table"):
             rows = []
             for i in range(int(count)):
                 d = first_date + timedelta(days=int(gap) * i)
@@ -1378,7 +1372,7 @@ def render_add_check_form():
                 lbl      = f"{'▲' if is_open else '▼'} צ'ק #{num} — {date_disp} | {fmt_ils(amt_val)}"
 
                 st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
-                if st.button(lbl, key=f"batch_row_btn_{idx}", use_container_width=True):
+                if st.button(lbl, key=f"batch_row_btn_{idx}", width='stretch'):
                     # סגור כל שאר השורות, פתח/סגור את הנוכחית
                     for j in range(len(df)):
                         if j != idx:
@@ -1398,12 +1392,12 @@ def render_add_check_form():
                     )
                     dcol1, dcol2 = st.columns(2)
                     with dcol1:
-                        if st.button("− יום", key=f"dm_{idx}", use_container_width=True):
+                        if st.button("− יום", key=f"dm_{idx}", width='stretch'):
                             df.at[idx, "תאריך"] = (d_obj - timedelta(days=1)).isoformat()
                             st.session_state.batch_df = df
                             st.rerun()
                     with dcol2:
-                        if st.button("+ יום", key=f"dp_{idx}", use_container_width=True):
+                        if st.button("+ יום", key=f"dp_{idx}", width='stretch'):
                             df.at[idx, "תאריך"] = (d_obj + timedelta(days=1)).isoformat()
                             st.session_state.batch_df = df
                             st.rerun()
@@ -1421,17 +1415,17 @@ def render_add_check_form():
                     )
                     acol1, acol2, acol3 = st.columns(3)
                     with acol1:
-                        if st.button("− 100", key=f"am_{idx}", use_container_width=True):
+                        if st.button("− 100", key=f"am_{idx}", width='stretch'):
                             df.at[idx, "סכום (₪)"] = max(0.0, amt_val - 100)
                             st.session_state.batch_df = df
                             st.rerun()
                     with acol2:
-                        if st.button("+ 100", key=f"ap_{idx}", use_container_width=True):
+                        if st.button("+ 100", key=f"ap_{idx}", width='stretch'):
                             df.at[idx, "סכום (₪)"] = amt_val + 100
                             st.session_state.batch_df = df
                             st.rerun()
                     with acol3:
-                        if st.button("✓ שמור", key=f"amt_save_{idx}", use_container_width=True):
+                        if st.button("✓ שמור", key=f"amt_save_{idx}", width='stretch'):
                             df.at[idx, "סכום (₪)"] = float(new_amt)
                             st.session_state.batch_df = df
                             st.session_state[open_key] = False
@@ -1442,7 +1436,7 @@ def render_add_check_form():
             edited = df
 
             st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-            if st.button("💾 שמור את כל הצ'קים", use_container_width=True, key="save_batch"):
+            if st.button("💾 שמור את כל הצ'קים", width='stretch', key="save_batch"):
                 cid = add_client(new_name or "") if sel == "— חדש —" else                       next((c["id"] for c in clients if c["name"] == sel), None)
                 if not cid:
                     st.error("נא לבחור או להזין שם לקוח.")
@@ -1524,7 +1518,7 @@ def render_clients():
         open_key = f"client_open_{r['id']}"
         is_open  = st.session_state.get(open_key, False)
         btn_lbl  = "✖ סגור פירוט" if is_open else "📋 צפייה בצ'קים"
-        if st.button(btn_lbl, key=f"client_toggle_{r['id']}", use_container_width=True):
+        if st.button(btn_lbl, key=f"client_toggle_{r['id']}", width='stretch'):
             st.session_state[open_key] = not is_open
             st.rerun()
 
@@ -1550,11 +1544,11 @@ def render_clients():
                     st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
                     b1, b2 = st.columns(2)
                     with b1:
-                        if st.button("✓", key=f"upd_{ch['id']}", use_container_width=True):
+                        if st.button("✓", key=f"upd_{ch['id']}", width='stretch'):
                             update_status(ch["id"], new_st)
                             st.rerun()
                     with b2:
-                        if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
+                        if st.button("🗑", key=f"del_{ch['id']}", width='stretch'):
                             delete_check(ch["id"])
                             st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
@@ -1604,7 +1598,6 @@ def render_calculator():
     ca, cb = st.columns(2)
     with ca:
         amount = st.number_input("סכום (₪)", min_value=0.0, step=100.0,
-                                 value=st.session_state.get("calc_amount", default_amount),
                                  format="%.0f", key="calc_amount")
     with cb:
         due_date = st.date_input("תאריך פירעון", key="calc_due",
@@ -1628,13 +1621,13 @@ def render_calculator():
     with bm:
         st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
         if st.button(f"{'✓ ' if cur_basis_c=='חודשי' else ''}חודשי",
-                     key="calc_basis_m", use_container_width=True):
+                     key="calc_basis_m", width='stretch'):
             st.session_state.rate_basis = "חודשי"
             st.rerun()
     with by_:
         st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
         if st.button(f"{'✓ ' if cur_basis_c=='שנתי' else ''}שנתי",
-                     key="calc_basis_y", use_container_width=True):
+                     key="calc_basis_y", width='stretch'):
             st.session_state.rate_basis = "שנתי"
             st.rerun()
 
@@ -1655,7 +1648,7 @@ def render_calculator():
             f"</div>", unsafe_allow_html=True)
     with rr2:
         st.write("")
-        if st.button("✏️ עריכה", use_container_width=True, key="edit_rate"):
+        if st.button("✏️ עריכה", width='stretch', key="edit_rate"):
             st.session_state.rate_edit_open = not st.session_state.rate_edit_open
 
     if st.session_state.rate_edit_open:
@@ -1666,7 +1659,7 @@ def render_calculator():
                                        key="rate_input_manual")
         with er2:
             st.write("")
-            if st.button("💾 שמור", use_container_width=True, key="save_rate"):
+            if st.button("💾 שמור", width='stretch', key="save_rate"):
                 st.session_state.fixed_rate    = new_rate
                 st.session_state.rate_edit_open = False
                 st.rerun()
@@ -1704,19 +1697,17 @@ def main():
     if "current_user" not in st.session_state:
         st.session_state.current_user = "admin"
 
-    # pushState לתמיכה בכפתור חזור
-    screen = st.session_state.get("screen", "home")
-    st.components.v1.html(f"""
-    <script>
-    (function(){{
-        var s = "{screen}";
-        var cur = new URLSearchParams(window.location.search).get("s");
-        if(cur !== s) window.history.pushState({{screen:s}},"","?s="+s);
-    }})();
-    </script>""", height=0)
-
     if "screen" not in st.session_state:
         st.session_state.screen = "home"
+
+    # בדיקת query param לתמיכה בכפתור חזור — פעם אחת בלבד
+    qp = st.query_params.get("s", None)
+    if qp in ("calc", "mgmt", "home") and st.session_state.screen != qp:
+        st.session_state.screen = qp
+        st.query_params.clear()
+        st.rerun()
+
+    screen = st.session_state.get("screen", "home")
 
     if screen == "home":
         render_home_screen()
