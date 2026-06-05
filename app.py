@@ -661,11 +661,20 @@ def inject_css():
     </style>
     """, unsafe_allow_html=True)
 
-    # JS — סימון אוטומטי בלחיצה על שדה מספר
-    st.iframe("""
+    # רקע מיידי — מונע מסך אפור בטעינה
+    st.markdown("""
+    <style>
+    html { background-color: #041424 !important; }
+    body { background-color: #041424 !important; }
+    [data-testid="stAppViewContainer"] { background-color: #041424 !important; }
+    /* skeleton loaders */
+    [data-testid="stSkeleton"] { background-color: rgba(229,154,101,0.08) !important; }
+    </style>
+    """, unsafe_allow_html=True)
+    st.markdown("""
     <script>
     function attachSelectAll() {
-        var inputs = window.parent.document.querySelectorAll('input[type="number"]');
+        var inputs = document.querySelectorAll('input[type="number"]');
         inputs.forEach(function(inp) {
             if (inp._sa) return;
             inp._sa = true;
@@ -677,7 +686,7 @@ def inject_css():
     attachSelectAll();
     setInterval(attachSelectAll, 600);
     </script>
-    """, height=0)
+    """, unsafe_allow_html=True)
 
 def fmt_ils(x):
     """פורמט שקלים — שלמים לסכומים גדולים, עשרוניים לסכומים קטנים"""
