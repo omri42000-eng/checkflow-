@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ניהול אובליגו ומחשבון פריטת צ'קים
-Streamlit Web App — Mobile-first + Supabase/Postgres
+Streamlit Web App — Mobile-first + Supabase
 """
 
 import os
@@ -29,12 +29,12 @@ STATUS_COLORS = {
 
 
 # ─────────────────────────────────────────────
-# DB — Postgres
+# DB — Supabase/Postgres
 # ─────────────────────────────────────────────
 def get_db_url():
     url = st.secrets.get("DATABASE_URL", os.environ.get("DATABASE_URL", ""))
     if not url:
-        st.error("❌ חסר DATABASE_URL ב-secrets. הוסף אותו ב-Streamlit Cloud.")
+        st.error("❌ חסר DATABASE_URL ב-secrets.")
         st.stop()
     return url
 
@@ -183,40 +183,6 @@ def get_client_obligo():
         return cur.fetchall()
 
 
-def get_cashflow_forecast():
-    """תחזית תזרים — סכום צ'קים לפי חודש"""
-    u = current_user()
-    with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT
-                DATE_TRUNC('month', ch.due_date) AS month,
-                SUM(ch.amount) AS total,
-                COUNT(ch.id) AS cnt
-            FROM checks ch JOIN clients cl ON cl.id=ch.client_id
-            WHERE cl.username=%s
-              AND ch.due_date >= CURRENT_DATE
-            GROUP BY 1 ORDER BY 1
-        """, (u,))
-        return cur.fetchall()
-
-
-def get_status_breakdown():
-    """פירוט לפי סטטוס"""
-    u = current_user()
-    with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT ch.status,
-                   SUM(ch.amount) AS total,
-                   COUNT(ch.id) AS cnt
-            FROM checks ch JOIN clients cl ON cl.id=ch.client_id
-            WHERE cl.username=%s
-            GROUP BY ch.status
-        """, (u,))
-        return cur.fetchall()
-
-
 def get_upcoming_checks(days_ahead=2):
     u = current_user()
     results = {}
@@ -263,8 +229,34 @@ def do_login(username, password):
     return False, "סיסמה שגויה"
 
 
+def get_cashflow_forecast():
+    u = current_user()
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT DATE_TRUNC('month', ch.due_date) AS month,
+                   SUM(ch.amount) AS total, COUNT(ch.id) AS cnt
+            FROM checks ch JOIN clients cl ON cl.id=ch.client_id
+            WHERE cl.username=%s AND ch.due_date >= CURRENT_DATE
+            GROUP BY 1 ORDER BY 1
+        """, (u,))
+        return cur.fetchall()
+
+
+def get_status_breakdown():
+    u = current_user()
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT ch.status, SUM(ch.amount) AS total, COUNT(ch.id) AS cnt
+            FROM checks ch JOIN clients cl ON cl.id=ch.client_id
+            WHERE cl.username=%s GROUP BY ch.status
+        """, (u,))
+        return cur.fetchall()
+
+
 # ─────────────────────────────────────────────
-# CSS
+# CSS — עיצוב מקורי
 # ─────────────────────────────────────────────
 def inject_css():
     st.markdown("""
@@ -291,58 +283,55 @@ def inject_css():
         padding: 28px 24px 22px;
         margin-bottom: 6px;
         text-align: center;
+        border: none;
     }
     .kpi-label { font-size: 12px; font-weight: 600; letter-spacing: 1.5px; color: #5A5AA3; text-transform: uppercase; margin-bottom: 6px; }
     .kpi-value { font-family: 'Inter', sans-serif; font-size: 3rem; font-weight: 900; line-height: 1; color: #000000; direction: ltr; display: block; letter-spacing: -2px; }
     .kpi-sub { font-size: 13px; color: #6B6BA8; margin-top: 8px; font-weight: 500; }
 
-    .glass { background: rgba(255,255,255,0.15); border-radius: 28px; padding: 20px 22px; margin-bottom: 6px; }
-    .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-inline-start: 6px; }
+    .glass { background: rgba(255,255,255,0.15); border-radius: 28px; padding: 20px 22px; margin-bottom: 6px; border: none; }
+    .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-inline-start: 6px; letter-spacing: 0.3px; }
 
     .section-title { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #fff; margin: 20px 0 6px; text-align: right; }
     .section-title-right { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #fff; margin: 10px 0 6px; text-align: right; }
     .neon-bar, .neon-bar-right { height: 3px; width: 36px; border-radius: 3px; background: #fff; margin-bottom: 16px; margin-right: 0; }
     .neon-bar { margin-right: auto; margin-left: auto; }
 
-    .client-card { display: flex; justify-content: space-between; align-items: center; background: #F0F0F5; border-radius: 22px; padding: 16px 18px; margin-bottom: 6px; }
+    .client-card { display: flex; justify-content: space-between; align-items: center; background: #F0F0F5; border-radius: 22px; padding: 16px 18px; margin-bottom: 6px; border: none; }
     .client-name { font-weight: 800; font-size: 1rem; color: #000; }
     .client-obligo { font-weight: 900; font-size: 1.15rem; color: #000; direction: ltr; letter-spacing: -0.5px; }
 
-    .calc-out { border-radius: 28px; padding: 20px 22px; margin-top: 6px; text-align: center; }
+    .calc-out { border-radius: 28px; padding: 20px 22px; margin-top: 6px; text-align: center; border: none; }
     .calc-out.fee { background: #FFD6E8; }
     .calc-out.net { background: #D6F5E0; margin-top: 6px; }
     .calc-out .lbl { font-size: 12px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: #8A8A93; margin-bottom: 6px; }
     .calc-out .big { font-family: 'Inter', sans-serif; font-size: 2.6rem; font-weight: 900; direction: ltr; line-height: 1.1; letter-spacing: -1.5px; color: #000; }
 
-    /* דשבורד תזרים */
-    .forecast-card { background: #E8E4FF; border-radius: 22px; padding: 16px 18px; margin-bottom: 6px; }
-    .forecast-month { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #5A5AA3; margin-bottom: 4px; }
-    .forecast-amount { font-size: 1.4rem; font-weight: 900; color: #000; direction: ltr; }
-    .forecast-bar-bg { background: rgba(0,0,0,0.08); border-radius: 99px; height: 6px; margin-top: 8px; }
-    .forecast-bar-fill { background: #5A5AA3; border-radius: 99px; height: 6px; }
-
-    .status-card { border-radius: 18px; padding: 14px 16px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-
     .stButton > button { border-radius: 16px !important; border: none !important; background: #EFEFEF !important; color: #000 !important; font-weight: 700 !important; font-family: 'Inter', sans-serif !important; transition: opacity .15s ease !important; }
     .stButton > button:hover { opacity: 0.82 !important; }
 
-    .home-nav-btn .stButton > button { border-radius: 28px !important; font-size: 1.25rem !important; font-weight: 900 !important; min-height: 90px !important; height: auto !important; padding: 26px 24px !important; }
+    .home-nav-btn .stButton > button { border-radius: 28px !important; font-size: 1.25rem !important; font-weight: 900 !important; min-height: 90px !important; height: auto !important; padding: 26px 24px !important; letter-spacing: -0.3px !important; border: none !important; }
     .home-nav-green .stButton > button { background: #D6F5E0 !important; color: #000 !important; }
     .home-nav-pink .stButton > button { background: #E8E4FF !important; color: #000 !important; }
     .home-nav-blue .stButton > button { background: #C8E8FF !important; color: #000 !important; }
 
-    .btn-single .stButton > button { border-radius: 50px !important; background: #000 !important; color: #fff !important; font-size: 0.95rem !important; font-weight: 800 !important; padding: 12px 0 !important; }
-    .btn-batch .stButton > button { border-radius: 50px !important; background: #E8E4FF !important; color: #000 !important; font-size: 0.95rem !important; font-weight: 800 !important; padding: 12px 0 !important; }
+    .btn-single .stButton > button { border-radius: 50px !important; background: #000 !important; color: #fff !important; font-size: 0.95rem !important; font-weight: 800 !important; padding: 12px 0 !important; border: none !important; }
+    .btn-batch .stButton > button { border-radius: 50px !important; background: #E8E4FF !important; color: #000 !important; font-size: 0.95rem !important; font-weight: 800 !important; padding: 12px 0 !important; border: none !important; }
+    .btn-single .stButton > button:hover, .btn-batch .stButton > button:hover { opacity: 0.80 !important; }
 
-    .reminder-card { background: #FFF3C8; border-radius: 22px; padding: 16px 18px; margin-bottom: 8px; }
+    .reminder-card { background: #FFF3C8; border-radius: 22px; padding: 16px 18px; margin-bottom: 8px; cursor: pointer; }
     .reminder-title { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #8A6A00; margin-bottom: 8px; }
     .reminder-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
     .reminder-row:last-child { border-bottom: none; }
 
     .btn-sm .stButton > button { padding: 3px 8px !important; font-size: 0.75rem !important; border-radius: 8px !important; min-height: 0 !important; height: auto !important; font-weight: 700 !important; }
 
+    .stDataFrame, [data-testid="stDataEditor"] { border-radius: 16px !important; overflow: hidden !important; }
+
     .back-btn { position: fixed !important; bottom: 28px !important; left: 20px !important; z-index: 9999 !important; }
-    .back-btn .stButton > button { border-radius: 50px !important; background: rgba(255,255,255,0.92) !important; color: #000 !important; font-size: 0.82rem !important; font-weight: 800 !important; padding: 10px 20px !important; height: auto !important; min-height: 0 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.18) !important; }
+    .back-btn .stButton > button { border-radius: 50px !important; background: rgba(255,255,255,0.92) !important; color: #000 !important; font-size: 0.82rem !important; font-weight: 800 !important; padding: 10px 20px !important; height: auto !important; min-height: 0 !important; line-height: 1.4 !important; border: none !important; box-shadow: 0 4px 20px rgba(0,0,0,0.18) !important; }
+
+    div[data-testid="stNumberInput"]:has(input[aria-label*="סכום"]) input { font-size: 1.8rem !important; font-weight: 900 !important; text-align: center !important; letter-spacing: -1px !important; height: 64px !important; }
 
     .stTextInput input, .stNumberInput input, .stDateInput input,
     [data-baseweb="input"] input, [data-baseweb="base-input"] input {
@@ -350,7 +339,7 @@ def inject_css():
         -webkit-text-fill-color: #000 !important; caret-color: #000 !important;
         border-radius: 14px !important; border: none !important;
         font-weight: 600 !important; font-size: 1rem !important;
-        direction: rtl !important; text-align: right !important;
+        direction: ltr !important; text-align: right !important;
     }
     .stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"],
     .stDateInput div[data-baseweb="input"], div[data-baseweb="select"] > div {
@@ -358,23 +347,36 @@ def inject_css():
     }
     div[data-baseweb="select"] div { color: #000 !important; font-weight: 600 !important; }
     input::placeholder { color: #AEAEB8 !important; opacity: 1 !important; }
+
+    .stTextInput input, .stNumberInput input, .stDateInput input { text-align: right !important; direction: rtl !important; }
+    .stSelectbox label, .stNumberInput label, .stTextInput label, .stDateInput label, .stCheckbox label { text-align: right !important; display: block !important; }
+    ul[role="listbox"], div[data-baseweb="popover"] { background-color: #fff !important; border-radius: 16px !important; }
+    ul[role="listbox"] li { color: #000 !important; font-weight: 600 !important; }
     label { color: #000 !important; font-weight: 700 !important; font-size: 0.85rem !important; }
 
     div[data-testid="stRadio"] > div { gap: 10px !important; justify-content: center !important; }
-    div[data-testid="stRadio"] label { background: #F0F0F5 !important; border: none !important; border-radius: 14px !important; padding: 10px 28px !important; font-size: 1rem !important; font-weight: 800 !important; color: #000 !important; cursor: pointer; }
+    div[data-testid="stRadio"] label { background: #F0F0F5 !important; border: none !important; border-radius: 14px !important; padding: 10px 28px !important; font-size: 1rem !important; font-weight: 800 !important; color: #000 !important; cursor: pointer; transition: background .12s ease; }
+    div[data-testid="stRadio"] label:hover { background: #E8E4FF !important; }
     div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
     div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
 
     .stTabs [data-baseweb="tab-list"] { gap: 6px; justify-content: center; background: transparent !important; }
     .stTabs [data-baseweb="tab"] { background: #EFEFEF !important; border-radius: 14px !important; padding: 10px 24px !important; border: none !important; font-size: 0.95rem !important; font-weight: 700 !important; color: #8A8A93 !important; min-width: 130px; text-align: center; }
+    .stTabs [data-baseweb="tab"] p, .stTabs [data-baseweb="tab"] span, .stTabs [data-baseweb="tab"] div { color: #8A8A93 !important; }
     .stTabs [aria-selected="true"] { background: #000 !important; color: #fff !important; }
     .stTabs [aria-selected="true"] p, .stTabs [aria-selected="true"] span, .stTabs [aria-selected="true"] div { color: #fff !important; }
 
     .streamlit-expanderHeader { background: #F0F0F5 !important; border-radius: 14px !important; font-weight: 700 !important; color: #000 !important; border: none !important; }
     .streamlit-expanderContent { background: #F7F7F9 !important; border: none !important; }
+    .stCheckbox label { color: #000 !important; font-weight: 700 !important; font-size: 0.95rem !important; }
 
-    ul[role="listbox"], div[data-baseweb="popover"] { background-color: #fff !important; border-radius: 16px !important; }
-    ul[role="listbox"] li { color: #000 !important; font-weight: 600 !important; }
+    /* דשבורד */
+    .forecast-card { background: #E8E4FF; border-radius: 22px; padding: 16px 18px; margin-bottom: 6px; }
+    .forecast-month { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #5A5AA3; margin-bottom: 4px; }
+    .forecast-amount { font-size: 1.4rem; font-weight: 900; color: #000; direction: ltr; }
+    .forecast-bar-bg { background: rgba(0,0,0,0.08); border-radius: 99px; height: 6px; margin-top: 8px; }
+    .forecast-bar-fill { background: #5A5AA3; border-radius: 99px; height: 6px; }
+    .status-card { border-radius: 18px; padding: 14px 16px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -383,17 +385,30 @@ def inject_css():
     function attachSelectAll() {
         var inputs = window.parent.document.querySelectorAll('input[type="number"]');
         inputs.forEach(function(inp) {
-            if (inp._sa) return; inp._sa = true;
-            inp.addEventListener('focus', function() { var s=this; setTimeout(function(){ s.select(); },50); });
+            if (inp._sa) return;
+            inp._sa = true;
+            inp.addEventListener('focus', function() {
+                var s = this; setTimeout(function(){ s.select(); }, 50);
+            });
         });
     }
-    attachSelectAll(); setInterval(attachSelectAll, 600);
+    attachSelectAll();
+    setInterval(attachSelectAll, 600);
     </script>
     """, height=0)
 
 
 def fmt_ils(x):
     return f"₪{x:,.0f}"
+
+
+def calc_fee(amount, due_date, rate_val, rate_basis):
+    days = max((due_date - date.today()).days + 1, 0)
+    if rate_basis == "חודשית":
+        fee = float(amount) * (rate_val / 100.0) * (days / 30.0)
+    else:
+        fee = float(amount) * (rate_val / 100.0) * (days / 365.0)
+    return fee, days
 
 
 def fmt_date(d):
@@ -405,15 +420,6 @@ def fmt_date(d):
         return d.strftime("%d.%m.%Y")
     except Exception:
         return str(d)
-
-
-def calc_fee(amount, due_date, rate_val, rate_basis):
-    days = max((due_date - date.today()).days + 1, 0)
-    if rate_basis == "חודשית":
-        fee = float(amount) * (rate_val / 100.0) * (days / 30.0)
-    else:
-        fee = float(amount) * (rate_val / 100.0) * (days / 365.0)
-    return fee, days
 
 
 # ─────────────────────────────────────────────
@@ -489,10 +495,8 @@ def render_dashboard():
     st.markdown('<div class="section-title">📊 דשבורד תזרים</div>', unsafe_allow_html=True)
     st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
 
-    # סה"כ לפי סטטוס
     status_rows = get_status_breakdown()
     if status_rows:
-        st.markdown("<div style='margin-bottom:10px;'>", unsafe_allow_html=True)
         status_bg = {"ממתין למזומן": "#FFF3C8", "להפקדה": "#D6F5E0", "בפריטה": "#FFD6E8"}
         for r in status_rows:
             bg = status_bg.get(r["status"], "#F0F0F5")
@@ -505,41 +509,33 @@ def render_dashboard():
                 </div>
                 <span style="font-weight:900;font-size:1.1rem;color:#000;direction:ltr;">{fmt_ils(r['total'])}</span>
             </div>""", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
-    # תחזית חודשית
     forecast = get_cashflow_forecast()
     if not forecast:
         st.markdown('<div class="glass" style="text-align:center;color:#fff;">אין צ\'קים עתידיים 📭</div>', unsafe_allow_html=True)
         return
 
     max_amount = max(r["total"] for r in forecast) or 1
+    st.markdown("<div style='font-size:13px;font-weight:700;color:rgba(255,255,255,0.8);margin:12px 0 8px;'>פירעונות לפי חודש</div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='font-size:13px;font-weight:700;color:rgba(255,255,255,0.8);margin-bottom:8px;'>פירעונות לפי חודש</div>", unsafe_allow_html=True)
+    month_he = {"January":"ינואר","February":"פברואר","March":"מרץ","April":"אפריל",
+                "May":"מאי","June":"יוני","July":"יולי","August":"אוגוסט",
+                "September":"ספטמבר","October":"אוקטובר","November":"נובמבר","December":"דצמבר"}
+
     for r in forecast:
         month_dt = r["month"]
         if hasattr(month_dt, "strftime"):
             month_label = month_dt.strftime("%B %Y")
-            # עברית
-            month_he = {
-                "January": "ינואר", "February": "פברואר", "March": "מרץ",
-                "April": "אפריל", "May": "מאי", "June": "יוני",
-                "July": "יולי", "August": "אוגוסט", "September": "ספטמבר",
-                "October": "אוקטובר", "November": "נובמבר", "December": "דצמבר",
-            }
             for en, he in month_he.items():
                 month_label = month_label.replace(en, he)
         else:
             month_label = str(month_dt)[:7]
-
         pct = int((r["total"] / max_amount) * 100)
         st.markdown(f"""
         <div class="forecast-card">
             <div class="forecast-month">{month_label} · {r['cnt']} צ'קים</div>
             <div class="forecast-amount">{fmt_ils(r['total'])}</div>
-            <div class="forecast-bar-bg">
-                <div class="forecast-bar-fill" style="width:{pct}%;"></div>
-            </div>
+            <div class="forecast-bar-bg"><div class="forecast-bar-fill" style="width:{pct}%;"></div></div>
         </div>""", unsafe_allow_html=True)
 
 
@@ -547,6 +543,11 @@ def render_dashboard():
 # מסך ראשי
 # ─────────────────────────────────────────────
 def render_home_screen():
+    qp = st.query_params.get("s", None)
+    if qp in ("calc", "mgmt", "dash"):
+        st.session_state.screen = qp
+        st.rerun()
+
     st.markdown(
         "<div style='height:40px'></div>"
         "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
@@ -563,20 +564,17 @@ def render_home_screen():
 
     st.markdown('<div class="home-nav-btn home-nav-green">', unsafe_allow_html=True)
     if st.button("🧮  מחשבון פריטה", key="go_calc", use_container_width=True):
-        st.session_state.screen = "calc"
-        st.rerun()
-    st.markdown('</div><div style="height:10px"></div>', unsafe_allow_html=True)
+        st.session_state.screen = "calc"; st.rerun()
+    st.markdown('</div><div style="height:14px"></div>', unsafe_allow_html=True)
 
     st.markdown('<div class="home-nav-btn home-nav-pink">', unsafe_allow_html=True)
     if st.button("📋  ניהול צ׳קים", key="go_mgmt", use_container_width=True):
-        st.session_state.screen = "mgmt"
-        st.rerun()
-    st.markdown('</div><div style="height:10px"></div>', unsafe_allow_html=True)
+        st.session_state.screen = "mgmt"; st.rerun()
+    st.markdown('</div><div style="height:14px"></div>', unsafe_allow_html=True)
 
     st.markdown('<div class="home-nav-btn home-nav-blue">', unsafe_allow_html=True)
     if st.button("📊  דשבורד תזרים", key="go_dash", use_container_width=True):
-        st.session_state.screen = "dash"
-        st.rerun()
+        st.session_state.screen = "dash"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -584,6 +582,7 @@ def render_back_button():
     st.markdown('<div class="back-btn">', unsafe_allow_html=True)
     if st.button("← ראשי", key="back_home"):
         st.session_state.screen = "home"
+        st.query_params.clear()
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -624,7 +623,8 @@ def render_upcoming_reminder():
     )
 
     expanded = st.session_state.get("reminder_open", False)
-    if st.button("📋 פרטים מלאים" if not expanded else "✖ סגור", key="toggle_reminder"):
+    btn_label = "📋 פרטים מלאים" if not expanded else "✖ סגור"
+    if st.button(btn_label, key="toggle_reminder"):
         st.session_state.reminder_open = not expanded
         st.rerun()
 
@@ -644,8 +644,7 @@ def render_upcoming_reminder():
             f"<div class='reminder-row'>"
             f"<span style='font-weight:700;color:#000;'>{ch['client_name']}</span>"
             f"<span style='font-weight:900;color:#000;'>{fmt_ils(ch['amount'])}</span>"
-            f"</div>"
-            for ch in checks
+            f"</div>" for ch in checks
         )
         st.markdown(
             f"<div style='background:{bg};border-radius:18px;padding:14px 16px;margin-bottom:6px;'>"
@@ -678,7 +677,7 @@ def render_add_check_form():
         st.markdown(
             f"<div style='background:#D6F5E0;border-radius:22px;padding:18px 20px;margin-bottom:10px;'>"
             f"<div style='font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;"
-            f"color:#2A7A4A;margin-bottom:10px;'>✅ {bs['count']} צ'קים נשמרו</div>",
+            f"color:#2A7A4A;margin-bottom:10px;'>✅ {bs['count']} צ'קים נשמרו | ריבית {bs['rate_val']:.2f}% {bs['rate_basis']}</div>",
             unsafe_allow_html=True
         )
         st.dataframe(pd.DataFrame(bs["rows"]), use_container_width=True, hide_index=True)
@@ -701,7 +700,9 @@ def render_add_check_form():
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
     sel = st.selectbox("לקוח", ["— חדש —"] + names, key="add_client_sel")
-    new_name = st.text_input("שם לקוח חדש", key="new_client_name", placeholder="הזן שם לקוח...") if sel == "— חדש —" else None
+    new_name = None
+    if sel == "— חדש —":
+        new_name = st.text_input("שם לקוח חדש", key="new_client_name", placeholder="הזן שם לקוח...")
 
     if mode == "single":
         amount = st.number_input("סכום הצ'ק (₪)", min_value=0.0, step=100.0, format="%.0f", key="add_amount")
@@ -710,9 +711,12 @@ def render_add_check_form():
             due = st.date_input("תאריך פירעון", value=date.today() + timedelta(days=30), min_value=date.today(), key="add_due")
         with c2:
             use_remind = st.checkbox("הוסף תזכורת", value=False, key="add_use_remind")
-        remind = st.date_input("תאריך תזכורת", value=date.today() + timedelta(days=30), min_value=date.today(), key="add_remind") if use_remind else None
+        remind = None
+        if use_remind:
+            remind = st.date_input("תאריך תזכורת", value=date.today() + timedelta(days=30), min_value=date.today(), key="add_remind")
         status = st.selectbox("סטטוס", STATUSES, key="add_status")
 
+        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
         ra, rb = st.columns(2)
         with ra:
             single_rate = st.number_input("ריבית (%)", min_value=0.0, max_value=100.0,
@@ -779,10 +783,15 @@ def render_add_check_form():
         st.session_state.rate_basis = batch_basis
 
         if st.button("🔄 צור טבלת עריכה", use_container_width=True, key="gen_table"):
-            rows = [{"#": i+1, "סכום (₪)": float(amount_base), "תאריך": (first_date + timedelta(days=int(gap)*i)).isoformat()} for i in range(int(count))]
+            rows = []
+            for i in range(int(count)):
+                d = first_date + timedelta(days=int(gap) * i)
+                rows.append({"#": i+1, "סכום (₪)": float(amount_base), "תאריך": d.isoformat()})
             st.session_state.batch_df = pd.DataFrame(rows)[["#", "סכום (₪)", "תאריך"]]
 
         if "batch_df" in st.session_state and st.session_state.batch_df is not None:
+            st.markdown("**ערוך לפי הצורך — לחץ על תא לשינוי:**")
+            st.markdown("<div style='direction:rtl;'>", unsafe_allow_html=True)
             edited = st.data_editor(
                 st.session_state.batch_df, use_container_width=True, hide_index=True,
                 column_config={
@@ -791,7 +800,46 @@ def render_add_check_form():
                     "תאריך": st.column_config.TextColumn(),
                 }, key="batch_editor"
             )
+            st.markdown("</div>", unsafe_allow_html=True)
 
+            st.markdown(
+                "<div style='font-size:11px;font-weight:700;letter-spacing:1px;"
+                "text-transform:uppercase;color:rgba(255,255,255,0.5);"
+                "margin:10px 0 4px;text-align:right;'>כוונון תאריך</div>",
+                unsafe_allow_html=True
+            )
+            for idx, row in edited.iterrows():
+                date_val = str(row["תאריך"])
+                st.markdown(
+                    f"<div style='display:flex;align-items:center;justify-content:space-between;"
+                    f"background:rgba(255,255,255,0.10);border-radius:12px;"
+                    f"padding:6px 10px;margin-bottom:4px;direction:rtl;'>"
+                    f"<span style='font-size:12px;font-weight:800;color:#fff;min-width:24px;'>#{int(row['#'])}</span>"
+                    f"<span style='font-size:13px;font-weight:700;color:#fff;flex:1;text-align:center;'>{date_val}</span>"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
+                ca, cb = st.columns([1, 1])
+                with ca:
+                    if st.button(f"− יום", key=f"dm_{idx}", use_container_width=True):
+                        try:
+                            d = datetime.fromisoformat(date_val).date()
+                        except:
+                            d = date.today()
+                        edited.at[idx, "תאריך"] = (d - timedelta(days=1)).isoformat()
+                        st.session_state.batch_df = edited
+                        st.rerun()
+                with cb:
+                    if st.button(f"+ יום", key=f"dp_{idx}", use_container_width=True):
+                        try:
+                            d = datetime.fromisoformat(date_val).date()
+                        except:
+                            d = date.today()
+                        edited.at[idx, "תאריך"] = (d + timedelta(days=1)).isoformat()
+                        st.session_state.batch_df = edited
+                        st.rerun()
+
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
             if st.button("💾 שמור את כל הצ'קים", use_container_width=True, key="save_batch"):
                 cid = add_client(new_name or "") if sel == "— חדש —" else next((c["id"] for c in clients if c["name"] == sel), None)
                 if not cid:
@@ -800,19 +848,20 @@ def render_add_check_form():
                     amounts = edited["סכום (₪)"].tolist()
                     due_dates = [datetime.fromisoformat(str(d)).date() for d in edited["תאריך"].tolist()]
                     add_checks_batch(cid, amounts, due_dates, status)
-
                     rate_val = st.session_state.get("fixed_rate", 12.0)
                     rate_basis = st.session_state.get("rate_basis", "שנתית")
                     today = date.today()
                     summary_rows, total_fee, total_net = [], 0.0, 0.0
                     for amt, dd in zip(amounts, due_dates):
                         days = max((dd - today).days + 1, 0)
-                        fee = float(amt) * (rate_val/100.0) * (days/30.0 if rate_basis=="חודשית" else days/365.0)
+                        fee = float(amt) * (rate_val/100.0) * (days/30.0 if rate_basis == "חודשית" else days/365.0)
                         net = float(amt) - fee
                         total_fee += fee; total_net += net
                         summary_rows.append({"תאריך": fmt_date(dd), "סכום": fmt_ils(amt), "עמלה": fmt_ils(fee), "נטו": fmt_ils(net)})
-
-                    st.session_state.batch_summary = {"rows": summary_rows, "total_fee": total_fee, "total_net": total_net, "count": len(amounts)}
+                    st.session_state.batch_summary = {
+                        "rows": summary_rows, "total_fee": total_fee, "total_net": total_net,
+                        "count": len(amounts), "rate_val": rate_val, "rate_basis": rate_basis,
+                    }
                     st.session_state.add_mode = None
                     st.session_state.batch_df = None
                     st.rerun()
@@ -837,8 +886,10 @@ def render_clients():
         bg, txt = CLIENT_PALETTE[i % len(CLIENT_PALETTE)]
         st.markdown(f"""
         <div class="client-card" style="background:{bg};">
-            <div><div class="client-name">{r['name']}</div>
-            <div style="font-size:.82rem;color:{txt};font-weight:600;">{r['cnt']} צ'קים</div></div>
+            <div>
+                <div class="client-name">{r['name']}</div>
+                <div style="font-size:.82rem;color:{txt};font-weight:600;">{r['cnt']} צ'קים</div>
+            </div>
             <div class="client-obligo">{fmt_ils(r['obligo'])}</div>
         </div>""", unsafe_allow_html=True)
 
@@ -850,9 +901,12 @@ def render_clients():
                 with cc1:
                     st.markdown(f"""
                     <div style="padding:6px 0;">
-                        <span style="font-weight:700;direction:ltr;">{fmt_ils(ch['amount'])}</span><br>
-                        <span style="font-size:.8rem;color:rgba(255,255,255,0.75);">פירעון: {fmt_date(ch['due_date'])}{remind_str}</span>
-                        <span class="pill" style="background:{color}22;color:{color};border:1px solid {color}66;">{ch['status']}</span>
+                        <span style="font-family:'Orbitron';font-weight:700;direction:ltr;">
+                            {fmt_ils(ch['amount'])}</span><br>
+                        <span style="font-size:.8rem;color:rgba(255,255,255,0.75);">
+                            פירעון: {fmt_date(ch['due_date'])}{remind_str}</span>
+                        <span class="pill" style="background:{color}22;color:{color};
+                            border:1px solid {color}66;">{ch['status']}</span>
                     </div>""", unsafe_allow_html=True)
                 with cc2:
                     new_st = st.selectbox("סטטוס", STATUSES, index=STATUSES.index(ch["status"]),
@@ -877,7 +931,9 @@ def render_calculator():
     if "rate_edit_open" not in st.session_state: st.session_state.rate_edit_open = False
 
     checks = get_checks()
-    options = ["— הזנה ידנית —"] + [f"{c['client_name']} | {fmt_ils(c['amount'])} | {fmt_date(c['due_date'])}" for c in checks]
+    options = ["— הזנה ידנית —"] + [
+        f"{c['client_name']} | {fmt_ils(c['amount'])} | {fmt_date(c['due_date'])}" for c in checks
+    ]
     pick = st.selectbox("בחר צ'ק קיים (או הזנה ידנית)", options, key="calc_pick")
 
     default_amount = 10000.0
@@ -899,16 +955,22 @@ def render_calculator():
     amount = st.number_input("סכום הצ'ק (₪)", min_value=0.0, step=100.0,
                              value=st.session_state.get("calc_amount", default_amount),
                              format="%.0f", key="calc_amount")
-    due_date = st.date_input("תאריך פירעון הצ'ק", key="calc_due", min_value=date.today())
+    due_date = st.date_input("תאריך פירעון הצ'ק", key="calc_due", min_value=date.today(),
+                             help="החישוב מתחיל ממחר וכולל את יום הפירעון")
 
     days = max((due_date - date.today()).days + 1, 0)
     st.markdown(
         f"<div style='background:#E8F5A3;border-radius:22px;padding:16px;text-align:center;margin:6px 0 10px;'>"
-        f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:#5A6800;text-transform:uppercase;display:block;margin-bottom:2px;'>ימי זיכוי</span>"
-        f"<span style='font-family:Inter,sans-serif;font-size:2.4rem;font-weight:900;color:#000;letter-spacing:-1.5px;'>{days}</span>"
+        f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:#5A6800;"
+        f"text-transform:uppercase;display:block;margin-bottom:2px;'>ימי זיכוי</span>"
+        f"<span style='font-family:Inter,sans-serif;font-size:2.4rem;font-weight:900;"
+        f"color:#000;letter-spacing:-1.5px;'>{days}</span>"
         f"<span style='font-size:0.9rem;font-weight:600;color:#5A6800;'> ימים</span></div>",
         unsafe_allow_html=True)
 
+    st.markdown("<div style='text-align:center;font-size:11px;font-weight:700;"
+                "letter-spacing:1.5px;color:#8A8A93;text-transform:uppercase;"
+                "margin-bottom:8px;'>סוג הריבית</div>", unsafe_allow_html=True)
     basis = st.radio("סוג הריבית", ["חודשית", "שנתית"],
                      index=["חודשית", "שנתית"].index(st.session_state.rate_basis),
                      horizontal=True, key="basis_radio", label_visibility="collapsed")
@@ -918,9 +980,11 @@ def render_calculator():
     r1, r2 = st.columns([2, 1])
     with r1:
         st.markdown(
-            f"<div style='background:#FFF3C8;border-radius:22px;padding:16px;text-align:center;'>"
-            f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:#8A6A00;text-transform:uppercase;display:block;margin-bottom:4px;'>ריבית קבועה ({basis})</span>"
-            f"<span style='font-size:2rem;font-weight:900;color:#000;letter-spacing:-1px;'>{rate_val:.2f}%</span>"
+            f"<div style='background:#FFF3C8;border-radius:22px;padding:16px;text-align:center;margin-bottom:0;'>"
+            f"<span style='font-size:11px;font-weight:700;letter-spacing:1.2px;color:#8A6A00;"
+            f"text-transform:uppercase;display:block;margin-bottom:4px;'>ריבית קבועה ({basis})</span>"
+            f"<span style='font-family:Inter,sans-serif;font-size:2rem;font-weight:900;"
+            f"color:#000;letter-spacing:-1px;'>{rate_val:.2f}%</span>"
             f"</div>", unsafe_allow_html=True)
     with r2:
         st.write(""); st.write("")
@@ -938,9 +1002,17 @@ def render_calculator():
     fee = amount * (rate_val/100.0) * (days/30.0 if basis == "חודשית" else days/365.0)
     net = amount - fee
 
+    if days <= 0:
+        st.markdown("<div style='background:#FFE8D6;border-radius:16px;padding:12px;"
+                    "text-align:center;font-size:13px;font-weight:700;color:#8A3A00;"
+                    "margin:8px 0;'>⚠️ תאריך הפירעון עבר — אין ימי זיכוי.</div>",
+                    unsafe_allow_html=True)
+
     st.markdown(f"""
-    <div class="calc-out fee"><div class="lbl">סך העמלה שיורדת</div><div class="big">{fmt_ils(fee)}</div></div>
-    <div class="calc-out net"><div class="lbl">נטו מזומן שמתקבל</div><div class="big">{fmt_ils(net)}</div></div>
+    <div class="calc-out fee"><div class="lbl">סך העמלה שיורדת</div>
+        <div class="big">{fmt_ils(fee)}</div></div>
+    <div class="calc-out net"><div class="lbl">נטו מזומן שמתקבל</div>
+        <div class="big">{fmt_ils(net)}</div></div>
     """, unsafe_allow_html=True)
 
 
@@ -953,10 +1025,19 @@ def main():
 
     if "current_user" not in st.session_state:
         st.session_state.current_user = "admin"
+
+    screen = st.session_state.get("screen", "home")
+    st.components.v1.html(f"""
+    <script>
+    (function(){{
+        var s = "{screen}";
+        var cur = new URLSearchParams(window.location.search).get("s");
+        if(cur !== s) window.history.pushState({{screen:s}},"","?s="+s);
+    }})();
+    </script>""", height=0)
+
     if "screen" not in st.session_state:
         st.session_state.screen = "home"
-
-    screen = st.session_state.screen
 
     if screen == "home":
         render_home_screen()
