@@ -41,7 +41,12 @@ def get_db_url():
 
 @contextmanager
 def get_conn():
-    conn = psycopg.connect(get_db_url(), row_factory=dict_row)
+    url = get_db_url()
+    try:
+        conn = psycopg.connect(url, row_factory=dict_row)
+    except Exception as e:
+        st.error(f"❌ שגיאת חיבור: {e}")
+        st.stop()
     try:
         yield conn
         conn.commit()
