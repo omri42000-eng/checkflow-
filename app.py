@@ -8,8 +8,8 @@ import os
 from datetime import date, datetime, timedelta
 from contextlib import contextmanager
 
-import psycopg2
-import psycopg2.extras
+import psycopg
+from psycopg.rows import dict_row
 import streamlit as st
 import streamlit_authenticator as stauth
 
@@ -41,7 +41,7 @@ def get_db_url():
 
 @contextmanager
 def get_conn():
-    conn = psycopg2.connect(get_db_url(), cursor_factory=psycopg2.extras.RealDictCursor)
+    conn = psycopg.connect(get_db_url(), row_factory=dict_row)
     try:
         yield conn
         conn.commit()
