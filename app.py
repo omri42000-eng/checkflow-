@@ -382,18 +382,7 @@ css_code = """
 <style>
 # ודא שחלק זה מחליף את כל קוד ה-CSS הישן שהיה זרוק בקובץ
 st.markdown("""
-<style>
-@keyframes crazyAnim {
-    0% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
-    25% { transform: scale(1.15) rotate(-10deg); background: #ff0055; }
-    50% { transform: scale(0.9) rotate(10deg); background: #00ffaa; box-shadow: 0 0 25px #00ffaa; }
-    75% { transform: scale(1.1) rotate(-5deg); background: #ffff00; }
-    100% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
-}
 
-.my-big-button:active {
-    animation: crazyAnim 0.4s ease-in-out;
-}
 </style>
 """, unsafe_allow_html=True)
 
