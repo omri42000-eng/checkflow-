@@ -364,7 +364,22 @@ function attachSelectAll(){
 }
 attachSelectAll();setInterval(attachSelectAll,600);
 </script>""", height=0)
+import streamlit as st
 
+# 1. קוד ה-JavaScript שלך (נשאר ללא שינוי)
+st.components.v1.html("""<script>
+function attachSelectAll(){
+    var inputs=window.parent.document.querySelectorAll('input[type="number"]');
+    inputs.forEach(function(inp){if(inp._sa)return;inp._sa=true;
+    inp.addEventListener('focus',function(){var s=this;setTimeout(function(){s.select();},50);});});
+}
+attachSelectAll();setInterval(attachSelectAll,600);
+</script>""", height=0)
+
+
+# 2. התיקון: עטיפת ה-CSS בתוך מחרוזת פייתון והזרקה שלו דרך st.markdown
+css_code = """
+<style>
 @keyframes crazyAnim {
     0% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
     25% { transform: scale(1.15) rotate(-10deg); background: #ff0055; } /* ורוד חריף */
@@ -372,6 +387,16 @@ attachSelectAll();setInterval(attachSelectAll,600);
     75% { transform: scale(1.1) rotate(-5deg); background: #ffff00; } /* צהוב */
     100% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
 }
+
+/* החלף את שם המחלקה 'my-big-button' בשם המחלקה של הכפתורים שלך */
+.my-big-button:active {
+    animation: crazyAnim 0.4s ease-in-out;
+}
+</style>
+"""
+
+# הזרקת ה-CSS לאפליקציה
+st.markdown(css_code, unsafe_allow_html=True)
 
 /* החלף את שם המחלקה 'my-big-button' בשם המחלקה של הכפתורים שלך */
 .my-big-button:active {
