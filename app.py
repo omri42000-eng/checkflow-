@@ -162,10 +162,32 @@ def cached_month_checks(user, month_str):
             ORDER BY ch.due_date""", (user, month_str))
         return cur.fetchall()
 
+@st.cache_data(ttl=30)
+def cached_next_active_days(user, n=2):
+    """Next n calendar days that actually have checks due."""
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""SELECT DISTINCT ch.due_date
+            FROM checks ch JOIN clients cl ON cl.id=ch.client_id
+            WHERE cl.username=%s AND ch.due_date >= CURRENT_DATE
+            ORDER BY ch.due_date LIMIT %s""", (user, n))
+        dates = [row["due_date"] for row in cur.fetchall()]
+        results = {}
+        for d in dates:
+            cur.execute("""SELECT ch.id, ch.amount, ch.due_date, ch.status, cl.name AS client_name
+                FROM checks ch JOIN clients cl ON cl.id=ch.client_id
+                WHERE cl.username=%s AND ch.due_date=%s ORDER BY cl.name""", (user, d))
+            rows = cur.fetchall()
+            if rows:
+                dk = d.isoformat() if hasattr(d,"isoformat") else str(d)
+                results[dk] = [dict(r) for r in rows]
+        return results
+
 def invalidate_cache():
     cached_totals.clear(); cached_checks.clear(); cached_clients.clear()
     cached_obligo.clear(); cached_upcoming.clear(); cached_forecast.clear()
     cached_status_breakdown.clear(); cached_month_checks.clear()
+    cached_next_active_days.clear()
 
 # ─── write functions ───
 def add_client(name, rate=12.0, rate_basis="שנתית"):
@@ -339,6 +361,13 @@ div[data-testid="stRadio"] div[data-baseweb="radio"]>div:first-child{display:non
 ul[role="listbox"],div[data-baseweb="popover"]{background-color:#142438!important;border:1px solid rgba(229,154,101,.2)!important;border-radius:14px!important}
 ul[role="listbox"] li{color:#dec599!important;font-weight:600!important}
 .stDataFrame,[data-testid="stDataEditor"]{border-radius:14px!important;overflow:hidden!important;border:none!important}
+/* active radio button glow */
+div[data-testid="stRadio"] label:has(input:checked){
+    background:linear-gradient(135deg,#e59a65 0%,#b06a3b 100%)!important;
+    color:#fff!important;
+    box-shadow:0 0 16px rgba(229,154,101,.5)!important;
+    border-color:transparent!important;
+}
 /* center inline buttons */
 div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton {
     display: flex; justify-content: center;
@@ -470,12 +499,29 @@ def render_back_button():
 
 # ─── KPI ───
 def render_kpi():
-    total, cnt = cached_totals(current_user())
-    st.markdown(f"""<div class="kpi">
+    u = current_user()
+    total, cnt = cached_totals(u)
+    expanded = st.session_state.get("kpi_expanded", False)
+    st.markdown(f"""<div class="kpi" style="cursor:pointer;margin-bottom:4px;">
         <div class="kpi-label">אובליגו כולל</div>
         <div class="kpi-value">{fmt_ils(total)}</div>
-        <div class="kpi-sub">{cnt} צ'קים בארנק 💸</div>
+        <div class="kpi-sub">{cnt} צ'קים בארנק 💸 &nbsp;·&nbsp; {"▲ סגור" if expanded else "▼ לקוחות"}</div>
     </div>""", unsafe_allow_html=True)
+    col = st.columns([1,3,1])[1]
+    with col:
+        if st.button("▲ סגור" if expanded else "▼ הצג לקוחות", key="kpi_toggle_btn", use_container_width=True):
+            st.session_state.kpi_expanded = not expanded; st.rerun()
+    if expanded:
+        rows = [r for r in cached_obligo(u) if r["cnt"] > 0]
+        for r in rows:
+            st.markdown(
+                f"<div style='display:flex;justify-content:space-between;align-items:center;"
+                f"padding:8px 14px;background:rgba(44,52,64,.75);border-radius:12px;"
+                f"margin-bottom:4px;border:1px solid rgba(229,154,101,.12);'>"
+                f"<span style='font-weight:800;color:#dec599;font-size:.88rem;flex:1;'>{r['name']}</span>"
+                f"<span style='font-size:.75rem;color:#a07850;margin:0 12px;'>{r['cnt']} צ׳קים</span>"
+                f"<span style='font-weight:900;color:#e59a65;direction:ltr;'>{fmt_ils(r['obligo'])}</span>"
+                f"</div>", unsafe_allow_html=True)
 
 # ─── Home ───
 def render_home_screen():
@@ -566,16 +612,14 @@ function nav(key) {
 </html>
 """, height=335)
 
-    # Hidden nav buttons in main page — found and clicked by iframe JS above
+    # Hide the 3 nav buttons (found+clicked by iframe JS)
     st.markdown("""<style>
-.nav-hidden .stButton>button{position:fixed!important;top:-9999px!important;
+body .stButton>button{position:fixed!important;top:-9999px!important;
     left:-9999px!important;width:1px!important;height:1px!important;opacity:0!important}
 </style>""", unsafe_allow_html=True)
-    st.markdown('<div class="nav-hidden">', unsafe_allow_html=True)
     if st.button("calc", key="go_calc"): st.session_state.screen = "calc"; st.rerun()
     if st.button("mgmt", key="go_mgmt"): st.session_state.screen = "mgmt"; st.rerun()
     if st.button("dash", key="go_dash"): st.session_state.screen = "dash"; st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
     render_kpi()
 
@@ -596,16 +640,15 @@ def render_dashboard():
         f"<div class='db-hdr-cap'>תזרים מזומנים</div>"
         f"</div>", unsafe_allow_html=True)
 
-    # ══ GLASS SECTION 1: Timeline ─ upcoming 48 hrs ══
-    upcoming_raw = cached_upcoming(u)
-    DAY_LABELS = {today.isoformat(): "היום", (today+timedelta(days=1)).isoformat(): "מחר",
-                  (today+timedelta(days=2)).isoformat(): "מחרתיים"}
-    DAY_DOTS   = {today.isoformat(): "#FF3B30", (today+timedelta(days=1)).isoformat(): "#FFCC00",
-                  (today+timedelta(days=2)).isoformat(): "#FF9500"}
+    # ══ GLASS SECTION 1: Timeline ─ next active days ══
+    upcoming_raw = cached_next_active_days(u, n=2)
+    today = date.today()
+    DAY_DOTS = {today.isoformat(): "#FF3B30",
+                (today+timedelta(days=1)).isoformat(): "#FFCC00"}
 
     if upcoming_raw:
         to_deposit = [ch for v in upcoming_raw.values() for ch in v if ch["status"] == "להפקדה"]
-        html = '<div class="glass-section"><div class="gs-label">⏰  פירעונות 48 השעות הקרובות</div>'
+        html = '<div class="glass-section"><div class="gs-label">📅  יומיים הקרובים עם פעילות</div>'
 
         if to_deposit:
             dep_total = sum(ch["amount"] for ch in to_deposit)
@@ -616,10 +659,16 @@ def render_dashboard():
                      f"</div>")
 
         for d_str, checks in sorted(upcoming_raw.items()):
-            lbl   = DAY_LABELS.get(d_str, d_str)
-            dot_c = DAY_DOTS.get(d_str, "#e59a65")
-            day_t = sum(ch["amount"] for ch in checks)
-            date_label = d_str[5:].replace("-",".")
+            try:
+                d_obj = date.fromisoformat(d_str)
+                delta = (d_obj - today).days
+                if delta == 0: lbl = "היום"
+                elif delta == 1: lbl = "מחר"
+                else: lbl = f"בעוד {delta} ימים"
+                date_label = d_obj.strftime("%d.%m")
+            except: lbl = d_str; date_label = ""
+            dot_c = DAY_DOTS.get(d_str, "#FF9500")
+            day_t  = sum(ch["amount"] for ch in checks)
 
             html += (f"<div class='tl-day'>"
                      f"<div class='tl-day-hdr'>"
@@ -645,14 +694,14 @@ def render_dashboard():
                          f"<span class='tl-wc-chevron'>›</span>"
                          f"</div></div>")
 
-            html += "</div></div></div>"   # tl-items · tl-rows-wrap · tl-day
+            html += "</div></div></div>"
 
-        html += "</div>"   # glass-section
+        html += "</div>"
         st.markdown(html, unsafe_allow_html=True)
 
     else:
         st.markdown(
-            "<div class='glass-section'><div class='gs-label'>⏰  פירעונות 48 שעות</div>"
+            "<div class='glass-section'><div class='gs-label'>📅  ימים הבאים עם פעילות</div>"
             "<div style='color:#9BA1A6;font-size:.85rem;text-align:center;padding:12px 0;'>אין פירעונות קרובים ✓</div>"
             "</div>", unsafe_allow_html=True)
 
@@ -736,8 +785,8 @@ def render_calculator():
     st.markdown('<div class="section-title-right">🧮 מחשבון פריטה</div>', unsafe_allow_html=True)
     st.markdown('<div class="neon-bar-right"></div>', unsafe_allow_html=True)
 
-    if "fixed_rate" not in st.session_state: st.session_state.fixed_rate = 12.0
-    if "rate_basis" not in st.session_state: st.session_state.rate_basis = "שנתית"
+    if "fixed_rate" not in st.session_state: st.session_state.fixed_rate = 4.0
+    if "rate_basis" not in st.session_state: st.session_state.rate_basis = "חודשית"
     if "rate_edit_open" not in st.session_state: st.session_state.rate_edit_open = False
 
     checks = cached_checks(current_user())
@@ -773,11 +822,11 @@ def render_calculator():
         f"<span style='font-size:.9rem;font-weight:600;color:#8c6a45;'> ימים</span></div>",
         unsafe_allow_html=True)
 
-    # Basis buttons — no label
-    basis = st.radio("", ["ריבית חודשית", "ריבית שנתית"],
+    # Basis buttons
+    basis = st.radio("", ['שכ"ט חודשי', 'שכ"ט שנתי'],
                      index=0 if st.session_state.rate_basis=="חודשית" else 1,
                      horizontal=True, key="basis_radio", label_visibility="collapsed")
-    st.session_state.rate_basis = "חודשית" if basis=="שכר טרחה חודשי" else "שנתית"
+    st.session_state.rate_basis = "חודשית" if basis=='שכ"ט חודשי' else "שנתית"
 
     rate_val = st.session_state.fixed_rate
     r1, r2 = st.columns([2,1])
@@ -866,12 +915,14 @@ def render_add_check_form():
         bs = st.session_state.batch_summary
         st.markdown(
             f"<div style='background:rgba(42,122,74,.2);border:1px solid rgba(57,255,20,.2);border-radius:20px;padding:16px 18px;margin-bottom:10px;'>"
-            f"<div style='font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6ddf8a;margin-bottom:10px;'>✅ {bs['count']} צ'קים נשמרו | שכ\"ט {bs['rate_val']:.2f}% {bs['rate_basis']}</div>",
+            f"<div style='font-size:17px;font-weight:900;letter-spacing:-.3px;color:#6ddf8a;text-align:center;margin-bottom:12px;'>✅ {bs['count']} צ׳קים נשמרו — {bs['rate_val']:.2f}% {bs['rate_basis']}</div>",
             unsafe_allow_html=True)
         st.dataframe(pd.DataFrame(bs["rows"]), use_container_width=True, hide_index=True)
         st.markdown(
-            f"<div style='display:flex;justify-content:space-between;padding:10px 4px 4px;font-weight:800;font-size:1rem;color:#dec599;'>"
-            f"<span>סה\"כ עמלות: {fmt_ils(bs['total_fee'])}</span><span>סה\"כ נטו: {fmt_ils(bs['total_net'])}</span></div></div>",
+            f"<div style='display:flex;justify-content:space-between;padding:10px 4px 4px;font-weight:800;font-size:.9rem;color:#dec599;'>"
+            f"<span>ברוטו: {fmt_ils(bs.get('total_gross',0))}</span>"
+            f"<span>עמלות: {fmt_ils(bs['total_fee'])}</span>"
+            f"<span>נטו: {fmt_ils(bs['total_net'])}</span></div></div>",
             unsafe_allow_html=True)
         if st.button("✖ סגור", key="close_summary"):
             st.session_state.batch_summary = None; st.rerun()
@@ -910,10 +961,10 @@ def render_add_check_form():
             single_rate = st.number_input("אחוז שכ\"ט (%)", min_value=0.0, max_value=100.0,
                                           value=client_rate, step=0.1, format="%.2f", key="single_rate")
         with rb:
-            single_basis_lbl = st.radio("", ["שכר טרחה חודשי","שכר טרחה שנתי"],
+            single_basis_lbl = st.radio("", ['שכ"ט חודשי', 'שכ"ט שנתי'],
                                     index=["חודשית","שנתית"].index(client_basis),
                                     key="single_basis", horizontal=True, label_visibility="collapsed")
-        single_basis = "חודשית" if single_basis_lbl=="שכר טרחה חודשי" else "שנתית"
+        single_basis = "חודשית" if single_basis_lbl=='שכ"ט חודשי' else "שנתית"
         st.session_state.fixed_rate = single_rate
         st.session_state.rate_basis = single_basis
 
@@ -953,10 +1004,10 @@ def render_add_check_form():
             batch_rate = st.number_input("אחוז שכ\"ט (%)", min_value=0.0, max_value=100.0,
                                          value=client_rate, step=0.1, format="%.2f", key="batch_rate")
         with bb:
-            batch_basis_lbl = st.radio("", ["שכר טרחה חודשי","שכר טרחה שנתי"],
+            batch_basis_lbl = st.radio("", ['שכ"ט חודשי', 'שכ"ט שנתי'],
                                    index=["חודשית","שנתית"].index(client_basis),
                                    key="batch_basis", horizontal=True, label_visibility="collapsed")
-        batch_basis = "חודשית" if batch_basis_lbl=="שכר טרחה חודשי" else "שנתית"
+        batch_basis = "חודשית" if batch_basis_lbl=='שכ"ט חודשי' else "שנתית"
         st.session_state.fixed_rate = batch_rate
         st.session_state.rate_basis = batch_basis
 
@@ -985,11 +1036,14 @@ def render_add_check_form():
                     f"<span style='font-size:11px;color:#5a4030;'>עמלה: {fmt_ils(fee_v)}</span>"
                     f"</div></div>"
                 )
-                st.markdown(row_html, unsafe_allow_html=True)
-
-                if st.button("✏️ ערוך" if not is_editing else "✖ סגור", key=f"edit_row_{idx}", use_container_width=False):
-                    st.session_state.batch_edit_idx = idx if not is_editing else None
-                    st.rerun()
+                row_col, btn_col = st.columns([5, 1])
+                with row_col:
+                    st.markdown(row_html, unsafe_allow_html=True)
+                with btn_col:
+                    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+                    if st.button("✏️" if not is_editing else "✖", key=f"edit_row_{idx}", use_container_width=True):
+                        st.session_state.batch_edit_idx = idx if not is_editing else None
+                        st.rerun()
 
                 if is_editing:
                     ea, eb = st.columns(2)
@@ -1027,7 +1081,7 @@ def render_add_check_form():
                         fee2, _ = calc_fee(float(amt), dd, batch_rate, batch_basis)
                         net2 = float(amt)-fee2; total_fee2+=fee2; total_net+=net2
                         summary_rows.append({"תאריך":fmt_date(dd),"סכום":fmt_ils(amt),"עמלה":fmt_ils(fee2),"נטו":fmt_ils(net2)})
-                    st.session_state.batch_summary = {"rows":summary_rows,"total_fee":total_fee2,"total_net":total_net,"count":len(amounts),"rate_val":batch_rate,"rate_basis":batch_basis}
+                    st.session_state.batch_summary = {"rows":summary_rows,"total_fee":total_fee2,"total_net":total_net,"total_gross":sum(amounts),"count":len(amounts),"rate_val":batch_rate,"rate_basis":batch_basis}
                     invalidate_cache(); st.session_state.add_mode=None; st.session_state.batch_df=None; st.rerun()
 
 
@@ -1050,7 +1104,7 @@ def render_clients():
             for ch in cached_checks(u, r["id"]):
                 color = STATUS_COLORS.get(ch["status"],"#888")
                 remind_str = f" | תזכורת: {fmt_date(ch['remind_on'])}" if ch["remind_on"] else ""
-                cc1, cc2 = st.columns([3,2])
+                cc1, cc2, cc3, cc4 = st.columns([3,2,1,1])
                 with cc1:
                     st.markdown(f"""<div style="padding:5px 0;">
                         <span style="font-weight:700;direction:ltr;color:#e59a65;">{fmt_ils(ch['amount'])}</span><br>
@@ -1060,14 +1114,15 @@ def render_clients():
                 with cc2:
                     new_st = st.selectbox("סטטוס", STATUSES, index=STATUSES.index(ch["status"]),
                                           key=f"st_{ch['id']}", label_visibility="collapsed")
+                with cc3:
                     st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
-                    b1, b2 = st.columns(2)
-                    with b1:
-                        if st.button("✓", key=f"upd_{ch['id']}", use_container_width=True):
-                            update_status(ch["id"], new_st); invalidate_cache(); st.rerun()
-                    with b2:
-                        if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
-                            delete_check(ch["id"]); invalidate_cache(); st.rerun()
+                    if st.button("✓", key=f"upd_{ch['id']}", use_container_width=True):
+                        update_status(ch["id"], new_st); invalidate_cache(); st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+                with cc4:
+                    st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
+                    if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
+                        delete_check(ch["id"]); invalidate_cache(); st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
 
 
