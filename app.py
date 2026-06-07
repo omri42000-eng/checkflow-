@@ -27,18 +27,31 @@ def get_db_url():
         st.error("❌ חסר DATABASE_URL"); st.stop()
     return url
 
+@st.cache_resource(show_spinner=False)
+def _get_persistent_conn():
+    """One DB connection shared across all reruns - this is what makes it fast."""
+    conn = psycopg.connect(get_db_url(), row_factory=dict_row, autocommit=True)
+    return conn
+
 @contextmanager
 def get_conn():
     try:
-        conn = psycopg.connect(get_db_url(), row_factory=dict_row)
+        conn = _get_persistent_conn()
+        # Check if connection is alive, reconnect if dead
+        if conn.closed:
+            _get_persistent_conn.clear()
+            conn = _get_persistent_conn()
     except Exception as e:
         st.error(f"❌ שגיאת חיבור: {e}"); st.stop()
     try:
-        yield conn; conn.commit()
+        yield conn
     except Exception:
-        conn.rollback(); raise
-    finally:
-        conn.close()
+        try: conn.rollback()
+        except: pass
+        # If connection broke, clear cache so next call reconnects
+        try: _get_persistent_conn.clear()
+        except: pass
+        raise
 
 def init_db():
     with get_conn() as conn:
@@ -108,18 +121,14 @@ def cached_upcoming(user):
     today = date.today()
     with get_conn() as conn:
         cur = conn.cursor()
-        # Scan upcoming 90 days to find at least 2 distinct days with active check maturities
-        cur.execute("""SELECT ch.id, ch.amount, ch.due_date, ch.status, cl.name AS client_name
-            FROM checks ch JOIN clients cl ON cl.id=ch.client_id
-            WHERE cl.username=%s AND ch.due_date >= %s 
-            ORDER BY ch.due_date ASC, cl.name ASC""", (user, today))
-        all_upcoming = cur.fetchall()
-        
-        distinct_days = sorted(list(set(r["due_date"] for r in all_upcoming)))[:2]
-        
-        for d in distinct_days:
-            day_str = d.isoformat() if hasattr(d, "isoformat") else str(d)
-            results[day_str] = [dict(r) for r in all_upcoming if r["due_date"] == d]
+        for i in range(3):
+            d = today + timedelta(days=i)
+            cur.execute("""SELECT ch.id, ch.amount, ch.due_date, ch.status, cl.name AS client_name
+                FROM checks ch JOIN clients cl ON cl.id=ch.client_id
+                WHERE cl.username=%s AND ch.due_date=%s ORDER BY cl.name""", (user, d))
+            rows = cur.fetchall()
+            if rows:
+                results[d.isoformat()] = [dict(r) for r in rows]
     return results
 
 @st.cache_data(ttl=30)
@@ -226,8 +235,8 @@ html,body,[class*="css"]{direction:rtl}
 .stApp{background:#041424;background-image:linear-gradient(135deg,#041424 0%,#0b243a 50%,#041424 100%);font-family:'Inter',sans-serif;color:#dec599;min-height:100vh}
 #MainMenu,header,footer{visibility:hidden}
 .block-container{padding-top:0!important;padding-bottom:6rem;max-width:480px}
-.logo-title{font-family:'Comfortaa',sans-serif;font-weight:700;font-size:2.1rem;white-shadow:nowrap;background:linear-gradient(135deg,#e59a65 0%,#f0c090 40%,#b06a3b 70%,#e59a65 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0px 3px 6px rgba(0,0,0,.7));display:block;text-align:center;line-height:1.2;margin-bottom:14px;white-space:nowrap}
-.kpi{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.25);border-radius:24px;padding:18px 20px 14px;margin-top:14px;margin-bottom:6px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(229,154,101,.15)}
+.logo-title{font-family:'Comfortaa',sans-serif;font-weight:700;font-size:2.6rem;white-space:nowrap;background:linear-gradient(135deg,#e59a65 0%,#f0c090 40%,#b06a3b 70%,#e59a65 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0px 3px 6px rgba(0,0,0,.7));display:block;text-align:center;line-height:1;margin-bottom:2px}
+.kpi{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.25);border-radius:24px;padding:18px 20px 14px;margin-bottom:6px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(229,154,101,.15)}
 .kpi-label{font-size:10px;font-weight:700;letter-spacing:2px;color:#e59a65;text-transform:uppercase;margin-bottom:4px}
 .kpi-value{font-family:'Inter',sans-serif;font-size:2.4rem;font-weight:900;line-height:1;background:linear-gradient(135deg,#f0c090 0%,#e59a65 50%,#dec599 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;letter-spacing:-2px;direction:ltr}
 .kpi-sub{font-size:12px;color:#8c6a45;margin-top:6px;font-weight:500}
@@ -249,63 +258,67 @@ html,body,[class*="css"]{direction:rtl}
 .reminder-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#e59a65;margin-bottom:8px}
 .reminder-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(229,154,101,.1)}
 .reminder-row:last-child{border-bottom:none}
-
-/* Carousel container layout for circular buttons */
-.carousel-wrap {
-    display: flex;
-    gap: 16px;
-    overflow-x: auto;
-    padding: 10px 4px 15px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    justify-content: center;
-    align-items: center;
-}
-.carousel-wrap::-webkit-scrollbar { display: none; }
-
-/* Circular Navigation Buttons */
-div.carousel-wrap div.stButton>button {
+/* carousel */
+.carousel-wrap{display:flex;gap:12px;overflow-x:auto;padding:8px 2px 12px;scrollbar-width:none;-ms-overflow-style:none}
+.carousel-wrap::-webkit-scrollbar{display:none}
+/* round nav buttons */
+div[data-testid="column"] .stButton>button {
     border-radius: 50% !important;
-    width: 90px !important;
-    height: 90px !important;
-    min-width: 90px !important;
-    max-width: 90px !important;
-    min-height: 90px !important;
-    max-height: 90px !important;
+    width: 100px !important;
+    height: 100px !important;
     padding: 0 !important;
-    font-weight: 700 !important;
-    line-height: 1.1 !important;
+    font-size: 0.62rem !important;
+    font-weight: 800 !important;
+    line-height: 1.3 !important;
     white-space: pre-wrap !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
     margin: 0 auto !important;
-    transition: all .2s ease-in-out !important;
+    animation: pulse-glow 2.5s ease-in-out infinite !important;
 }
-
-/* Specific item palettes inside carousel wrapper */
-div.carousel-wrap div:nth-child(1) .stButton>button {
+div[data-testid="column"]:nth-child(1) .stButton>button {
     background: linear-gradient(135deg,#1a3a2a,#0f4a22) !important;
-    border: 1px solid rgba(57,255,20,.4) !important;
-    box-shadow: 0 4px 14px rgba(57,255,20,.15) !important;
+    border-color: rgba(57,255,20,.4) !important;
+    color: #6ddf8a !important;
+    box-shadow: 0 0 20px rgba(57,255,20,.2), 0 8px 24px rgba(0,0,0,.5) !important;
+    animation: pulse-green 2.5s ease-in-out infinite !important;
 }
-div.carousel-wrap div:nth-child(2) .stButton>button {
+div[data-testid="column"]:nth-child(2) .stButton>button {
     background: linear-gradient(135deg,#3a2a1a,#4a1a0f) !important;
-    border: 1px solid rgba(229,154,101,.5) !important;
-    box-shadow: 0 4px 14px rgba(229,154,101,.2) !important;
+    border-color: rgba(229,154,101,.5) !important;
+    color: #e59a65 !important;
+    box-shadow: 0 0 20px rgba(229,154,101,.25), 0 8px 24px rgba(0,0,0,.5) !important;
+    animation: pulse-copper 2.5s ease-in-out infinite !important;
+    animation-delay: .4s !important;
 }
-div.carousel-wrap div:nth-child(3) .stButton>button {
+div[data-testid="column"]:nth-child(3) .stButton>button {
     background: linear-gradient(135deg,#1a2a3a,#0f1a4a) !important;
-    border: 1px solid rgba(100,160,229,.4) !important;
-    box-shadow: 0 4px 14px rgba(100,160,229,.15) !important;
+    border-color: rgba(100,160,229,.4) !important;
+    color: #90bfdf !important;
+    box-shadow: 0 0 20px rgba(100,160,229,.2), 0 8px 24px rgba(0,0,0,.5) !important;
+    animation: pulse-blue 2.5s ease-in-out infinite !important;
+    animation-delay: .8s !important;
 }
-div.carousel-wrap div.stButton>button:hover {
-    transform: scale(1.08) !important;
-    box-shadow: 0 0 25px currentColor !important;
+div[data-testid="column"] .stButton>button:hover {
+    transform: scale(1.12) rotate(-3deg) !important;
+    animation: none !important;
+    box-shadow: 0 0 40px currentColor, 0 12px 32px rgba(0,0,0,.6) !important;
 }
-
-/* General button global overrides */
+@keyframes pulse-green {
+    0%,100% { box-shadow: 0 0 15px rgba(57,255,20,.2), 0 8px 24px rgba(0,0,0,.5); transform: scale(1); }
+    50% { box-shadow: 0 0 35px rgba(57,255,20,.5), 0 8px 24px rgba(0,0,0,.5); transform: scale(1.06) rotate(2deg); }
+}
+@keyframes pulse-copper {
+    0%,100% { box-shadow: 0 0 15px rgba(229,154,101,.2), 0 8px 24px rgba(0,0,0,.5); transform: scale(1); }
+    50% { box-shadow: 0 0 35px rgba(229,154,101,.5), 0 8px 24px rgba(0,0,0,.5); transform: scale(1.06) rotate(-2deg); }
+}
+@keyframes pulse-blue {
+    0%,100% { box-shadow: 0 0 15px rgba(100,160,229,.2), 0 8px 24px rgba(0,0,0,.5); transform: scale(1); }
+    50% { box-shadow: 0 0 35px rgba(100,160,229,.5), 0 8px 24px rgba(0,0,0,.5); transform: scale(1.06) rotate(2deg); }
+}
+/* general buttons */
 .stButton>button{border-radius:14px!important;border:1px solid rgba(229,154,101,.2)!important;background:rgba(30,35,42,.9)!important;color:#dec599!important;font-weight:700!important;font-family:'Inter',sans-serif!important;transition:all .12s ease!important;box-shadow:0 3px 10px rgba(0,0,0,.3)!important}
 .stButton>button:hover{border-color:rgba(229,154,101,.5)!important}
 .btn-single .stButton>button{border-radius:50px!important;background:linear-gradient(135deg,#e59a65 0%,#b06a3b 100%)!important;color:#fff!important;font-size:.92rem!important;font-weight:800!important;padding:13px 0!important;border:none!important;box-shadow:0 4px 16px rgba(176,106,59,.4)!important}
@@ -313,49 +326,46 @@ div.carousel-wrap div.stButton>button:hover {
 .btn-sm .stButton>button{padding:3px 8px!important;font-size:.75rem!important;border-radius:8px!important;min-height:0!important;height:auto!important;font-weight:700!important}
 .back-btn{position:fixed!important;bottom:28px!important;left:20px!important;z-index:9999!important}
 .back-btn .stButton>button{border-radius:50px!important;background:linear-gradient(135deg,#e59a65 0%,#b06a3b 100%)!important;color:#fff!important;font-size:.82rem!important;font-weight:800!important;padding:10px 22px!important;height:auto!important;min-height:0!important;border:none!important;box-shadow:0 4px 20px rgba(176,106,59,.5)!important}
-
-/* Inputs design */
+/* inputs */
 .stTextInput input,.stNumberInput input,.stDateInput input,[data-baseweb="input"] input,[data-baseweb="base-input"] input{color:#dec599!important;background-color:rgba(30,35,42,.9)!important;-webkit-text-fill-color:#dec599!important;caret-color:#e59a65!important;border-radius:12px!important;border:1px solid rgba(229,154,101,.2)!important;font-weight:600!important;font-size:.95rem!important;direction:rtl!important;text-align:right!important}
 .stTextInput div[data-baseweb="input"],.stNumberInput div[data-baseweb="input"],.stDateInput div[data-baseweb="input"],div[data-baseweb="select"]>div{background-color:rgba(30,35,42,.9)!important;border:1px solid rgba(229,154,101,.2)!important;border-radius:12px!important}
 div[data-baseweb="select"] div{color:#dec599!important;font-weight:600!important}
 input::placeholder{color:#5a4030!important;opacity:1!important}
 div[data-testid="stNumberInput"]:has(input[aria-label*="סכום"]) input{font-size:1.8rem!important;font-weight:900!important;text-align:center!important;letter-spacing:-1px!important;height:64px!important}
 label{color:#8c6a45!important;font-weight:700!important;font-size:10px!important;letter-spacing:.8px!important;text-transform:uppercase!important;text-align:right!important;display:block!important}
-
-/* Custom layout for radio buttons */
+/* radio basis buttons */
 div[data-testid="stRadio"]>div{gap:8px!important;justify-content:center!important}
 div[data-testid="stRadio"] label{background:rgba(30,35,42,.9)!important;border:1px solid rgba(229,154,101,.2)!important;border-radius:12px!important;padding:9px 22px!important;font-size:.9rem!important;font-weight:800!important;color:#dec599!important;cursor:pointer;text-transform:none!important;letter-spacing:0!important}
 div[data-testid="stRadio"] label:hover{border-color:rgba(229,154,101,.5)!important}
 div[data-testid="stRadio"] input[type="radio"]{display:none!important}
 div[data-testid="stRadio"] div[data-baseweb="radio"]>div:first-child{display:none!important}
-
-/* Tabs UI layout */
+/* tabs */
 .stTabs [data-baseweb="tab-list"]{gap:5px;justify-content:center;background:transparent!important}
 .stTabs [data-baseweb="tab"]{background:rgba(30,35,42,.9)!important;border:1px solid rgba(229,154,101,.15)!important;border-radius:12px!important;padding:9px 20px!important;font-size:.88rem!important;font-weight:700!important;color:#8c6a45!important;min-width:110px;text-align:center}
 .stTabs [data-baseweb="tab"] p,.stTabs [data-baseweb="tab"] span,.stTabs [data-baseweb="tab"] div{color:#8c6a45!important}
 .stTabs [aria-selected="true"]{background:linear-gradient(135deg,#e59a65 0%,#b06a3b 100%)!important;border-color:transparent!important}
 .stTabs [aria-selected="true"] p,.stTabs [aria-selected="true"] span,.stTabs [aria-selected="true"] div{color:#fff!important}
-
-/* Expander layout updates */
+/* expander */
 .streamlit-expanderHeader{background:rgba(30,35,42,.9)!important;border-radius:12px!important;font-weight:700!important;color:#dec599!important;border:1px solid rgba(229,154,101,.15)!important}
 .streamlit-expanderContent{background:rgba(20,25,32,.8)!important;border:none!important}
 .stCheckbox label{color:#dec599!important;font-weight:700!important;font-size:.88rem!important;text-transform:none!important;letter-spacing:0!important}
 ul[role="listbox"],div[data-baseweb="popover"]{background-color:#0b1a2a!important;border:1px solid rgba(229,154,101,.2)!important;border-radius:14px!important}
 ul[role="listbox"] li{color:#dec599!important;font-weight:600!important}
 .stDataFrame,[data-testid="stDataEditor"]{border-radius:14px!important;overflow:hidden!important;border:none!important}
-
-/* Align layout blocks */
-div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton { display: flex; justify-content: center; }
-div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:not([style*="width:100"]) { min-width: 80px; }
-
-/* Dashboard layout elements */
+/* center buttons inside columns */
+div[data-testid="column"] .stButton {
+    display: flex !important;
+    justify-content: center !important;
+}
+/* dashboard */
+.dash-day-card{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.2);border-radius:20px;padding:14px 16px;margin-bottom:6px;cursor:pointer;transition:border-color .15s}
+.dash-day-card:hover{border-color:rgba(229,154,101,.5)}
 .dash-month-card{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.15);border-radius:20px;padding:14px 16px;margin-bottom:5px}
 .dash-bar-bg{background:rgba(255,255,255,.06);border-radius:99px;height:5px;margin-top:8px}
 .dash-bar-fill{background:linear-gradient(90deg,#e59a65,#b06a3b);border-radius:99px;height:5px}
+/* batch table row edit */
 .batch-row{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.15);border-radius:14px;padding:12px 14px;margin-bottom:5px}
-.table-row-class { white-space: nowrap; display: flex; align-items: center; justify-content: space-between; }
-</style>
-""", unsafe_allow_html=True)
+</style>""", unsafe_allow_html=True)
 
     st.components.v1.html("""<script>
 function attachSelectAll(){
@@ -371,6 +381,8 @@ attachSelectAll();setInterval(attachSelectAll,600);
 def render_auth_screen():
     st.markdown(
         "<div style='height:30px'></div>"
+        "<p style='text-align:center;font-size:11px;font-weight:700;letter-spacing:3px;"
+        "color:#8c6a45;text-transform:uppercase;margin-bottom:4px;'>CHECK MANAGEMENT</p>"
         "<h1><span class='logo-title'>CHECKFLOW</span></h1>",
         unsafe_allow_html=True)
     tab_login, tab_register = st.tabs(["🔑  כניסה", "📝  הרשמה"])
@@ -427,93 +439,233 @@ def render_kpi():
 # ─── Home ───
 def render_home_screen():
     st.markdown(
-        "<div style='height:24px'></div>"
+        "<div style='height:20px'></div>"
+        "<p style='text-align:center;font-size:11px;font-weight:700;letter-spacing:3px;"
+        "color:#8c6a45;text-transform:uppercase;margin-bottom:2px;'>CHECK MANAGEMENT</p>"
         "<h1><span class='logo-title'>CHECKFLOW</span></h1>",
         unsafe_allow_html=True)
 
-    # 3 round navigation buttons structured inside a mobile-friendly slide wrap carousel
-    st.markdown('<div class="carousel-wrap">', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        if st.button("🧮\nמחשבון\nפריטה", key="go_calc", use_container_width=True):
-            st.session_state.screen = "calc"; st.rerun()
-    with c2:
-        if st.button("📋\nניהול\nצ׳קים", key="go_mgmt", use_container_width=True):
-            st.session_state.screen = "mgmt"; st.rerun()
-    with c3:
-        if st.button("📊\nדשבורד\nתזרים", key="go_dash", use_container_width=True):
-            st.session_state.screen = "dash"; st.rerun()
+    # 3D animated carousel — 3 round buttons that rotate, glow, float
+    st.markdown("""
+    <style>
+    .carousel-3d {
+        position: relative;
+        height: 200px;
+        margin: 20px 0 10px;
+        perspective: 1200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+    }
+    .orb {
+        width: 130px; height: 130px;
+        border-radius: 50%;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        cursor: pointer;
+        transform-style: preserve-3d;
+        position: relative;
+        overflow: hidden;
+        transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    .orb::before {
+        content: '';
+        position: absolute; inset: 0;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    .orb::after {
+        content: '';
+        position: absolute; inset: -3px;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg, transparent, currentColor, transparent);
+        opacity: 0.4;
+        animation: orbit 3s linear infinite;
+        z-index: -1;
+        filter: blur(8px);
+    }
+    .orb-calc {
+        background: radial-gradient(circle at 35% 30%, #4afc7c 0%, #1a7a3a 40%, #0a3a1a 100%);
+        color: #6dff8a;
+        box-shadow: 0 0 40px rgba(74,252,124,.5), inset 0 -10px 30px rgba(0,0,0,.4), inset 0 4px 10px rgba(255,255,255,.2);
+        animation: float-1 4s ease-in-out infinite, breathe 2.5s ease-in-out infinite;
+    }
+    .orb-mgmt {
+        background: radial-gradient(circle at 35% 30%, #ffb380 0%, #b06a3b 40%, #4a2a14 100%);
+        color: #ffc699;
+        box-shadow: 0 0 40px rgba(229,154,101,.6), inset 0 -10px 30px rgba(0,0,0,.4), inset 0 4px 10px rgba(255,255,255,.25);
+        animation: float-2 4s ease-in-out infinite, breathe 2.5s ease-in-out infinite;
+        animation-delay: -.7s, -.5s;
+        transform: scale(1.15) translateZ(20px);
+        z-index: 2;
+    }
+    .orb-dash {
+        background: radial-gradient(circle at 35% 30%, #80c0ff 0%, #2a5a9a 40%, #0a1a3a 100%);
+        color: #a0d0ff;
+        box-shadow: 0 0 40px rgba(128,192,255,.5), inset 0 -10px 30px rgba(0,0,0,.4), inset 0 4px 10px rgba(255,255,255,.2);
+        animation: float-3 4s ease-in-out infinite, breathe 2.5s ease-in-out infinite;
+        animation-delay: -1.4s, -1s;
+    }
+    .orb:hover {
+        transform: scale(1.25) translateZ(40px) rotateY(15deg) !important;
+        animation-play-state: paused;
+    }
+    .orb-mgmt:hover { transform: scale(1.35) translateZ(40px) rotateY(15deg) !important; }
+    .orb .emoji {
+        font-size: 2.5rem;
+        line-height: 1;
+        margin-bottom: 4px;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,.5));
+        animation: spin-emoji 6s ease-in-out infinite;
+    }
+    .orb .label {
+        font-size: .68rem;
+        font-weight: 900;
+        letter-spacing: .8px;
+        text-shadow: 0 2px 4px rgba(0,0,0,.6);
+        text-align: center;
+        line-height: 1.2;
+    }
+    @keyframes float-1 {
+        0%,100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-12px) rotate(-3deg); }
+    }
+    @keyframes float-2 {
+        0%,100% { transform: translateY(0) scale(1.15) rotate(0deg); }
+        50% { transform: translateY(-18px) scale(1.18) rotate(2deg); }
+    }
+    @keyframes float-3 {
+        0%,100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-12px) rotate(3deg); }
+    }
+    @keyframes breathe {
+        0%,100% { filter: brightness(1) saturate(1); }
+        50% { filter: brightness(1.2) saturate(1.3); }
+    }
+    @keyframes orbit {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes spin-emoji {
+        0%,100% { transform: rotate(0deg) scale(1); }
+        25% { transform: rotate(-8deg) scale(1.05); }
+        75% { transform: rotate(8deg) scale(1.05); }
+    }
+    .orb.clicked {
+        animation: pop .4s ease-out !important;
+    }
+    @keyframes pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.4) rotateY(180deg); }
+        100% { transform: scale(1) rotateY(360deg); }
+    }
+    </style>
+    <div class="carousel-3d">
+        <div class="orb orb-calc" onclick="
+            this.classList.add('clicked');
+            const btns = window.parent.document.querySelectorAll('button');
+            for (const b of btns) {
+                if (b.innerText.includes('NAV_CALC')) { setTimeout(()=>b.click(), 350); break; }
+            }
+        ">
+            <span class="emoji">🧮</span>
+            <span class="label">מחשבון<br>פריטה</span>
+        </div>
+        <div class="orb orb-mgmt" onclick="
+            this.classList.add('clicked');
+            const btns = window.parent.document.querySelectorAll('button');
+            for (const b of btns) {
+                if (b.innerText.includes('NAV_MGMT')) { setTimeout(()=>b.click(), 350); break; }
+            }
+        ">
+            <span class="emoji">📋</span>
+            <span class="label">ניהול<br>צ'קים</span>
+        </div>
+        <div class="orb orb-dash" onclick="
+            this.classList.add('clicked');
+            const btns = window.parent.document.querySelectorAll('button');
+            for (const b of btns) {
+                if (b.innerText.includes('NAV_DASH')) { setTimeout(()=>b.click(), 350); break; }
+            }
+        ">
+            <span class="emoji">📊</span>
+            <span class="label">דשבורד<br>תזרים</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Hidden buttons - the JS clicks these
+    st.markdown('<div style="position:absolute;top:-9999px;left:-9999px;opacity:0;pointer-events:none;">', unsafe_allow_html=True)
+    if st.button("NAV_CALC", key="go_calc"):
+        st.session_state.screen = "calc"; st.rerun()
+    if st.button("NAV_MGMT", key="go_mgmt"):
+        st.session_state.screen = "mgmt"; st.rerun()
+    if st.button("NAV_DASH", key="go_dash"):
+        st.session_state.screen = "dash"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Big summary context card is rendered under the carousel menu with proper margins
     render_kpi()
 
 
 # ─── Dashboard ───
 def render_dashboard():
     render_back_button()
-    st.markdown('<div class="section-title">📊 דשבורד תזרים משוכלל</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📊 דשבורד תזרים</div>', unsafe_allow_html=True)
     st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
     u = current_user()
 
-    # Dynamic lookahead to grab the first 2 chronological days that possess check activity data
+    # Upcoming 2 days
     upcoming_raw = cached_upcoming(u)
     today = date.today()
-    day_labels = {today.isoformat(): "היום 🟢", (today+timedelta(days=1)).isoformat(): "מחר 🟠",
-                  (today+timedelta(days=2)).isoformat(): "מחרתיים 🔴"}
-    
+    day_labels = {today.isoformat(): "היום", (today+timedelta(days=1)).isoformat(): "מחר",
+                  (today+timedelta(days=2)).isoformat(): "מחרתיים"}
     day_colors = {today.isoformat(): "rgba(57,255,20,.12)", (today+timedelta(days=1)).isoformat(): "rgba(229,154,101,.12)",
                   (today+timedelta(days=2)).isoformat(): "rgba(255,45,149,.12)"}
     border_colors = {today.isoformat(): "rgba(57,255,20,.3)", (today+timedelta(days=1)).isoformat(): "rgba(229,154,101,.3)",
                      (today+timedelta(days=2)).isoformat(): "rgba(255,45,149,.3)"}
 
     if upcoming_raw:
-        st.markdown("<div style='font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#e59a65;margin-bottom:12px;'>📅 פירעונות קרובים עם פעילות</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8c6a45;margin-bottom:8px;'>פירעונות קרובים</div>", unsafe_allow_html=True)
         for d_str, checks in sorted(upcoming_raw.items()):
-            # Parse localized date strings beautifully
-            try:
-                parsed_dt = datetime.fromisoformat(d_str).date()
-                formatted_date_label = parsed_dt.strftime("%d.%m.%Y")
-            except:
-                formatted_date_label = d_str
-                
-            label = day_labels.get(d_str, f"מתאריך {formatted_date_label}")
+            label = day_labels.get(d_str, d_str)
             day_total = sum(ch["amount"] for ch in checks)
             bg = day_colors.get(d_str, "rgba(30,35,42,.85)")
-            border = border_colors.get(d_str, "rgba(229,154,101,.25)")
+            border = border_colors.get(d_str, "rgba(229,154,101,.2)")
             key = f"day_expand_{d_str}"
             expanded = st.session_state.get(key, False)
 
             da, db = st.columns([3, 1])
             with da:
                 st.markdown(
-                    f"<div class='dash-day-card' style='background:{bg};border:1px solid {border};border-radius:18px;padding:12px 14px;'>"
+                    f"<div style='background:{bg};border:1px solid {border};border-radius:18px;padding:12px 14px;'>"
                     f"<div style='font-size:14px;font-weight:800;color:#dec599;'>{label}</div>"
-                    f"<div style='display:flex;justify-content:space-between;align-items:center;margin-top:4px;'> "
-                    f"<span style='font-size:11px;color:#8c6a45;font-weight:700;'>{len(checks)} צ'קים במערכת</span>"
-                    f"<span style='font-weight:900;font-size:1.15rem;color:#e59a65;direction:ltr;'>{fmt_ils(day_total)}</span>"
+                    f"<div style='display:flex;justify-content:space-between;align-items:center;margin-top:4px;'>"
+                    f"<span style='font-size:10px;color:#8c6a45;font-weight:700;'>{len(checks)} צ'קים</span>"
+                    f"<span style='font-weight:900;font-size:1.1rem;color:#e59a65;direction:ltr;'>{fmt_ils(day_total)}</span>"
                     f"</div></div>", unsafe_allow_html=True)
             with db:
                 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-                if st.button("▼ צפה" if not expanded else "▲ סגור", key=f"btn_{key}", use_container_width=True):
+                if st.button("▼" if not expanded else "▲", key=f"btn_{key}", use_container_width=True):
                     st.session_state[key] = not expanded; st.rerun()
             if expanded:
                 for ch in checks:
                     color = STATUS_COLORS.get(ch["status"], "#888")
                     st.markdown(
-                        f"<div style='background:rgba(20,25,32,.9);border:1px solid rgba(229,154,101,.1);border-radius:12px;padding:10px 14px;"
-                        f"margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;'> "
-                        f"<span style='font-weight:700;color:#dec599;'>👤 {ch['client_name']}</span>"
+                        f"<div style='background:rgba(20,25,32,.8);border-radius:12px;padding:10px 14px;"
+                        f"margin-bottom:4px;display:flex;justify-content:space-between;'>"
+                        f"<span style='font-weight:700;color:#dec599;'>{ch['client_name']}</span>"
                         f"<div><span style='font-weight:900;color:#e59a65;direction:ltr;'>{fmt_ils(ch['amount'])}</span>"
                         f"<span class='pill' style='background:{color}22;color:{color};border:1px solid {color}66;'>{ch['status']}</span>"
                         f"</div></div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
-    # Status breakdown card views
+    # Status breakdown
     status_rows = cached_status_breakdown(u)
     if status_rows:
-        st.markdown("<div style='font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#e59a65;margin-bottom:8px;'>💼 סיכום פוזיציות לפי סטטוס</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8c6a45;margin-bottom:8px;'>לפי סטטוס</div>", unsafe_allow_html=True)
         status_bg = {"ממתין למזומן":"rgba(255,159,28,.15)","להפקדה":"rgba(57,255,20,.12)","בפריטה":"rgba(255,45,149,.12)"}
         for r in status_rows:
             bg = status_bg.get(r["status"],"rgba(30,35,42,.85)")
@@ -526,11 +678,11 @@ def render_dashboard():
                 f"<span style='font-weight:900;font-size:1rem;color:#e59a65;direction:ltr;'>{fmt_ils(r['total'])}</span>"
                 f"</div>", unsafe_allow_html=True)
 
-    # Monthly forecast layout views
+    # Monthly forecast
     forecast = cached_forecast(u)
     if forecast:
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#e59a65;margin-bottom:8px;'>📈 תחזית תזרים חודשית</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8c6a45;margin-bottom:8px;'>תחזית חודשית</div>", unsafe_allow_html=True)
         max_amount = max(r["total"] for r in forecast) or 1
         month_he = {"January":"ינואר","February":"פברואר","March":"מרץ","April":"אפריל",
                     "May":"מאי","June":"יוני","July":"יולי","August":"אוגוסט",
@@ -593,18 +745,18 @@ def render_calculator():
         f"<span style='font-size:.9rem;font-weight:600;color:#8c6a45;'> ימים</span></div>",
         unsafe_allow_html=True)
 
-    # Simplified segment: removed label wrapper entirely, retaining clean toggle selection functionality
-    basis = st.radio("", ["אחוז שכר טרחה חודשי", "אחוז שכר טרחה שנתי"],
+    # Basis buttons — no label
+    basis = st.radio("", ["ריבית חודשית", "ריבית שנתית"],
                      index=0 if st.session_state.rate_basis=="חודשית" else 1,
                      horizontal=True, key="basis_radio", label_visibility="collapsed")
-    st.session_state.rate_basis = "חודשית" if basis=="אחוז שכר טרחה חודשי" else "שנתית"
+    st.session_state.rate_basis = "חודשית" if basis=="שכר טרחה חודשי" else "שנתית"
 
     rate_val = st.session_state.fixed_rate
     r1, r2 = st.columns([2,1])
     with r1:
         st.markdown(
             f"<div style='background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.2);border-radius:16px;padding:14px;text-align:center;'>"
-            f"<span style='font-size:10px;font-weight:700;letter-spacing:1.2px;color:#8c6a45;text-transform:uppercase;display:block;margin-bottom:4px;'>אחוז שכר טרחה</span>"
+            f"<span style='font-size:10px;font-weight:700;letter-spacing:1.2px;color:#8c6a45;text-transform:uppercase;display:block;margin-bottom:4px;'>אחוז שכ\"ט</span>"
             f"<span style='font-size:1.8rem;font-weight:900;color:#e59a65;letter-spacing:-1px;'>{rate_val:.2f}%</span>"
             f"</div>", unsafe_allow_html=True)
     with r2:
@@ -612,7 +764,7 @@ def render_calculator():
         if st.button("✏️ שינוי", use_container_width=True, key="edit_rate"):
             st.session_state.rate_edit_open = not st.session_state.rate_edit_open
     if st.session_state.rate_edit_open:
-        new_rate = st.number_input("אחוז שכר טרחה (%)", min_value=0.0, max_value=100.0,
+        new_rate = st.number_input("אחוז שכ\"ט (%)", min_value=0.0, max_value=100.0,
                                    value=float(rate_val), step=0.1, format="%.2f", key="rate_input_manual")
         if st.button("💾 שמור", use_container_width=True, key="save_rate"):
             st.session_state.fixed_rate = new_rate; st.session_state.rate_edit_open = False; st.rerun()
@@ -623,7 +775,7 @@ def render_calculator():
     if days<=0:
         st.markdown("<div style='background:rgba(255,45,149,.15);border:1px solid rgba(255,45,149,.3);border-radius:14px;padding:10px;text-align:center;font-size:13px;font-weight:700;color:#ff6bba;margin:8px 0;'>⚠️ תאריך הפירעון עבר</div>", unsafe_allow_html=True)
 
-    st.markdown(f"""<div class="calc-out fee"><div class="lbl">שכר טרחה שיורד</div><div class="big">{fmt_ils(fee)}</div></div>
+    st.markdown(f"""<div class="calc-out fee"><div class="lbl">עמלה שיורדת</div><div class="big">{fmt_ils(fee)}</div></div>
     <div class="calc-out net"><div class="lbl">נטו מזומן שמתקבל</div><div class="big">{fmt_ils(net)}</div></div>""", unsafe_allow_html=True)
 
 
@@ -691,8 +843,8 @@ def render_add_check_form():
             unsafe_allow_html=True)
         st.dataframe(pd.DataFrame(bs["rows"]), use_container_width=True, hide_index=True)
         st.markdown(
-            f"<div style='display:flex;justify-content:space-between;padding:10px 4px 4px;font-weight:800;font-size:1rem;color:#dec599;'> "
-            f"<span>סה\"כ שכר טרחה: {fmt_ils(bs['total_fee'])}</span><span>סה\"כ נטו: {fmt_ils(bs['total_net'])}</span></div></div>",
+            f"<div style='display:flex;justify-content:space-between;padding:10px 4px 4px;font-weight:800;font-size:1rem;color:#dec599;'>"
+            f"<span>סה\"כ עמלות: {fmt_ils(bs['total_fee'])}</span><span>סה\"כ נטו: {fmt_ils(bs['total_net'])}</span></div></div>",
             unsafe_allow_html=True)
         if st.button("✖ סגור", key="close_summary"):
             st.session_state.batch_summary = None; st.rerun()
@@ -703,13 +855,13 @@ def render_add_check_form():
 
     sel = st.selectbox("לקוח", ["— חדש —"]+names, key="add_client_sel")
     new_name = None
-    
-    # Intelligently query persistent profiles to pull saved defaults instantly upon identification matches
-    client_rate = 12.0
-    client_basis = "שנתית"
     if sel == "— חדש —":
         new_name = st.text_input("שם לקוח חדש", key="new_client_name", placeholder="הזן שם לקוח...")
-    else:
+
+    # Get client rate if existing
+    client_rate = 12.0
+    client_basis = "שנתית"
+    if sel != "— חדש —":
         cl = next((c for c in clients if c["name"]==sel), None)
         if cl:
             client_rate = float(cl["rate"] or 12.0)
@@ -728,22 +880,24 @@ def render_add_check_form():
         st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
         ra, rb = st.columns(2)
         with ra:
-            single_rate = st.number_input("אחוז שכר טרחה (%)", min_value=0.0, max_value=100.0,
+            single_rate = st.number_input("אחוז שכ\"ט (%)", min_value=0.0, max_value=100.0,
                                           value=client_rate, step=0.1, format="%.2f", key="single_rate")
         with rb:
             single_basis_lbl = st.radio("", ["שכר טרחה חודשי","שכר טרחה שנתי"],
-                                        index=["חודשית","שנתית"].index(client_basis),
-                                        key="single_basis", horizontal=True, label_visibility="collapsed")
+                                    index=["חודשית","שנתית"].index(client_basis),
+                                    key="single_basis", horizontal=True, label_visibility="collapsed")
         single_basis = "חודשית" if single_basis_lbl=="שכר טרחה חודשי" else "שנתית"
+        st.session_state.fixed_rate = single_rate
+        st.session_state.rate_basis = single_basis
 
         if amount > 0:
             fee, days = calc_fee(amount, due, single_rate, single_basis)
             net = amount-fee
             st.markdown(
-                f"<div style='background:rgba(229,154,101,.1);border:1px solid rgba(229,154,101,.2);border-radius:16px;padding:12px 14px;margin:8px 0;display:flex;justify-content:space-between;'> "
+                f"<div style='background:rgba(229,154,101,.1);border:1px solid rgba(229,154,101,.2);border-radius:16px;padding:12px 14px;margin:8px 0;display:flex;justify-content:space-between;'>"
                 f"<div style='text-align:center;'><div style='font-size:10px;font-weight:700;color:#8c6a45;'>{days} ימים</div>"
                 f"<div style='font-weight:900;font-size:1rem;color:#e59a65;'>{fmt_ils(fee)}</div>"
-                f"<div style='font-size:10px;color:#8c6a45;'>שכ\"ט</div></div>"
+                f"<div style='font-size:10px;color:#8c6a45;'>עמלה</div></div>"
                 f"<div style='text-align:center;'><div style='font-size:10px;font-weight:700;color:#6ddf8a;'>נטו מזומן</div>"
                 f"<div style='font-weight:900;font-size:1.1rem;color:#dec599;'>{fmt_ils(net)}</div>"
                 f"<div style='font-size:10px;color:#6ddf8a;'>מתקבל</div></div></div>",
@@ -769,13 +923,15 @@ def render_add_check_form():
 
         ba, bb = st.columns(2)
         with ba:
-            batch_rate = st.number_input("אחוז שכר טרחה (%)", min_value=0.0, max_value=100.0,
+            batch_rate = st.number_input("אחוז שכ\"ט (%)", min_value=0.0, max_value=100.0,
                                          value=client_rate, step=0.1, format="%.2f", key="batch_rate")
         with bb:
             batch_basis_lbl = st.radio("", ["שכר טרחה חודשי","שכר טרחה שנתי"],
-                                       index=["חודשית","שנתית"].index(client_basis),
-                                       key="batch_basis", horizontal=True, label_visibility="collapsed")
+                                   index=["חודשית","שנתית"].index(client_basis),
+                                   key="batch_basis", horizontal=True, label_visibility="collapsed")
         batch_basis = "חודשית" if batch_basis_lbl=="שכר טרחה חודשי" else "שנתית"
+        st.session_state.fixed_rate = batch_rate
+        st.session_state.rate_basis = batch_basis
 
         if st.button("🔄 צור טבלה", use_container_width=True, key="gen_table"):
             rows = [{"#":i+1,"סכום (₪)":float(amount_base),"תאריך":(first_date+timedelta(days=int(gap)*i)).isoformat()} for i in range(int(count))]
@@ -790,50 +946,47 @@ def render_add_check_form():
                 date_val = str(row["תאריך"])
                 amt_val = float(row["סכום (₪)"])
                 fee_v, _ = calc_fee(amt_val, datetime.fromisoformat(date_val).date(), batch_rate, batch_basis)
+                net_v = amt_val - fee_v
                 is_editing = (edit_idx == idx)
 
-                # Custom inline item rendering block layout
                 row_html = (
-                    f"<div class='batch-row' style='{'border-color:rgba(229,154,101,.6); background:rgba(40,46,54,0.95);' if is_editing else ''}'>"
-                    f"<div style='display:flex;justify-content:space-between;align-items:center;'> "
+                    f"<div class='batch-row' style='{'border-color:rgba(229,154,101,.5);' if is_editing else ''}'>"
+                    f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
                     f"<span style='font-size:11px;font-weight:800;color:#e59a65;'>#{int(row['#'])}</span>"
                     f"<span style='font-weight:700;color:#dec599;font-size:.95rem;'>{fmt_ils(amt_val)}</span>"
                     f"<span style='font-size:12px;color:#8c6a45;'>{date_val}</span>"
-                    f"<span style='font-size:11px;color:#5a4030;'>שכ\"ט: {fmt_ils(fee_v)}</span>"
+                    f"<span style='font-size:11px;color:#5a4030;'>עמלה: {fmt_ils(fee_v)}</span>"
                     f"</div></div>"
                 )
                 st.markdown(row_html, unsafe_allow_html=True)
 
-                # Edit control button anchors immediately under row text frame context to prevent long scrolling delays
-                if st.button("✏️ ערוך שורה" if not is_editing else "✖ סגור חלונית", key=f"edit_row_{idx}", use_container_width=True):
+                if st.button("✏️ ערוך" if not is_editing else "✖ סגור", key=f"edit_row_{idx}", use_container_width=False):
                     st.session_state.batch_edit_idx = idx if not is_editing else None
                     st.rerun()
 
-                # High performance inline editing fields injected precisely under the active element row anchor
                 if is_editing:
-                    st.markdown("<div style='padding:4px 10px; background:rgba(15,22,30,0.5); border-radius:10px; margin-bottom:10px;'>", unsafe_allow_html=True)
                     ea, eb = st.columns(2)
                     with ea:
-                        new_amt = st.number_input("עדכן סכום", min_value=0.0, value=amt_val, step=100.0, format="%.0f", key=f"amt_{idx}")
+                        new_amt = st.number_input("סכום", min_value=0.0, value=amt_val, step=100.0, format="%.0f", key=f"amt_{idx}")
                     with eb:
-                        new_date = st.date_input("עדכן תאריך", value=datetime.fromisoformat(date_val).date(), key=f"dt_{idx}")
-                    if st.button("💾 אשר שינוי שורה", key=f"upd_row_{idx}", use_container_width=True):
+                        new_date = st.date_input("תאריך", value=datetime.fromisoformat(date_val).date(), key=f"dt_{idx}")
+                    if st.button("✅ עדכן שורה", key=f"upd_row_{idx}", use_container_width=True):
                         df.at[idx,"סכום (₪)"] = float(new_amt)
                         df.at[idx,"תאריך"] = new_date.isoformat()
                         st.session_state.batch_df = df
                         st.session_state.batch_edit_idx = None
                         st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
 
+            # Total summary
             total_fee = sum(calc_fee(float(r["סכום (₪)"]), datetime.fromisoformat(str(r["תאריך"])).date(), batch_rate, batch_basis)[0] for _, r in df.iterrows())
             total_amt = df["סכום (₪)"].sum()
             st.markdown(
                 f"<div style='background:rgba(229,154,101,.08);border:1px solid rgba(229,154,101,.2);border-radius:14px;padding:12px 14px;margin:8px 0;display:flex;justify-content:space-between;'>"
-                f"<span style='font-weight:700;color:#8c6a45;font-size:12px;'>סה\"כ שכר טרחה: {fmt_ils(total_fee)}</span>"
-                f"<span style='font-weight:700;color:#6ddf8a;font-size:12px;'>נטו לתשלום: {fmt_ils(total_amt-total_fee)}</span></div>",
+                f"<span style='font-weight:700;color:#8c6a45;font-size:12px;'>סה\"כ עמלות: {fmt_ils(total_fee)}</span>"
+                f"<span style='font-weight:700;color:#6ddf8a;font-size:12px;'>נטו: {fmt_ils(total_amt-total_fee)}</span></div>",
                 unsafe_allow_html=True)
 
-            if st.button("💾 שמור את כל מקבץ הצ'קים", use_container_width=True, key="save_batch"):
+            if st.button("💾 שמור את כל הצ'קים", use_container_width=True, key="save_batch"):
                 cid = add_client(new_name or "", batch_rate, batch_basis) if sel=="— חדש —" else next((c["id"] for c in clients if c["name"]==sel), None)
                 if not cid: st.error("נא לבחור או להזין שם לקוח.")
                 else:
@@ -841,31 +994,32 @@ def render_add_check_form():
                     amounts = df["סכום (₪)"].tolist()
                     due_dates = [datetime.fromisoformat(str(d)).date() for d in df["תאריך"].tolist()]
                     add_checks_batch(cid, amounts, due_dates, status)
+                    today_d = date.today()
                     summary_rows, total_fee2, total_net = [], 0.0, 0.0
                     for amt, dd in zip(amounts, due_dates):
                         fee2, _ = calc_fee(float(amt), dd, batch_rate, batch_basis)
                         net2 = float(amt)-fee2; total_fee2+=fee2; total_net+=net2
-                        summary_rows.append({"תאריך":fmt_date(dd),"סכום":fmt_ils(amt),"שכ\"ט":fmt_ils(fee2),"נטו":fmt_ils(net2)})
+                        summary_rows.append({"תאריך":fmt_date(dd),"סכום":fmt_ils(amt),"עמלה":fmt_ils(fee2),"נטו":fmt_ils(net2)})
                     st.session_state.batch_summary = {"rows":summary_rows,"total_fee":total_fee2,"total_net":total_net,"count":len(amounts),"rate_val":batch_rate,"rate_basis":batch_basis}
                     invalidate_cache(); st.session_state.add_mode=None; st.session_state.batch_df=None; st.rerun()
 
 
 def render_clients():
-    st.markdown('<div class="section-title">תיק לקוחות פעיל</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">הלקוחות שלי</div>', unsafe_allow_html=True)
     st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
     u = current_user()
     rows = [r for r in cached_obligo(u) if r["cnt"]>0]
     if not rows:
-        st.markdown('<div class="glass">אין עדיין צ\'קים פעילים במערכת ⬆️</div>', unsafe_allow_html=True); return
+        st.markdown('<div class="glass">אין עדיין צ\'קים ⬆️</div>', unsafe_allow_html=True); return
 
     for i, r in enumerate(rows):
         bg, txt = CLIENT_PALETTE[i%len(CLIENT_PALETTE)]
         st.markdown(f"""<div class="client-card" style="background:rgba(30,35,42,.85);">
-            <div><div class="client-name">👤 {r['name']}</div>
-            <div style="font-size:.78rem;color:#8c6a45;font-weight:600;">{r['cnt']} צ'קים במערכת</div></div>
+            <div><div class="client-name">{r['name']}</div>
+            <div style="font-size:.78rem;color:#8c6a45;font-weight:600;">{r['cnt']} צ'קים</div></div>
             <div class="client-obligo">{fmt_ils(r['obligo'])}</div>
         </div>""", unsafe_allow_html=True)
-        with st.expander("צפייה בריכוז צ'קים"):
+        with st.expander("צפייה בצ'קים"):
             for ch in cached_checks(u, r["id"]):
                 color = STATUS_COLORS.get(ch["status"],"#888")
                 remind_str = f" | תזכורת: {fmt_date(ch['remind_on'])}" if ch["remind_on"] else ""
