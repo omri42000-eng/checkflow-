@@ -330,8 +330,10 @@ html,body,[class*="css"]{direction:rtl}
 /* general buttons */
 .stButton>button{border-radius:14px!important;border:1px solid rgba(229,154,101,.22)!important;background:rgba(44,52,64,.9)!important;color:#dec599!important;font-weight:700!important;font-family:'Inter',sans-serif!important;transition:all .12s ease!important;box-shadow:0 3px 10px rgba(0,0,0,.3)!important}
 .stButton>button:hover{border-color:rgba(229,154,101,.5)!important}
-.btn-single .stButton>button{border-radius:50px!important;background:linear-gradient(135deg,#e59a65 0%,#b06a3b 100%)!important;color:#fff!important;font-size:.92rem!important;font-weight:800!important;padding:13px 0!important;border:none!important;box-shadow:0 4px 16px rgba(176,106,59,.4)!important}
-.btn-batch .stButton>button{border-radius:50px!important;background:rgba(44,52,64,.9)!important;color:#e59a65!important;font-size:.92rem!important;font-weight:800!important;padding:13px 0!important;border:1px solid rgba(229,154,101,.4)!important}
+.btn-single .stButton>button{height:82px!important;border-radius:22px!important;background:linear-gradient(135deg,#1a4a2a 0%,#0a2814 100%)!important;color:#6dff8a!important;font-size:.88rem!important;font-weight:900!important;padding:0 20px!important;white-space:pre-wrap!important;line-height:1.4!important;border:none!important;text-align:right!important;direction:rtl!important;box-shadow:0 12px 36px rgba(0,0,0,.5)!important}
+.btn-single .stButton>button:hover{filter:brightness(1.1)!important;transform:translateY(-2px)!important}
+.btn-batch .stButton>button{height:82px!important;border-radius:22px!important;background:linear-gradient(135deg,#4a2808 0%,#281404 100%)!important;color:#ffc699!important;font-size:.88rem!important;font-weight:900!important;padding:0 20px!important;white-space:pre-wrap!important;line-height:1.4!important;border:none!important;text-align:right!important;direction:rtl!important;box-shadow:0 12px 36px rgba(229,154,101,.25),0 12px 36px rgba(0,0,0,.4)!important}
+.btn-batch .stButton>button:hover{filter:brightness(1.1)!important;transform:translateY(-2px)!important}
 .btn-sm .stButton>button{padding:3px 8px!important;font-size:.75rem!important;border-radius:8px!important;min-height:0!important;height:auto!important;font-weight:700!important}
 .back-btn{position:fixed!important;bottom:28px!important;left:20px!important;z-index:9999!important}
 .back-btn .stButton>button{border-radius:50px!important;background:linear-gradient(135deg,#e59a65 0%,#b06a3b 100%)!important;color:#fff!important;font-size:.82rem!important;font-weight:800!important;padding:10px 22px!important;height:auto!important;min-height:0!important;border:none!important;box-shadow:0 4px 20px rgba(176,106,59,.5)!important}
@@ -901,12 +903,12 @@ def render_add_check_form():
     c1, c2 = st.columns(2)
     with c1:
         st.markdown('<div class="btn-single">', unsafe_allow_html=True)
-        if st.button("➕ צ'ק בודד", key="open_single", use_container_width=True):
+        if st.button("➕  צ'ק בודד\nהוסף צ'ק ידנית", key="open_single", use_container_width=True):
             st.session_state.add_mode = "single" if st.session_state.get("add_mode")!="single" else None
         st.markdown('</div>', unsafe_allow_html=True)
     with c2:
         st.markdown('<div class="btn-batch">', unsafe_allow_html=True)
-        if st.button("📦 מקבץ צ'קים", key="open_batch", use_container_width=True):
+        if st.button("📦  מקבץ צ'קים\nכמה צ'קים יחד", key="open_batch", use_container_width=True):
             st.session_state.add_mode = "batch" if st.session_state.get("add_mode")!="batch" else None
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -937,8 +939,8 @@ def render_add_check_form():
         new_name = st.text_input("שם לקוח חדש", key="new_client_name", placeholder="הזן שם לקוח...")
 
     # Get client rate if existing
-    client_rate = 12.0
-    client_basis = "שנתית"
+    client_rate = 4.0
+    client_basis = "חודשית"
     if sel != "— חדש —":
         cl = next((c for c in clients if c["name"]==sel), None)
         if cl:
@@ -1024,26 +1026,27 @@ def render_add_check_form():
                 date_val = str(row["תאריך"])
                 amt_val = float(row["סכום (₪)"])
                 fee_v, _ = calc_fee(amt_val, datetime.fromisoformat(date_val).date(), batch_rate, batch_basis)
-                net_v = amt_val - fee_v
                 is_editing = (edit_idx == idx)
 
-                row_html = (
-                    f"<div class='batch-row' style='{'border-color:rgba(229,154,101,.5);' if is_editing else ''}'>"
-                    f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
-                    f"<span style='font-size:11px;font-weight:800;color:#e59a65;'>#{int(row['#'])}</span>"
-                    f"<span style='font-weight:700;color:#dec599;font-size:.95rem;'>{fmt_ils(amt_val)}</span>"
-                    f"<span style='font-size:12px;color:#8c6a45;'>{date_val}</span>"
-                    f"<span style='font-size:11px;color:#5a4030;'>עמלה: {fmt_ils(fee_v)}</span>"
-                    f"</div></div>"
-                )
-                row_col, btn_col = st.columns([5, 1])
-                with row_col:
-                    st.markdown(row_html, unsafe_allow_html=True)
-                with btn_col:
-                    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+                # One horizontal row — pure st.columns (guaranteed inline)
+                bg = "rgba(229,154,101,.08)" if is_editing else "rgba(44,52,64,.6)"
+                border = "rgba(229,154,101,.5)" if is_editing else "rgba(229,154,101,.12)"
+                st.markdown(f"<div style='background:{bg};border:1px solid {border};border-radius:12px;padding:2px 4px;margin-bottom:4px;'>", unsafe_allow_html=True)
+                cn, ca, cd, cf, cb = st.columns([1, 2, 2, 2, 1])
+                with cn:
+                    st.markdown(f"<div style='padding:9px 0;text-align:center;font-size:12px;font-weight:800;color:#e59a65;'>#{int(row['#'])}</div>", unsafe_allow_html=True)
+                with ca:
+                    st.markdown(f"<div style='padding:9px 0;text-align:center;font-weight:800;color:#fff;font-size:.88rem;direction:ltr;'>{fmt_ils(amt_val)}</div>", unsafe_allow_html=True)
+                with cd:
+                    st.markdown(f"<div style='padding:9px 0;text-align:center;font-size:.78rem;color:#c09060;'>{fmt_date(date_val)}</div>", unsafe_allow_html=True)
+                with cf:
+                    st.markdown(f"<div style='padding:9px 0;text-align:center;font-size:.78rem;color:#ffb870;font-weight:700;'>{fmt_ils(fee_v)}</div>", unsafe_allow_html=True)
+                with cb:
+                    st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
                     if st.button("✏️" if not is_editing else "✖", key=f"edit_row_{idx}", use_container_width=True):
-                        st.session_state.batch_edit_idx = idx if not is_editing else None
-                        st.rerun()
+                        st.session_state.batch_edit_idx = idx if not is_editing else None; st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
 
                 if is_editing:
                     ea, eb = st.columns(2)
