@@ -365,10 +365,12 @@ div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:
 .hnc-title{font-size:1.02rem;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.1}
 .hnc-rule{height:2px;border-radius:2px;width:30px;margin:6px 0}
 .hnc-desc{font-size:.71rem;color:rgba(255,255,255,.5);font-weight:500;letter-spacing:.2px}
-/* transparent click overlay — hidden visually, clickable via JS */
-.hnc-over{height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;border:0!important}
-.hnc-over .stButton{height:0!important;overflow:hidden!important;margin:0!important}
-.hnc-over .stButton>button{height:0!important;min-height:0!important;padding:0!important;border:none!important;overflow:hidden!important}
+/* transparent click overlay */
+.hnc-over{margin-top:-102px;height:102px;position:relative;z-index:50;margin-bottom:22px}
+.hnc-over .stButton{height:100%!important}
+.hnc-over .stButton>button{background:transparent!important;color:transparent!important;border:none!important;box-shadow:none!important;width:100%!important;height:102px!important;cursor:pointer!important;border-radius:26px!important;position:relative;outline:none!important;font-size:1px!important}
+.hnc-over .stButton>button::after{content:'';position:absolute;inset:0;border-radius:26px;background:rgba(255,255,255,0);transition:background .2s}
+.hnc-over .stButton>button:hover::after{background:rgba(255,255,255,.07)}
 /* ══ DASHBOARD GLASSMORPHISM TIMELINE (Prompt 1: Dark Glass + Timeline) ══ */
 .db-hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 4px 20px;direction:rtl}
 .db-hdr-left .db-hdr-lbl{font-size:.62rem;font-weight:700;letter-spacing:2.5px;color:#9BA1A6;text-transform:uppercase}
@@ -414,16 +416,16 @@ function attachSelectAll(){
 }
 attachSelectAll();setInterval(attachSelectAll,600);
 
-// Make HTML cards clickable — defined on window.parent so main-doc onclick can call it
-window.parent.clickNav = function(key) {
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-        if (btns[i].textContent.trim() === key) {
-            btns[i].click();
-            return;
+// clickNav — defined on parent window so HTML card onclicks can call it
+(function(){
+    var pd = window.parent.document;
+    window.parent.clickNav = function(key){
+        var btns = pd.querySelectorAll('button');
+        for(var i=0;i<btns.length;i++){
+            if(btns[i].textContent.trim()===key){ btns[i].click(); return; }
         }
-    }
-};
+    };
+})();
 </script>""", height=0)
 
 
@@ -488,13 +490,20 @@ def render_kpi():
 
 # ─── Home ───
 def render_home_screen():
-    st.markdown(
-        "<div style='height:28px'></div>"
-        "<p style='text-align:center;font-size:10px;font-weight:700;letter-spacing:4px;"
-        "color:#a07850;text-transform:uppercase;margin-bottom:3px;'>CHECK MANAGEMENT SYSTEM</p>"
-        "<h1><span class='logo-title'>CHECKFLOW</span></h1>"
-        "<div style='height:32px'></div>",
-        unsafe_allow_html=True)
+    # Inline CSS: hide all st.button elements on this screen only
+    st.markdown("""
+<style>
+/* Home screen — hide nav buttons (JS clicks them programmatically) */
+body .stButton>button{
+    position:fixed!important;top:-9999px!important;left:-9999px!important;
+    width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;
+}
+</style>
+<div style='height:28px'></div>
+<p style='text-align:center;font-size:10px;font-weight:700;letter-spacing:4px;
+color:#a07850;text-transform:uppercase;margin-bottom:3px;'>CHECK MANAGEMENT SYSTEM</p>
+<h1><span class='logo-title'>CHECKFLOW</span></h1>
+<div style='height:32px'></div>""", unsafe_allow_html=True)
 
     # ── Card 1: Calculator (Green) ──
     st.markdown("""
@@ -508,12 +517,10 @@ def render_home_screen():
             <div class="hnc-desc">חישוב עמלות פריטה מהיר ומדויק</div>
         </div>
     </div>""", unsafe_allow_html=True)
-    st.markdown('<div class="hnc-over">', unsafe_allow_html=True)
     if st.button("calc", key="go_calc", use_container_width=True):
         st.session_state.screen = "calc"; st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Card 2: Management (Copper) – slightly elevated ──
+    # ── Card 2: Management (Copper) ──
     st.markdown("""
     <div class="hnc" onclick="clickNav('mgmt')" style="transform:scale(1.04);transform-origin:center;box-shadow:0 20px 52px rgba(0,0,0,.65);cursor:pointer;">
         <div class="hnc-badge" style="background:linear-gradient(160deg,#ffc080 0%,#a85818 100%);">
@@ -525,10 +532,8 @@ def render_home_screen():
             <div class="hnc-desc">לקוחות · סטטוסים · מעקב מלא</div>
         </div>
     </div>""", unsafe_allow_html=True)
-    st.markdown('<div class="hnc-over">', unsafe_allow_html=True)
     if st.button("mgmt", key="go_mgmt", use_container_width=True):
         st.session_state.screen = "mgmt"; st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Card 3: Dashboard (Blue) ──
     st.markdown("""
@@ -542,10 +547,8 @@ def render_home_screen():
             <div class="hnc-desc">תחזית חודשית · פירעונות</div>
         </div>
     </div>""", unsafe_allow_html=True)
-    st.markdown('<div class="hnc-over">', unsafe_allow_html=True)
     if st.button("dash", key="go_dash", use_container_width=True):
         st.session_state.screen = "dash"; st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
     render_kpi()
 
