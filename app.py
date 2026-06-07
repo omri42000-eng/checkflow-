@@ -248,13 +248,63 @@ html,body,[class*="css"]{direction:rtl}
 /* carousel */
 .carousel-wrap{display:flex;gap:12px;overflow-x:auto;padding:8px 2px 12px;scrollbar-width:none;-ms-overflow-style:none}
 .carousel-wrap::-webkit-scrollbar{display:none}
-.nav-card{flex:0 0 110px;height:110px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(229,154,101,.25);box-shadow:0 4px 16px rgba(0,0,0,.4);transition:transform .15s ease}
-.nav-card:hover{transform:scale(1.05)}
-.nav-card .nav-emoji{font-size:2rem;line-height:1;margin-bottom:4px}
-.nav-card .nav-label{font-size:0.65rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#dec599;text-align:center}
-.nav-calc{background:linear-gradient(135deg,#1a3a2a,#0f2318)}
-.nav-mgmt{background:linear-gradient(135deg,#2a1a3a,#180f23)}
-.nav-dash{background:linear-gradient(135deg,#1a2a3a,#0f1823)}
+/* round nav buttons */
+div[data-testid="column"] .stButton>button {
+    border-radius: 50% !important;
+    width: 100px !important;
+    height: 100px !important;
+    padding: 0 !important;
+    font-size: 0.62rem !important;
+    font-weight: 800 !important;
+    line-height: 1.3 !important;
+    white-space: pre-wrap !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto !important;
+    animation: pulse-glow 2.5s ease-in-out infinite !important;
+}
+div[data-testid="column"]:nth-child(1) .stButton>button {
+    background: linear-gradient(135deg,#1a3a2a,#0f4a22) !important;
+    border-color: rgba(57,255,20,.4) !important;
+    color: #6ddf8a !important;
+    box-shadow: 0 0 20px rgba(57,255,20,.2), 0 8px 24px rgba(0,0,0,.5) !important;
+    animation: pulse-green 2.5s ease-in-out infinite !important;
+}
+div[data-testid="column"]:nth-child(2) .stButton>button {
+    background: linear-gradient(135deg,#3a2a1a,#4a1a0f) !important;
+    border-color: rgba(229,154,101,.5) !important;
+    color: #e59a65 !important;
+    box-shadow: 0 0 20px rgba(229,154,101,.25), 0 8px 24px rgba(0,0,0,.5) !important;
+    animation: pulse-copper 2.5s ease-in-out infinite !important;
+    animation-delay: .4s !important;
+}
+div[data-testid="column"]:nth-child(3) .stButton>button {
+    background: linear-gradient(135deg,#1a2a3a,#0f1a4a) !important;
+    border-color: rgba(100,160,229,.4) !important;
+    color: #90bfdf !important;
+    box-shadow: 0 0 20px rgba(100,160,229,.2), 0 8px 24px rgba(0,0,0,.5) !important;
+    animation: pulse-blue 2.5s ease-in-out infinite !important;
+    animation-delay: .8s !important;
+}
+div[data-testid="column"] .stButton>button:hover {
+    transform: scale(1.12) rotate(-3deg) !important;
+    animation: none !important;
+    box-shadow: 0 0 40px currentColor, 0 12px 32px rgba(0,0,0,.6) !important;
+}
+@keyframes pulse-green {
+    0%,100% { box-shadow: 0 0 15px rgba(57,255,20,.2), 0 8px 24px rgba(0,0,0,.5); transform: scale(1); }
+    50% { box-shadow: 0 0 35px rgba(57,255,20,.5), 0 8px 24px rgba(0,0,0,.5); transform: scale(1.06) rotate(2deg); }
+}
+@keyframes pulse-copper {
+    0%,100% { box-shadow: 0 0 15px rgba(229,154,101,.2), 0 8px 24px rgba(0,0,0,.5); transform: scale(1); }
+    50% { box-shadow: 0 0 35px rgba(229,154,101,.5), 0 8px 24px rgba(0,0,0,.5); transform: scale(1.06) rotate(-2deg); }
+}
+@keyframes pulse-blue {
+    0%,100% { box-shadow: 0 0 15px rgba(100,160,229,.2), 0 8px 24px rgba(0,0,0,.5); transform: scale(1); }
+    50% { box-shadow: 0 0 35px rgba(100,160,229,.5), 0 8px 24px rgba(0,0,0,.5); transform: scale(1.06) rotate(2deg); }
+}
 /* general buttons */
 .stButton>button{border-radius:14px!important;border:1px solid rgba(229,154,101,.2)!important;background:rgba(30,35,42,.9)!important;color:#dec599!important;font-weight:700!important;font-family:'Inter',sans-serif!important;transition:all .12s ease!important;box-shadow:0 3px 10px rgba(0,0,0,.3)!important}
 .stButton>button:hover{border-color:rgba(229,154,101,.5)!important}
@@ -289,6 +339,13 @@ div[data-testid="stRadio"] div[data-baseweb="radio"]>div:first-child{display:non
 ul[role="listbox"],div[data-baseweb="popover"]{background-color:#0b1a2a!important;border:1px solid rgba(229,154,101,.2)!important;border-radius:14px!important}
 ul[role="listbox"] li{color:#dec599!important;font-weight:600!important}
 .stDataFrame,[data-testid="stDataEditor"]{border-radius:14px!important;overflow:hidden!important;border:none!important}
+/* center inline buttons */
+div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton {
+    display: flex; justify-content: center;
+}
+div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:not([style*="width:100"]) {
+    min-width: 80px;
+}
 /* dashboard */
 .dash-day-card{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.2);border-radius:20px;padding:14px 16px;margin-bottom:6px;cursor:pointer;transition:border-color .15s}
 .dash-day-card:hover{border-color:rgba(229,154,101,.5)}
@@ -377,31 +434,21 @@ def render_home_screen():
         "<h1><span class='logo-title'>CHECKFLOW</span></h1>",
         unsafe_allow_html=True)
 
-    # Carousel nav
-    st.markdown("""<div class="carousel-wrap">
-      <div class="nav-card nav-calc" onclick="window.parent.postMessage({type:'streamlit:setComponentValue',value:'calc'},'*')">
-        <div class="nav-emoji">🧮</div><div class="nav-label">מחשבון פריטה</div>
-      </div>
-      <div class="nav-card nav-mgmt" onclick="window.parent.postMessage({type:'streamlit:setComponentValue',value:'mgmt'},'*')">
-        <div class="nav-emoji">📋</div><div class="nav-label">ניהול צ'קים</div>
-      </div>
-      <div class="nav-card nav-dash" onclick="window.parent.postMessage({type:'streamlit:setComponentValue',value:'dash'},'*')">
-        <div class="nav-emoji">📊</div><div class="nav-label">דשבורד תזרים</div>
-      </div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
+    # 3 round nav buttons using Streamlit
     c1, c2, c3 = st.columns(3)
     with c1:
-        if st.button("🧮\nמחשבון", key="go_calc", use_container_width=True):
+        if st.button("🧮\nמחשבון\nפריטה", key="go_calc", use_container_width=True):
             st.session_state.screen = "calc"; st.rerun()
     with c2:
-        if st.button("📋\nניהול", key="go_mgmt", use_container_width=True):
+        if st.button("📋\nניהול\nצ׳קים", key="go_mgmt", use_container_width=True):
             st.session_state.screen = "mgmt"; st.rerun()
     with c3:
-        if st.button("📊\nדשבורד", key="go_dash", use_container_width=True):
+        if st.button("📊\nדשבורד\nתזרים", key="go_dash", use_container_width=True):
             st.session_state.screen = "dash"; st.rerun()
 
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
     render_kpi()
 
 
@@ -432,17 +479,19 @@ def render_dashboard():
             key = f"day_expand_{d_str}"
             expanded = st.session_state.get(key, False)
 
-            header_html = (
-                f"<div class='dash-day-card' style='background:{bg};border-color:{border};'>"
-                f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
-                f"<div><span style='font-size:13px;font-weight:800;color:#dec599;'>{label}</span>"
-                f"<span style='font-size:10px;color:#8c6a45;font-weight:700;margin-right:8px;letter-spacing:.5px;'> · {len(checks)} צ'קים</span></div>"
-                f"<span style='font-weight:900;font-size:1.1rem;color:#e59a65;direction:ltr;'>{fmt_ils(day_total)}</span>"
-                f"</div></div>"
-            )
-            st.markdown(header_html, unsafe_allow_html=True)
-            if st.button("▼ פרטים" if not expanded else "▲ סגור", key=f"btn_{key}"):
-                st.session_state[key] = not expanded; st.rerun()
+            da, db = st.columns([3, 1])
+            with da:
+                st.markdown(
+                    f"<div style='background:{bg};border:1px solid {border};border-radius:18px;padding:12px 14px;'>"
+                    f"<div style='font-size:14px;font-weight:800;color:#dec599;'>{label}</div>"
+                    f"<div style='display:flex;justify-content:space-between;align-items:center;margin-top:4px;'>"
+                    f"<span style='font-size:10px;color:#8c6a45;font-weight:700;'>{len(checks)} צ'קים</span>"
+                    f"<span style='font-weight:900;font-size:1.1rem;color:#e59a65;direction:ltr;'>{fmt_ils(day_total)}</span>"
+                    f"</div></div>", unsafe_allow_html=True)
+            with db:
+                st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+                if st.button("▼" if not expanded else "▲", key=f"btn_{key}", use_container_width=True):
+                    st.session_state[key] = not expanded; st.rerun()
             if expanded:
                 for ch in checks:
                     color = STATUS_COLORS.get(ch["status"], "#888")
@@ -543,7 +592,7 @@ def render_calculator():
     basis = st.radio("", ["ריבית חודשית", "ריבית שנתית"],
                      index=0 if st.session_state.rate_basis=="חודשית" else 1,
                      horizontal=True, key="basis_radio", label_visibility="collapsed")
-    st.session_state.rate_basis = "חודשית" if basis=="ריבית חודשית" else "שנתית"
+    st.session_state.rate_basis = "חודשית" if basis=="שכר טרחה חודשי" else "שנתית"
 
     rate_val = st.session_state.fixed_rate
     r1, r2 = st.columns([2,1])
@@ -677,9 +726,10 @@ def render_add_check_form():
             single_rate = st.number_input("אחוז שכ\"ט (%)", min_value=0.0, max_value=100.0,
                                           value=client_rate, step=0.1, format="%.2f", key="single_rate")
         with rb:
-            single_basis = st.radio("", ["חודשית","שנתית"],
+            single_basis_lbl = st.radio("", ["שכר טרחה חודשי","שכר טרחה שנתי"],
                                     index=["חודשית","שנתית"].index(client_basis),
                                     key="single_basis", horizontal=True, label_visibility="collapsed")
+        single_basis = "חודשית" if single_basis_lbl=="שכר טרחה חודשי" else "שנתית"
         st.session_state.fixed_rate = single_rate
         st.session_state.rate_basis = single_basis
 
@@ -719,9 +769,10 @@ def render_add_check_form():
             batch_rate = st.number_input("אחוז שכ\"ט (%)", min_value=0.0, max_value=100.0,
                                          value=client_rate, step=0.1, format="%.2f", key="batch_rate")
         with bb:
-            batch_basis = st.radio("", ["חודשית","שנתית"],
+            batch_basis_lbl = st.radio("", ["שכר טרחה חודשי","שכר טרחה שנתי"],
                                    index=["חודשית","שנתית"].index(client_basis),
                                    key="batch_basis", horizontal=True, label_visibility="collapsed")
+        batch_basis = "חודשית" if batch_basis_lbl=="שכר טרחה חודשי" else "שנתית"
         st.session_state.fixed_rate = batch_rate
         st.session_state.rate_basis = batch_basis
 
