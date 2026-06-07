@@ -724,47 +724,47 @@ def fmt_date(d):
 # מסך התחברות / הרשמה
 # ─────────────────────────────────────────────
 def get_upcoming_checks(days_ahead=2):
-    """צ'קים שפורעים היום + הימים הקרובים"""
     u = current_user()
     results = {}
     today = date.today()
-    for i in range(days_ahead + 1):
-        d = today + timedelta(days=i)
-        with closing(get_conn()) as conn:
-            rows = conn.execute("""
+    with get_conn() as conn:
+        cur = conn.cursor()
+        for i in range(days_ahead + 1):
+            d = today + timedelta(days=i)
+            cur.execute("""
                 SELECT ch.id, ch.amount, ch.due_date, ch.status, cl.name AS client_name
                 FROM checks ch JOIN clients cl ON cl.id=ch.client_id
-                WHERE cl.username=? AND DATE(ch.due_date)=DATE(?)
+                WHERE cl.username=%s AND ch.due_date=%s
                 ORDER BY cl.name
-            """, (u, d.isoformat())).fetchall()
-        if rows:
-            results[d] = [dict(r) for r in rows]
+            """, (u, d))
+            rows = cur.fetchall()
+            if rows:
+                results[d] = [dict(r) for r in rows]
     return results
 
 
 def add_checks_batch(client_id, amounts, due_dates, status):
-    """שמירת מקבץ צ'קים בבת אחת"""
-    with closing(get_conn()) as conn, conn:
+    with get_conn() as conn:
+        cur = conn.cursor()
         for amt, dd in zip(amounts, due_dates):
-            conn.execute(
-                "INSERT INTO checks (client_id,amount,due_date,status,remind_on) VALUES (?,?,?,?,NULL)",
-                (client_id, float(amt), dd.isoformat() if hasattr(dd, "isoformat") else str(dd), status)
+            cur.execute(
+                "INSERT INTO checks (client_id,amount,due_date,status,remind_on) VALUES (%s,%s,%s,%s,NULL)",
+                (client_id, float(amt), dd, status)
             )
 
 
 def do_login(username, password):
-    """בדיקת סיסמה ישירה מ-DB"""
     username = username.strip()
-    with closing(get_conn()) as conn:
-        user = conn.execute(
-            "SELECT * FROM users WHERE username=?", (username,)
-        ).fetchone()
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
+        user = cur.fetchone()
     if not user:
         return False, "שם משתמש לא קיים"
     if stauth.Hasher().check_pw(password, user["password"]):
         st.session_state["authentication_status"] = True
         st.session_state["username"] = user["username"]
-        st.session_state["name"]     = user["name"]
+        st.session_state["name"] = user["name"]
         return True, ""
     return False, "סיסמה שגויה"
 
@@ -815,15 +815,18 @@ def render_auth_screen():
             elif r_pass != r_pass2:
                 st.error("הסיסמאות אינן תואמות.")
             else:
-                with closing(get_conn()) as conn:
-                    exists = conn.execute("SELECT 1 FROM users WHERE username=?", (r_user,)).fetchone()
+                with get_conn() as conn:
+                    cur = conn.cursor()
+                    cur.execute("SELECT 1 FROM users WHERE username=%s", (r_user,))
+                    exists = cur.fetchone()
                 if exists:
                     st.error("שם המשתמש כבר קיים.")
                 else:
                     hashed = stauth.Hasher().hash(r_pass)
-                    with closing(get_conn()) as conn, conn:
-                        conn.execute(
-                            "INSERT INTO users (username,name,password,email) VALUES (?,?,?,?)",
+                    with get_conn() as conn:
+                        cur = conn.cursor()
+                        cur.execute(
+                            "INSERT INTO users (username,name,password,email) VALUES (%s,%s,%s,%s)",
                             (r_user, r_name, hashed, r_email)
                         )
                     st.success("נרשמת בהצלחה! עבור ללשונית 'כניסה' והתחבר. 🎉")
