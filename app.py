@@ -259,17 +259,18 @@ def get_status_breakdown():
 def inject_css():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800&display=swap');
 
-    /* ═══════════════════════════════════════
-       GLOBAL RESET & BASE
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════
+       GLOBAL BASE
+    ═══════════════════════════════════ */
     html, body, [class*="css"] { direction: rtl; }
 
     .stApp {
         background: #F7F7F9;
         font-family: 'Inter', sans-serif;
-        color: #000000;
+        color: #000;
+        min-height: 100vh;
     }
     #MainMenu, header, footer { visibility: hidden; }
     .block-container {
@@ -278,178 +279,254 @@ def inject_css():
         max-width: 480px;
     }
 
-    /* ═══════════════════════════════════════
-       KPI CARD — Periwinkle block
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════
+       KPI — PERIWINKLE HERO BLOCK
+    ═══════════════════════════════════ */
     .kpi {
-        background: #C4CEFF;
+        background: linear-gradient(135deg, #C4CEFF 0%, #B8B5FF 100%);
         border-radius: 32px;
-        padding: 32px 24px 24px;
-        margin-bottom: 5px;
+        padding: 36px 28px 28px;
+        margin-bottom: 6px;
         text-align: center;
         border: none;
+        position: relative;
+        overflow: hidden;
+    }
+    .kpi::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 180px; height: 180px;
+        background: rgba(255,255,255,0.18);
+        border-radius: 50%;
+    }
+    .kpi::after {
+        content: '';
+        position: absolute;
+        bottom: -30px; left: -30px;
+        width: 120px; height: 120px;
+        background: rgba(255,255,255,0.12);
+        border-radius: 50%;
     }
     .kpi-label {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 2px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 3px;
         color: #5A5AA3;
         text-transform: uppercase;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
+        position: relative; z-index: 1;
     }
     .kpi-value {
         font-family: 'Inter', sans-serif;
-        font-size: 3.2rem;
+        font-size: 3.6rem;
         font-weight: 900;
-        line-height: 1;
-        color: #000000;
+        line-height: 0.95;
+        color: #000;
         display: block;
-        letter-spacing: -2.5px;
+        letter-spacing: -3px;
         direction: ltr;
+        position: relative; z-index: 1;
     }
     .kpi-sub {
         font-size: 13px;
-        color: #5A5AA3;
-        margin-top: 10px;
-        font-weight: 500;
+        color: #6B6BA8;
+        margin-top: 12px;
+        font-weight: 600;
+        position: relative; z-index: 1;
     }
 
-    /* ═══════════════════════════════════════
-       PILL / TAG
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════
+       PILL / STATUS TAG
+    ═══════════════════════════════════ */
     .pill {
-        display: inline-block;
-        padding: 2px 10px;
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 12px;
         border-radius: 999px;
-        font-size: 11px;
-        font-weight: 700;
+        font-size: 10px;
+        font-weight: 800;
         margin-inline-start: 6px;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
     }
 
-    /* ═══════════════════════════════════════
-       SECTION TITLES
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════
+       SECTION TITLES — EDITORIAL
+    ═══════════════════════════════════ */
     .section-title {
-        font-size: 24px;
+        font-size: 26px;
         font-weight: 900;
-        letter-spacing: -0.8px;
+        letter-spacing: -1px;
         color: #000;
-        margin: 24px 0 5px;
+        margin: 28px 0 6px;
         text-align: right;
-        line-height: 1.1;
+        line-height: 1;
     }
     .section-title-right {
-        font-size: 24px;
+        font-size: 26px;
         font-weight: 900;
-        letter-spacing: -0.8px;
+        letter-spacing: -1px;
         color: #000;
-        margin: 12px 0 5px;
+        margin: 16px 0 6px;
         text-align: right;
-        line-height: 1.1;
+        line-height: 1;
     }
-    .neon-bar {
-        height: 3px; width: 36px; border-radius: 3px;
-        background: #000; margin: 0 auto 16px;
+    .neon-bar, .neon-bar-right {
+        height: 4px; width: 40px; border-radius: 4px;
+        background: #000; margin-bottom: 18px;
     }
-    .neon-bar-right {
-        height: 3px; width: 36px; border-radius: 3px;
-        background: #000; margin: 0 0 16px auto;
-    }
+    .neon-bar  { margin-right: auto; margin-left: auto; }
+    .neon-bar-right { margin-right: 0; margin-left: auto; }
 
-    /* ═══════════════════════════════════════
-       GLASS / GENERIC CARD
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════
+       GLASS / WHITE CARD
+    ═══════════════════════════════════ */
     .glass {
-        background: #FFFFFF;
+        background: #fff;
         border-radius: 28px;
-        padding: 20px 22px;
-        margin-bottom: 5px;
+        padding: 22px 24px;
+        margin-bottom: 6px;
         border: none;
     }
 
-    /* ═══════════════════════════════════════
-       CLIENT CARDS — pastel deck
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════
+       CLIENT CARDS — PASTEL DECK
+    ═══════════════════════════════════ */
     .client-card {
         display: flex;
         justify-content: space-between;
         align-items: center;
         border-radius: 24px;
-        padding: 18px 20px;
-        margin-bottom: 5px;
+        padding: 20px 22px;
+        margin-bottom: 6px;
         border: none;
+        transition: transform .12s ease;
     }
-    .client-name  { font-weight: 800; font-size: 1rem; color: #000; }
+    .client-card:active { transform: scale(0.98); }
+    .client-name {
+        font-weight: 900;
+        font-size: 1.05rem;
+        color: #000;
+        letter-spacing: -0.3px;
+    }
     .client-obligo {
         font-weight: 900;
-        font-size: 1.15rem;
+        font-size: 1.2rem;
         color: #000;
         direction: ltr;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.8px;
     }
 
-    /* ═══════════════════════════════════════
-       CALCULATOR OUTPUT CARDS
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════
+       CALCULATOR OUTPUT
+    ═══════════════════════════════════ */
     .calc-out {
         border-radius: 28px;
-        padding: 22px 22px;
-        margin-top: 5px;
+        padding: 24px;
+        margin-top: 6px;
         text-align: center;
         border: none;
+        position: relative;
+        overflow: hidden;
+    }
+    .calc-out::before {
+        content: '';
+        position: absolute;
+        top: -20px; left: -20px;
+        width: 100px; height: 100px;
+        background: rgba(255,255,255,0.25);
+        border-radius: 50%;
     }
     .calc-out.fee { background: #FFD6E8; }
-    .calc-out.net { background: #D6F5E0; margin-top: 5px; }
+    .calc-out.net { background: #D6F5E0; margin-top: 6px; }
     .calc-out .lbl {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1.5px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 2px;
         text-transform: uppercase;
         color: #8A8A93;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
+        position: relative; z-index: 1;
     }
     .calc-out .big {
         font-family: 'Inter', sans-serif;
-        font-size: 2.8rem;
+        font-size: 3rem;
         font-weight: 900;
         direction: ltr;
-        line-height: 1.05;
-        letter-spacing: -1.5px;
+        line-height: 1;
+        letter-spacing: -2px;
         color: #000;
+        position: relative; z-index: 1;
     }
 
-    /* ═══════════════════════════════════════
-       REMINDER CARD — butter yellow
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════
+       REMINDER CARD — BUTTER YELLOW
+    ═══════════════════════════════════ */
     .reminder-card {
-        background: #FFF3C8;
+        background: linear-gradient(135deg, #FFF3C8 0%, #FFE8A3 100%);
         border-radius: 24px;
-        padding: 18px 20px;
-        margin-bottom: 5px;
+        padding: 20px 22px;
+        margin-bottom: 6px;
         cursor: pointer;
         border: none;
+        position: relative;
+        overflow: hidden;
+    }
+    .reminder-card::after {
+        content: '⏰';
+        position: absolute;
+        top: 12px; left: 16px;
+        font-size: 2.5rem;
+        opacity: 0.15;
     }
     .reminder-title {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1.5px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 2px;
         text-transform: uppercase;
         color: #8A6A00;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
     .reminder-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0;
-        border-bottom: 1px solid rgba(0,0,0,0.06);
+        padding: 7px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.07);
     }
     .reminder-row:last-child { border-bottom: none; }
 
-    /* ═══════════════════════════════════════
+    /* ═══════════════════════════════════
+       DASHBOARD STAT CARDS
+    ═══════════════════════════════════ */
+    .stat-card {
+        border-radius: 24px;
+        padding: 20px 18px;
+        text-align: center;
+        border: none;
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-label {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #8A8A93;
+        margin-bottom: 8px;
+    }
+    .stat-value {
+        font-size: 1.9rem;
+        font-weight: 900;
+        letter-spacing: -1.5px;
+        color: #000;
+        line-height: 1;
+    }
+
+    /* ═══════════════════════════════════
        BUTTONS — GENERAL
-    ═══════════════════════════════════════ */
+    ═══════════════════════════════════ */
     .stButton > button {
         border-radius: 16px !important;
         border: none !important;
@@ -458,62 +535,78 @@ def inject_css():
         font-weight: 700 !important;
         font-family: 'Inter', sans-serif !important;
         font-size: 0.9rem !important;
-        transition: opacity .12s ease !important;
+        transition: all .15s ease !important;
+        letter-spacing: -0.1px !important;
     }
-    .stButton > button:hover { opacity: 0.78 !important; }
+    .stButton > button:hover {
+        opacity: 0.80 !important;
+        transform: translateY(-1px) !important;
+    }
+    .stButton > button:active { transform: scale(0.97) !important; }
 
-    /* HOME NAV — large pastel blocks */
+    /* HOME NAV — BIG PASTEL BLOCKS */
     .home-nav-btn .stButton > button {
         border-radius: 28px !important;
-        font-size: 1.2rem !important;
+        font-size: 1.25rem !important;
         font-weight: 900 !important;
-        min-height: 90px !important;
+        min-height: 100px !important;
         height: auto !important;
-        padding: 26px 24px !important;
-        letter-spacing: -0.3px !important;
+        padding: 28px 24px !important;
+        letter-spacing: -0.5px !important;
         border: none !important;
         color: #000 !important;
     }
-    .home-nav-green .stButton > button { background: #D6F5E0 !important; }
-    .home-nav-pink  .stButton > button { background: #E8E4FF !important; }
+    .home-nav-green .stButton > button {
+        background: #D6F5E0 !important;
+        color: #000 !important;
+    }
+    .home-nav-pink .stButton > button {
+        background: #E8E4FF !important;
+        color: #000 !important;
+    }
+    .home-nav-blue .stButton > button {
+        background: #C8E8FF !important;
+        color: #000 !important;
+    }
 
-    /* ADD CHECK BUTTONS */
+    /* ADD CHECK PILL BUTTONS */
     .btn-single .stButton > button {
         border-radius: 50px !important;
         background: #000 !important;
         color: #fff !important;
-        font-size: 0.92rem !important;
+        font-size: 0.95rem !important;
         font-weight: 800 !important;
-        padding: 13px 0 !important;
+        padding: 14px 0 !important;
         border: none !important;
+        letter-spacing: -0.2px !important;
     }
     .btn-batch .stButton > button {
         border-radius: 50px !important;
         background: #E8E4FF !important;
         color: #000 !important;
-        font-size: 0.92rem !important;
+        font-size: 0.95rem !important;
         font-weight: 800 !important;
-        padding: 13px 0 !important;
+        padding: 14px 0 !important;
         border: none !important;
     }
     .btn-single .stButton > button:hover,
-    .btn-batch  .stButton > button:hover { opacity: 0.78 !important; }
+    .btn-batch  .stButton > button:hover { opacity: 0.82 !important; }
 
-    /* SMALL ACTION BUTTONS (✓ 🗑) */
+    /* SMALL ICON BUTTONS */
     .btn-sm .stButton > button {
-        padding: 4px 10px !important;
-        font-size: 0.75rem !important;
-        border-radius: 10px !important;
+        padding: 5px 12px !important;
+        font-size: 0.78rem !important;
+        border-radius: 12px !important;
         min-height: 0 !important;
         height: auto !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         background: #EBEBEB !important;
     }
 
     /* FLOATING BACK BUTTON */
     .back-btn {
         position: fixed !important;
-        bottom: 28px !important;
+        bottom: 30px !important;
         left: 20px !important;
         z-index: 9999 !important;
     }
@@ -521,18 +614,19 @@ def inject_css():
         border-radius: 50px !important;
         background: #000 !important;
         color: #fff !important;
-        font-size: 0.80rem !important;
-        font-weight: 800 !important;
-        padding: 10px 22px !important;
+        font-size: 0.82rem !important;
+        font-weight: 900 !important;
+        padding: 12px 24px !important;
         height: auto !important;
         min-height: 0 !important;
         border: none !important;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.14) !important;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.20) !important;
+        letter-spacing: -0.2px !important;
     }
 
-    /* ═══════════════════════════════════════
+    /* ═══════════════════════════════════
        INPUTS & SELECTS
-    ═══════════════════════════════════════ */
+    ═══════════════════════════════════ */
     .stTextInput input,
     .stNumberInput input,
     .stDateInput input,
@@ -544,10 +638,16 @@ def inject_css():
         caret-color: #000 !important;
         border-radius: 14px !important;
         border: none !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         font-size: 1rem !important;
         direction: rtl !important;
         text-align: right !important;
+        transition: background .12s ease !important;
+    }
+    .stTextInput input:focus,
+    .stNumberInput input:focus {
+        background-color: #E0E0E8 !important;
+        outline: none !important;
     }
     .stTextInput div[data-baseweb="input"],
     .stNumberInput div[data-baseweb="input"],
@@ -558,41 +658,45 @@ def inject_css():
         border-radius: 14px !important;
     }
 
-    /* big amount field in calculator */
+    /* BIG AMOUNT FIELD */
     div[data-testid="stNumberInput"]:has(input[aria-label*="סכום"]) input {
-        font-size: 1.8rem !important;
+        font-size: 1.9rem !important;
         font-weight: 900 !important;
         text-align: center !important;
-        letter-spacing: -1px !important;
-        height: 64px !important;
+        letter-spacing: -1.5px !important;
+        height: 68px !important;
+        background: linear-gradient(135deg, #E8E4FF, #EBEBEB) !important;
     }
 
-    div[data-baseweb="select"] div { color: #000 !important; font-weight: 600 !important; }
-    input::placeholder { color: #AEAEB8 !important; opacity: 1 !important; }
+    div[data-baseweb="select"] div { color: #000 !important; font-weight: 700 !important; }
+    input::placeholder { color: #B0B0BA !important; opacity: 1 !important; }
     ul[role="listbox"], div[data-baseweb="popover"] {
         background-color: #fff !important;
-        border-radius: 16px !important;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.10) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.12) !important;
     }
-    ul[role="listbox"] li { color: #000 !important; font-weight: 600 !important; }
+    ul[role="listbox"] li {
+        color: #000 !important;
+        font-weight: 700 !important;
+        border-radius: 12px !important;
+        margin: 2px 4px !important;
+    }
+    ul[role="listbox"] li:hover { background: #F0F0F5 !important; }
 
     label {
         color: #8A8A93 !important;
         font-weight: 700 !important;
-        font-size: 11px !important;
-        letter-spacing: 0.8px !important;
+        font-size: 10px !important;
+        letter-spacing: 1px !important;
         text-transform: uppercase !important;
         text-align: right !important;
         display: block !important;
     }
 
-    /* ═══════════════════════════════════════
-       RADIO — RATE TYPE
-    ═══════════════════════════════════════ */
-    div[data-testid="stRadio"] > div {
-        gap: 8px !important;
-        justify-content: center !important;
-    }
+    /* ═══════════════════════════════════
+       RADIO BUTTONS
+    ═══════════════════════════════════ */
+    div[data-testid="stRadio"] > div { gap: 8px !important; justify-content: center !important; }
     div[data-testid="stRadio"] label {
         background: #EBEBEB !important;
         border: none !important;
@@ -602,90 +706,133 @@ def inject_css():
         font-weight: 800 !important;
         color: #000 !important;
         cursor: pointer;
-        transition: background .1s ease;
+        transition: all .12s ease;
         text-transform: none !important;
         letter-spacing: 0 !important;
     }
-    div[data-testid="stRadio"] label:hover { background: #E8E4FF !important; }
+    div[data-testid="stRadio"] label:hover {
+        background: #E8E4FF !important;
+        transform: translateY(-1px);
+    }
     div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
     div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
 
-    /* ═══════════════════════════════════════
+    /* ═══════════════════════════════════
        TABS
-    ═══════════════════════════════════════ */
+    ═══════════════════════════════════ */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 5px;
-        justify-content: center;
+        gap: 5px; justify-content: center;
         background: transparent !important;
+        padding: 4px !important;
     }
     .stTabs [data-baseweb="tab"] {
         background: #EBEBEB !important;
         border-radius: 14px !important;
         padding: 10px 22px !important;
         border: none !important;
-        font-size: 0.9rem !important;
+        font-size: 0.88rem !important;
         font-weight: 700 !important;
         color: #8A8A93 !important;
-        min-width: 120px;
-        text-align: center;
+        min-width: 110px; text-align: center;
         text-transform: none !important;
         letter-spacing: 0 !important;
+        transition: all .12s ease !important;
     }
     .stTabs [data-baseweb="tab"] p,
     .stTabs [data-baseweb="tab"] span,
     .stTabs [data-baseweb="tab"] div { color: #8A8A93 !important; }
-    .stTabs [aria-selected="true"] { background: #000 !important; color: #fff !important; }
+    .stTabs [aria-selected="true"] {
+        background: #000 !important;
+        color: #fff !important;
+        transform: none !important;
+    }
     .stTabs [aria-selected="true"] p,
     .stTabs [aria-selected="true"] span,
     .stTabs [aria-selected="true"] div { color: #fff !important; }
 
-    /* ═══════════════════════════════════════
+    /* ═══════════════════════════════════
        EXPANDER
-    ═══════════════════════════════════════ */
+    ═══════════════════════════════════ */
     .streamlit-expanderHeader {
         background: #EBEBEB !important;
-        border-radius: 14px !important;
-        font-weight: 700 !important;
+        border-radius: 16px !important;
+        font-weight: 800 !important;
         color: #000 !important;
         border: none !important;
+        padding: 14px 18px !important;
+        letter-spacing: -0.2px !important;
     }
     .streamlit-expanderContent {
         background: #F7F7F9 !important;
         border: none !important;
+        border-radius: 0 0 16px 16px !important;
+        padding: 8px 4px !important;
     }
 
-    /* ═══════════════════════════════════════
-       CHECKBOX
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════
+       CHECKBOX & SELECT
+    ═══════════════════════════════════ */
     .stCheckbox label {
         color: #000 !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         font-size: 0.9rem !important;
         text-transform: none !important;
         letter-spacing: 0 !important;
     }
 
-    /* ═══════════════════════════════════════
-       DATA EDITOR
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════
+       DATA EDITOR / TABLE
+    ═══════════════════════════════════ */
     .stDataFrame, [data-testid="stDataEditor"] {
-        border-radius: 16px !important;
+        border-radius: 20px !important;
         overflow: hidden !important;
         border: none !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
     }
+
+    /* ═══════════════════════════════════
+       SCROLLBAR
+    ═══════════════════════════════════ */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D0D0D8; border-radius: 4px; }
+
+    /* ═══════════════════════════════════
+       SUCCESS / ERROR MESSAGES
+    ═══════════════════════════════════ */
+    .stSuccess {
+        background: #D6F5E0 !important;
+        border-radius: 16px !important;
+        border: none !important;
+        color: #000 !important;
+        font-weight: 700 !important;
+    }
+    .stError {
+        background: #FFD6E8 !important;
+        border-radius: 16px !important;
+        border: none !important;
+        color: #000 !important;
+        font-weight: 700 !important;
+    }
+    [data-testid="stNotification"] {
+        border-radius: 16px !important;
+        border: none !important;
+    }
+
     </style>
     """, unsafe_allow_html=True)
 
-    # JS — סימון אוטומטי בלחיצה על שדה מספר
     st.components.v1.html("""
     <script>
+    /* ── Auto-select number inputs on focus ── */
     function attachSelectAll() {
         var inputs = window.parent.document.querySelectorAll('input[type="number"]');
         inputs.forEach(function(inp) {
             if (inp._sa) return;
             inp._sa = true;
             inp.addEventListener('focus', function() {
-                var s = this; setTimeout(function(){ s.select(); }, 50);
+                var s = this;
+                setTimeout(function(){ s.select(); }, 50);
             });
         });
     }
