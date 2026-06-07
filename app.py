@@ -365,8 +365,9 @@ function attachSelectAll(){
 attachSelectAll();setInterval(attachSelectAll,600);
 </script>""", height=0)
 import streamlit as st
+from datetime import date, timedelta
 
-# 1. קוד ה-JavaScript שלך (נשאר ללא שינוי)
+# 1. הזרקת קוד JavaScript (Select All לפוקוס על שדות מספרים)
 st.components.v1.html("""<script>
 function attachSelectAll(){
     var inputs=window.parent.document.querySelectorAll('input[type="number"]');
@@ -377,22 +378,65 @@ attachSelectAll();setInterval(attachSelectAll,600);
 </script>""", height=0)
 
 
-# 2. התיקון: עטיפת ה-CSS בתוך מחרוזת פייתון והזרקה שלו דרך st.markdown
-css_code = """
-<style>
-# ודא שחלק זה מחליף את כל קוד ה-CSS הישן שהיה זרוק בקובץ
+# 2. הזרקת כל קוד ה-CSS של האפליקציה (כולל כרטיסיות התזרים והאנימציות) בצורה תקינה
 st.markdown("""
-
-</style>
-""", unsafe_allow_html=True)
-
-/* גרום לשורה לא לעטוף שורות חדשות */
+<style>
+.dash-day-card {
+    background: rgba(30,35,42,.85);
+    border: 1px solid rgba(229,154,101,.2);
+    border-radius: 20px;
+    padding: 14px 16px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: border-color .15s;
+}
+.dash-day-card:hover {
+    border-color: rgba(229,154,101,.5);
+}
+.dash-month-card {
+    background: rgba(30,35,42,.85);
+    border: 1px solid rgba(229,154,101,.15);
+    border-radius: 20px;
+    padding: 14px 16px;
+    margin-bottom: 5px;
+}
+.dash-bar-bg {
+    background: rgba(255,255,255,.06);
+    border-radius: 99px;
+    height: 5px;
+    margin-top: 8px;
+}
+.dash-bar-fill {
+    background: linear-gradient(90deg,#e59a65,#b06a3b);
+    border-radius: 99px;
+    height: 5px;
+}
+.batch-row {
+    background: rgba(30,35,42,.85);
+    border: 1px solid rgba(229,154,101,.15);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 5px;
+}
+@keyframes crazyAnim {
+    0% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
+    25% { transform: scale(1.15) rotate(-10deg); background: #ff0055; }
+    50% { transform: scale(0.9) rotate(10deg); background: #00ffaa; box-shadow: 0 0 25px #00ffaa; }
+    75% { transform: scale(1.1) rotate(-5deg); background: #ffff00; }
+    100% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
+}
+.my-big-button:active {
+    animation: crazyAnim 0.4s ease-in-out;
+}
 .table-row-class {
     white-space: nowrap; 
-    display: flex; /* אם אתה משתמש ב-divs, זה יסדר את הכפתור בצד */
+    display: flex;
     align-items: center;
     justify-content: space-between;
 }
+</style>
+""", unsafe_allow_html=True)
+
 
 # ─── Auth ───
 def render_auth_screen():
@@ -436,6 +480,93 @@ def render_auth_screen():
                         cur=conn.cursor()
                         cur.execute("INSERT INTO users (username,name,password,email) VALUES (%s,%s,%s,%s)",(r_user,r_name,hashed,r_email))
                     st.success("נרשמת בהצלחה! 🎉")
+
+# ─── Back button ───
+def render_back_button():
+    st.markdown('<div class="back-btn">', unsafe_allow_html=True)
+    if st.button("← ראשי", key="back_home"):
+        st.session_state.screen = "home"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ─── KPI ───
+def render_kpi():
+    total, cnt = cached_totals(current_user())
+    st.markdown(f"""<div class="kpi">
+        <div class="kpi-label">אובליגו כולל</div>
+        <div class="kpi-value">{fmt_ils(total)}</div>
+        <div class="kpi-sub">{cnt} צ'קים בארנק 💸</div>
+    </div>""", unsafe_allow_html=True)
+
+# ─── Home ───
+def render_home_screen():
+    st.markdown(
+        "<div style='height:24px'></div>"
+        "<p style='text-align:center;font-size:11px;font-weight:700;letter-spacing:3px;"
+        "color:#8c6a45;text-transform:uppercase;margin-bottom:2px;'>CHECK MANAGEMENT</p>"
+        "<h1><span class='logo-title'>CHECKFLOW</span></h1>",
+        unsafe_allow_html=True)
+
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # 3 round nav buttons using Streamlit
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("🧮\nמחשבון\nפריטה", key="go_calc", use_container_width=True):
+            st.session_state.screen = "calc"; st.rerun()
+    with c2:
+        if st.button("📋\nניהול\nצ׳קים", key="go_mgmt", use_container_width=True):
+            st.session_state.screen = "mgmt"; st.rerun()
+    with c3:
+        if st.button("📊\nדשבורד\nתזרים", key="go_dash", use_container_width=True):
+            st.session_state.screen = "dash"; st.rerun()
+
+    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+    render_kpi()
+
+
+# ─── Dashboard ───
+def render_dashboard():
+    render_back_button()
+    st.markdown('<div class="section-title">📊 דשבורד תזרים</div>', unsafe_allow_html=True)
+    st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
+    u = current_user()
+
+    # Upcoming 2 days
+    upcoming_raw = cached_upcoming(u)
+    today = date.today()
+    day_labels = {today.isoformat(): "היום", (today+timedelta(days=1)).isoformat(): "מחר",
+                  (today+timedelta(days=2)).isoformat(): "מחרתיים"}
+    day_colors = {today.isoformat(): "rgba(57,255,20,.12)", (today+timedelta(days=1)).isoformat(): "rgba(229,154,101,.12)",
+                  (today+timedelta(days=2)).isoformat(): "rgba(255,45,149,.12)"}
+    border_colors = {today.isoformat(): "rgba(57,255,20,.3)", (today+timedelta(days=1)).isoformat(): "rgba(229,154,101,.3)",
+                     (today+timedelta(days=2)).isoformat(): "rgba(255,45,149,.3)"}
+
+    if upcoming_raw:
+        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8c6a45;margin-bottom:8px;'>פירעונות קרובים</div>", unsafe_allow_html=True)
+        for d_str, checks in sorted(upcoming_raw.items()):
+            label = day_labels.get(d_str, d_str)
+            day_total = sum(ch["amount"] for ch in checks)
+            bg = day_colors.get(d_str, "rgba(30,35,42,.85)")
+            border = border_colors.get(d_str, "rgba(229,154,101,.2)")
+            key = f"day_expand_{d_str}"
+            expanded = st.session_state.get(key, False)
+
+            da, db = st.columns([3, 1])
+            with da:
+                st.markdown(
+                    f"<div style='background:{bg};border:1px solid {border};border-radius:18px;padding:12px 14px;'>"
+                    f"<div style='font-size:14px;font-weight:800;color:#dec599;'>{label}</div>"
+                    f"<div style='display:flex;justify-content:space-between;align-items:center;margin-top:4px;'>"
+                    f"<span style='font-size:10px;color:#8c6a45;font-weight:700;'>{len(checks)} צ'קים</span>"
+                    f"<span style='font-weight:900;font-size:1.1rem;color:#e59a65;direction:ltr;'>{fmt_ils(day_total)}</span>"
+                    f"</div></div>", unsafe_allow_html=True)
+            with db:
+                st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+                if st.button("▼" if not expanded else "▲", key=f"btn_{key}", use_container_width=True):
+                    st.session_state[key] = not expanded; st.rerun()
+            if expanded:
+                for ch in checks:
+                    # המשך הקוד שלך מציג את הצ'קים כאן...
 
 # ─── Back button ───
 def render_back_button():
