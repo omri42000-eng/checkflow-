@@ -543,7 +543,7 @@ def render_home_screen():
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0d2240;font-family:'Inter',sans-serif;padding:12px 0 8px;}
+html,body{background:transparent!important;font-family:'Inter',sans-serif;padding:8px 0 0;}
 .hnc{display:flex;direction:ltr;height:90px;border-radius:26px;overflow:hidden;
     box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:18px;cursor:pointer;
     transition:transform .2s,box-shadow .2s;}
@@ -899,18 +899,57 @@ def render_add_check_form():
     u = current_user()
     clients = cached_clients(u)
     names = [c["name"] for c in clients]
+    mode = st.session_state.get("add_mode")
 
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown('<div class="btn-single">', unsafe_allow_html=True)
-        if st.button("➕  צ'ק בודד\nהוסף צ'ק ידנית", key="open_single", use_container_width=True):
-            st.session_state.add_mode = "single" if st.session_state.get("add_mode")!="single" else None
-        st.markdown('</div>', unsafe_allow_html=True)
-    with c2:
-        st.markdown('<div class="btn-batch">', unsafe_allow_html=True)
-        if st.button("📦  מקבץ צ'קים\nכמה צ'קים יחד", key="open_batch", use_container_width=True):
-            st.session_state.add_mode = "batch" if st.session_state.get("add_mode")!="batch" else None
-        st.markdown('</div>', unsafe_allow_html=True)
+    # ── CSS: hide the 2 Streamlit nav buttons that follow the marker ──
+    st.markdown("""<style>
+div:has(.mgmt-btn-marker)+div:has(.stButton),
+div:has(.mgmt-btn-marker)+div:has(.stButton)+div:has(.stButton){
+    position:fixed!important;top:-9999px!important;left:-9999px!important;
+    width:0!important;height:0!important;overflow:hidden!important;opacity:0!important;
+}
+</style>
+<div class="mgmt-btn-marker"></div>""", unsafe_allow_html=True)
+
+    # ── Hidden Streamlit nav buttons (clicked by iframe JS) ──
+    if st.button("single", key="open_single"):
+        st.session_state.add_mode = "single" if mode!="single" else None; st.rerun()
+    if st.button("batch", key="open_batch"):
+        st.session_state.add_mode = "batch" if mode!="batch" else None; st.rerun()
+
+    # ── Visual cards (iframe — onclick works here) ──
+    a_s = "active" if mode=="single" else ""
+    a_b = "active" if mode=="batch" else ""
+    st.components.v1.html(f"""<!DOCTYPE html><html><head><style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
+*{{box-sizing:border-box;margin:0;padding:0}}
+html,body{{background:transparent!important;font-family:'Inter',sans-serif;padding:6px 0 0;}}
+.grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;}}
+.mgmt-card{{height:82px;border-radius:22px;overflow:hidden;cursor:pointer;
+    display:flex;align-items:center;padding:0 16px;gap:12px;direction:rtl;
+    transition:filter .2s,transform .15s;}}
+.mgmt-card:hover{{filter:brightness(1.1);transform:scale(1.02);}}
+.mgmt-card.active{{box-shadow:0 0 0 2.5px rgba(255,255,255,.5) inset!important;}}
+.icon{{font-size:1.9rem;flex-shrink:0;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.3));}}
+.info .title{{font-weight:900;font-size:.88rem;color:#fff;}}
+.info .desc{{font-size:.68rem;color:rgba(255,255,255,.55);margin-top:2px;}}
+.green{{background:linear-gradient(135deg,#1a4a2a,#0a2814);box-shadow:0 10px 30px rgba(0,0,0,.5);}}
+.copper{{background:linear-gradient(135deg,#4a2808,#281404);box-shadow:0 10px 30px rgba(229,154,101,.2),0 10px 30px rgba(0,0,0,.4);}}
+</style></head><body>
+<div class="grid">
+<div class="mgmt-card green {a_s}" onclick="nav('single')">
+  <span class="icon">➕</span>
+  <div class="info"><div class="title">צ׳ק בודד</div><div class="desc">הוסף צ׳ק ידנית</div></div>
+</div>
+<div class="mgmt-card copper {a_b}" onclick="nav('batch')">
+  <span class="icon">📦</span>
+  <div class="info"><div class="title">מקבץ צ׳קים</div><div class="desc">כמה צ׳קים יחד</div></div>
+</div>
+</div>
+<script>
+function nav(k){{var b=window.parent.document.querySelectorAll('button');
+for(var i=0;i<b.length;i++){{if(b[i].textContent.trim()===k){{b[i].click();return;}}}}}}
+</script></body></html>""", height=105)
 
     if "batch_summary" in st.session_state and st.session_state.batch_summary:
         import pandas as pd
@@ -1027,26 +1066,24 @@ def render_add_check_form():
                 amt_val = float(row["סכום (₪)"])
                 fee_v, _ = calc_fee(amt_val, datetime.fromisoformat(date_val).date(), batch_rate, batch_basis)
                 is_editing = (edit_idx == idx)
-
-                # One horizontal row — pure st.columns (guaranteed inline)
-                bg = "rgba(229,154,101,.08)" if is_editing else "rgba(44,52,64,.6)"
                 border = "rgba(229,154,101,.5)" if is_editing else "rgba(229,154,101,.12)"
-                st.markdown(f"<div style='background:{bg};border:1px solid {border};border-radius:12px;padding:2px 4px;margin-bottom:4px;'>", unsafe_allow_html=True)
-                cn, ca, cd, cf, cb = st.columns([1, 2, 2, 2, 1])
-                with cn:
-                    st.markdown(f"<div style='padding:9px 0;text-align:center;font-size:12px;font-weight:800;color:#e59a65;'>#{int(row['#'])}</div>", unsafe_allow_html=True)
-                with ca:
-                    st.markdown(f"<div style='padding:9px 0;text-align:center;font-weight:800;color:#fff;font-size:.88rem;direction:ltr;'>{fmt_ils(amt_val)}</div>", unsafe_allow_html=True)
-                with cd:
-                    st.markdown(f"<div style='padding:9px 0;text-align:center;font-size:.78rem;color:#c09060;'>{fmt_date(date_val)}</div>", unsafe_allow_html=True)
-                with cf:
-                    st.markdown(f"<div style='padding:9px 0;text-align:center;font-size:.78rem;color:#ffb870;font-weight:700;'>{fmt_ils(fee_v)}</div>", unsafe_allow_html=True)
-                with cb:
-                    st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
+
+                # 2 columns only — guaranteed horizontal even on narrow mobile
+                data_col, btn_col = st.columns([3, 1])
+                with data_col:
+                    st.markdown(
+                        f"<div style='display:flex;justify-content:space-between;align-items:center;"
+                        f"background:rgba(44,52,64,.88);border:1px solid {border};border-radius:14px;"
+                        f"padding:10px 14px;direction:rtl;'>"
+                        f"<span style='color:#e59a65;font-weight:800;font-size:13px;'>#{int(row['#'])}</span>"
+                        f"<span style='color:#fff;font-weight:700;font-size:.9rem;'>{fmt_ils(amt_val)}</span>"
+                        f"<span style='color:#c09060;font-size:.78rem;'>{fmt_date(date_val)}</span>"
+                        f"<span style='color:#ffb870;font-size:.78rem;font-weight:700;'>{fmt_ils(fee_v)}</span>"
+                        f"</div>", unsafe_allow_html=True)
+                with btn_col:
+                    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
                     if st.button("✏️" if not is_editing else "✖", key=f"edit_row_{idx}", use_container_width=True):
                         st.session_state.batch_edit_idx = idx if not is_editing else None; st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
-                st.markdown("</div>", unsafe_allow_html=True)
 
                 if is_editing:
                     ea, eb = st.columns(2)
@@ -1107,7 +1144,7 @@ def render_clients():
             for ch in cached_checks(u, r["id"]):
                 color = STATUS_COLORS.get(ch["status"],"#888")
                 remind_str = f" | תזכורת: {fmt_date(ch['remind_on'])}" if ch["remind_on"] else ""
-                cc1, cc2, cc3, cc4 = st.columns([3,2,1,1])
+                cc1, cc2 = st.columns([4, 3])
                 with cc1:
                     st.markdown(f"""<div style="padding:5px 0;">
                         <span style="font-weight:700;direction:ltr;color:#e59a65;">{fmt_ils(ch['amount'])}</span><br>
@@ -1115,18 +1152,16 @@ def render_clients():
                         <span class="pill" style="background:{color}22;color:{color};border:1px solid {color}66;">{ch['status']}</span>
                     </div>""", unsafe_allow_html=True)
                 with cc2:
-                    new_st = st.selectbox("סטטוס", STATUSES, index=STATUSES.index(ch["status"]),
-                                          key=f"st_{ch['id']}", label_visibility="collapsed")
-                with cc3:
-                    st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
-                    if st.button("✓", key=f"upd_{ch['id']}", use_container_width=True):
-                        update_status(ch["id"], new_st); invalidate_cache(); st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
-                with cc4:
-                    st.markdown('<div class="btn-sm">', unsafe_allow_html=True)
-                    if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
-                        delete_check(ch["id"]); invalidate_cache(); st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    sel_col, ok_col, del_col = st.columns([2, 1, 1])
+                    with sel_col:
+                        new_st = st.selectbox("סטטוס", STATUSES, index=STATUSES.index(ch["status"]),
+                                              key=f"st_{ch['id']}", label_visibility="collapsed")
+                    with ok_col:
+                        if st.button("✓", key=f"upd_{ch['id']}", use_container_width=True):
+                            update_status(ch["id"], new_st); invalidate_cache(); st.rerun()
+                    with del_col:
+                        if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
+                            delete_check(ch["id"]); invalidate_cache(); st.rerun()
 
 
 # ─── Main ───
