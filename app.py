@@ -612,7 +612,7 @@ html,body{background:transparent!important;font-family:'Inter',sans-serif;paddin
   </div>
 </div>
 
-<div class="hnc hnc-mgmt" onclick="nav('mgmt')">
+<div class="hnc" onclick="nav('mgmt')">
   <div class="hnc-badge" style="background:linear-gradient(160deg,#ffc080 0%,#a85818 100%)">
     <span class="hnc-icon">💳</span>
   </div>
@@ -634,6 +634,17 @@ html,body{background:transparent!important;font-family:'Inter',sans-serif;paddin
   </div>
 </div>
 
+<div class="hnc" onclick="nav('clients')">
+  <div class="hnc-badge" style="background:linear-gradient(160deg,#c090ff 0%,#6030b0 100%)">
+    <span class="hnc-icon">👥</span>
+  </div>
+  <div class="hnc-body" style="background:linear-gradient(135deg,#2a1050 0%,#180828 100%)">
+    <div class="hnc-title">לקוחות</div>
+    <div class="hnc-rule" style="background:#9060e0"></div>
+    <div class="hnc-desc">פרטים · מסגרות · היסטוריה</div>
+  </div>
+</div>
+
 <script>
 function nav(key) {
     var btns = window.parent.document.querySelectorAll('button');
@@ -647,7 +658,7 @@ function nav(key) {
 </script>
 </body>
 </html>
-""", height=385)
+""", height=490)
 
     # Hide the 3 nav buttons (found+clicked by iframe JS)
     st.markdown("""<style>
@@ -657,12 +668,9 @@ body .stButton>button{position:fixed!important;top:-9999px!important;
     if st.button("calc", key="go_calc"): st.session_state.screen = "calc"; st.rerun()
     if st.button("mgmt", key="go_mgmt"): st.session_state.screen = "mgmt"; st.rerun()
     if st.button("dash", key="go_dash"): st.session_state.screen = "dash"; st.rerun()
+    if st.button("clients", key="go_clients"): st.session_state.screen = "clients"; st.rerun()
 
     render_kpi()
-    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title-right'>👥 לקוחות</div>"
-                "<div class='neon-bar-right'></div>", unsafe_allow_html=True)
-    render_client_grid()
 
 
 # ─── Dashboard ───
@@ -1297,6 +1305,14 @@ def render_clients():
     render_client_grid()
 
 
+def render_clients_screen():
+    render_back_button()
+    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>👥 לקוחות</div>"
+                "<div class='neon-bar'></div>", unsafe_allow_html=True)
+    render_client_grid()
+
+
 # ─── Main ───
 def main():
     init_db()
@@ -1321,6 +1337,8 @@ def main():
         render_clients()
     elif screen == "dash":
         render_dashboard()
+    elif screen == "clients":
+        render_clients_screen()
 
 
 if __name__ == "__main__":
