@@ -386,6 +386,8 @@ div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:
 .dash-bar-fill{background:linear-gradient(90deg,#e59a65,#b06a3b);border-radius:99px;height:5px}
 /* batch table row edit */
 .batch-row{background:rgba(44,52,64,.88);border:1px solid rgba(229,154,101,.15);border-radius:14px;padding:12px 14px;margin-bottom:5px}
+/* make all iframes transparent from parent-page level */
+iframe{background:transparent!important;border:none!important;}
 /* ══ HOME NAV PREMIUM CARDS (Prompt 2: Flat-Volumetric Badge) ══ */
 .hnc{display:flex;direction:ltr!important;height:90px;border-radius:26px;overflow:hidden;box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:4px;cursor:pointer;transition:transform .2s,box-shadow .2s}
 .hnc-badge{width:37%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex-shrink:0}
@@ -543,7 +545,7 @@ def render_home_screen():
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:#0d2240;background-image:linear-gradient(135deg,#0d2240 0%,#163652 50%,#0d2240 100%);background-attachment:fixed;font-family:'Inter',sans-serif;padding:8px 0 0;margin:0;}
+html,body{background:transparent!important;font-family:'Inter',sans-serif;padding:6px 0 0;margin:0;}
 .hnc{display:flex;direction:ltr;height:90px;border-radius:26px;overflow:hidden;
     box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:18px;cursor:pointer;
     transition:transform .2s,box-shadow .2s;}
