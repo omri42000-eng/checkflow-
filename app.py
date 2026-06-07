@@ -151,10 +151,21 @@ def cached_status_breakdown(user):
             WHERE cl.username=%s GROUP BY ch.status""", (user,))
         return cur.fetchall()
 
+@st.cache_data(ttl=30)
+def cached_month_checks(user, month_str):
+    """Returns all checks for a given month (YYYY-MM format)."""
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""SELECT ch.amount, ch.due_date, ch.status, cl.name AS client_name
+            FROM checks ch JOIN clients cl ON cl.id=ch.client_id
+            WHERE cl.username=%s AND TO_CHAR(ch.due_date, 'YYYY-MM') = %s
+            ORDER BY ch.due_date""", (user, month_str))
+        return cur.fetchall()
+
 def invalidate_cache():
     cached_totals.clear(); cached_checks.clear(); cached_clients.clear()
     cached_obligo.clear(); cached_upcoming.clear(); cached_forecast.clear()
-    cached_status_breakdown.clear()
+    cached_status_breakdown.clear(); cached_month_checks.clear()
 
 # ─── write functions ───
 def add_client(name, rate=12.0, rate_basis="שנתית"):
@@ -232,124 +243,100 @@ def inject_css():
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Inter:wght@400;500;600;700;800;900&display=swap');
 html,body,[class*="css"]{direction:rtl}
-.stApp{background:#041424;background-image:linear-gradient(135deg,#041424 0%,#0b243a 50%,#041424 100%);font-family:'Inter',sans-serif;color:#dec599;min-height:100vh}
+.stApp{background:#0d2240;background-image:linear-gradient(135deg,#0d2240 0%,#163652 50%,#0d2240 100%);font-family:'Inter',sans-serif;color:#dec599;min-height:100vh}
 #MainMenu,header,footer{visibility:hidden}
 .block-container{padding-top:0!important;padding-bottom:6rem;max-width:480px}
 .logo-title{font-family:'Comfortaa',sans-serif;font-weight:700;font-size:2.6rem;white-space:nowrap;background:linear-gradient(135deg,#e59a65 0%,#f0c090 40%,#b06a3b 70%,#e59a65 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0px 3px 6px rgba(0,0,0,.7));display:block;text-align:center;line-height:1;margin-bottom:2px}
-.kpi{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.25);border-radius:24px;padding:18px 20px 14px;margin-bottom:6px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(229,154,101,.15)}
+.kpi{background:rgba(44,52,64,.88);border:1px solid rgba(229,154,101,.25);border-radius:24px;padding:18px 20px 14px;margin-bottom:6px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(229,154,101,.15)}
 .kpi-label{font-size:10px;font-weight:700;letter-spacing:2px;color:#e59a65;text-transform:uppercase;margin-bottom:4px}
 .kpi-value{font-family:'Inter',sans-serif;font-size:2.4rem;font-weight:900;line-height:1;background:linear-gradient(135deg,#f0c090 0%,#e59a65 50%,#dec599 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;letter-spacing:-2px;direction:ltr}
-.kpi-sub{font-size:12px;color:#8c6a45;margin-top:6px;font-weight:500}
-.glass{background:rgba(30,35,42,.7);border:1px solid rgba(229,154,101,.15);border-radius:22px;padding:18px 20px;margin-bottom:5px;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.kpi-sub{font-size:12px;color:#a07850;margin-top:6px;font-weight:500}
+.glass{background:rgba(44,52,64,.75);border:1px solid rgba(229,154,101,.15);border-radius:22px;padding:18px 20px;margin-bottom:5px;box-shadow:0 4px 16px rgba(0,0,0,.3)}
 .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;margin-inline-start:6px}
 .section-title{font-size:20px;font-weight:900;letter-spacing:-.5px;color:#e59a65;margin:16px 0 4px;text-align:right}
 .section-title-right{font-size:20px;font-weight:900;letter-spacing:-.5px;color:#e59a65;margin:8px 0 4px;text-align:right}
 .neon-bar{height:2px;width:36px;border-radius:3px;background:linear-gradient(90deg,#e59a65,#b06a3b);margin:0 auto 14px}
 .neon-bar-right{height:2px;width:36px;border-radius:3px;background:linear-gradient(90deg,#e59a65,#b06a3b);margin:0 0 14px auto}
-.client-card{display:flex;justify-content:space-between;align-items:center;background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.2);border-radius:20px;padding:14px 16px;margin-bottom:5px;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.client-card{display:flex;justify-content:space-between;align-items:center;background:rgba(44,52,64,.88);border:1px solid rgba(229,154,101,.2);border-radius:20px;padding:14px 16px;margin-bottom:5px;box-shadow:0 4px 16px rgba(0,0,0,.3)}
 .client-name{font-weight:800;font-size:.95rem;color:#dec599}
 .client-obligo{font-weight:900;font-size:1.1rem;background:linear-gradient(135deg,#e59a65,#dec599);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;direction:ltr;letter-spacing:-.5px}
 .calc-out{border-radius:22px;padding:18px 20px;margin-top:5px;text-align:center}
-.calc-out.fee{background:rgba(140,42,80,.25);border:1px solid rgba(255,45,149,.2)}
-.calc-out.net{background:rgba(42,122,74,.25);border:1px solid rgba(57,255,20,.2);margin-top:5px}
-.calc-out .lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8c6a45;margin-bottom:6px}
+.calc-out.fee{background:rgba(140,42,80,.28);border:1px solid rgba(255,45,149,.25)}
+.calc-out.net{background:rgba(42,122,74,.28);border:1px solid rgba(57,255,20,.25);margin-top:5px}
+.calc-out .lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#a07850;margin-bottom:6px}
 .calc-out .big{font-family:'Inter',sans-serif;font-size:2.4rem;font-weight:900;direction:ltr;line-height:1.1;letter-spacing:-1.5px;color:#dec599}
-.reminder-card{background:rgba(139,106,0,.2);border:1px solid rgba(229,154,101,.25);border-radius:20px;padding:14px 16px;margin-bottom:6px}
+.reminder-card{background:rgba(139,106,0,.22);border:1px solid rgba(229,154,101,.25);border-radius:20px;padding:14px 16px;margin-bottom:6px}
 .reminder-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#e59a65;margin-bottom:8px}
 .reminder-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(229,154,101,.1)}
 .reminder-row:last-child{border-bottom:none}
-/* carousel */
+.deposit-alert{background:rgba(57,255,20,.08);border:1px solid rgba(57,255,20,.3);border-radius:18px;padding:12px 16px;margin-bottom:8px}
+/* carousel wrap (legacy) */
 .carousel-wrap{display:flex;gap:12px;overflow-x:auto;padding:8px 2px 12px;scrollbar-width:none;-ms-overflow-style:none}
 .carousel-wrap::-webkit-scrollbar{display:none}
-/* round nav buttons */
-div[data-testid="column"] .stButton>button {
-    border-radius: 50% !important;
-    width: 100px !important;
-    height: 100px !important;
-    padding: 0 !important;
-    font-size: 0.62rem !important;
-    font-weight: 800 !important;
-    line-height: 1.3 !important;
-    white-space: pre-wrap !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin: 0 auto !important;
-    animation: pulse-glow 2.5s ease-in-out infinite !important;
+/* ─── Home nav card buttons ─── */
+.nav-calc .stButton>button,.nav-mgmt .stButton>button,.nav-dash .stButton>button{
+    border-radius:18px!important;height:72px!important;width:100%!important;
+    padding:0 22px!important;font-size:.9rem!important;font-weight:900!important;
+    white-space:nowrap!important;letter-spacing:-.2px!important;
+    transition:all .25s cubic-bezier(.34,1.56,.64,1)!important;
+    box-shadow:0 8px 24px rgba(0,0,0,.4)!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    border:none!important;
 }
-div[data-testid="column"]:nth-child(1) .stButton>button {
-    background: linear-gradient(135deg,#1a3a2a,#0f4a22) !important;
-    border-color: rgba(57,255,20,.4) !important;
-    color: #6ddf8a !important;
-    box-shadow: 0 0 20px rgba(57,255,20,.2), 0 8px 24px rgba(0,0,0,.5) !important;
-    animation: pulse-green 2.5s ease-in-out infinite !important;
+.nav-calc .stButton>button{
+    background:linear-gradient(135deg,#1a4a2a 0%,#0a2a15 100%)!important;
+    color:#6dff8a!important;
+    box-shadow:0 8px 24px rgba(57,255,20,.18),inset 0 1px 0 rgba(255,255,255,.1)!important;
+    border-right:4px solid #39FF14!important;
 }
-div[data-testid="column"]:nth-child(2) .stButton>button {
-    background: linear-gradient(135deg,#3a2a1a,#4a1a0f) !important;
-    border-color: rgba(229,154,101,.5) !important;
-    color: #e59a65 !important;
-    box-shadow: 0 0 20px rgba(229,154,101,.25), 0 8px 24px rgba(0,0,0,.5) !important;
-    animation: pulse-copper 2.5s ease-in-out infinite !important;
-    animation-delay: .4s !important;
+.nav-mgmt .stButton>button{
+    background:linear-gradient(135deg,#5a3218 0%,#3a1e08 100%)!important;
+    color:#ffc699!important;
+    box-shadow:0 8px 24px rgba(229,154,101,.25),inset 0 1px 0 rgba(255,255,255,.12)!important;
+    border-right:4px solid #e59a65!important;
+    transform:scale(1.04) translateY(-3px)!important;
 }
-div[data-testid="column"]:nth-child(3) .stButton>button {
-    background: linear-gradient(135deg,#1a2a3a,#0f1a4a) !important;
-    border-color: rgba(100,160,229,.4) !important;
-    color: #90bfdf !important;
-    box-shadow: 0 0 20px rgba(100,160,229,.2), 0 8px 24px rgba(0,0,0,.5) !important;
-    animation: pulse-blue 2.5s ease-in-out infinite !important;
-    animation-delay: .8s !important;
+.nav-dash .stButton>button{
+    background:linear-gradient(135deg,#1a2a4a 0%,#0a1525 100%)!important;
+    color:#90c0ff!important;
+    box-shadow:0 8px 24px rgba(100,160,229,.18),inset 0 1px 0 rgba(255,255,255,.08)!important;
+    border-right:4px solid #4090e0!important;
 }
-div[data-testid="column"] .stButton>button:hover {
-    transform: scale(1.12) rotate(-3deg) !important;
-    animation: none !important;
-    box-shadow: 0 0 40px currentColor, 0 12px 32px rgba(0,0,0,.6) !important;
-}
-@keyframes pulse-green {
-    0%,100% { box-shadow: 0 0 15px rgba(57,255,20,.2), 0 8px 24px rgba(0,0,0,.5); transform: scale(1); }
-    50% { box-shadow: 0 0 35px rgba(57,255,20,.5), 0 8px 24px rgba(0,0,0,.5); transform: scale(1.06) rotate(2deg); }
-}
-@keyframes pulse-copper {
-    0%,100% { box-shadow: 0 0 15px rgba(229,154,101,.2), 0 8px 24px rgba(0,0,0,.5); transform: scale(1); }
-    50% { box-shadow: 0 0 35px rgba(229,154,101,.5), 0 8px 24px rgba(0,0,0,.5); transform: scale(1.06) rotate(-2deg); }
-}
-@keyframes pulse-blue {
-    0%,100% { box-shadow: 0 0 15px rgba(100,160,229,.2), 0 8px 24px rgba(0,0,0,.5); transform: scale(1); }
-    50% { box-shadow: 0 0 35px rgba(100,160,229,.5), 0 8px 24px rgba(0,0,0,.5); transform: scale(1.06) rotate(2deg); }
-}
+.nav-calc .stButton>button:hover{background:linear-gradient(135deg,#205a34 0%,#103a1e 100%)!important;transform:translateY(-3px) scale(1.03)!important;box-shadow:0 14px 32px rgba(57,255,20,.35)!important}
+.nav-mgmt .stButton>button:hover{background:linear-gradient(135deg,#6a4020 0%,#4a2a10 100%)!important;transform:scale(1.07) translateY(-6px)!important;box-shadow:0 14px 36px rgba(229,154,101,.45)!important}
+.nav-dash .stButton>button:hover{background:linear-gradient(135deg,#203256 0%,#101e3a 100%)!important;transform:translateY(-3px) scale(1.03)!important;box-shadow:0 14px 32px rgba(100,160,229,.35)!important}
 /* general buttons */
-.stButton>button{border-radius:14px!important;border:1px solid rgba(229,154,101,.2)!important;background:rgba(30,35,42,.9)!important;color:#dec599!important;font-weight:700!important;font-family:'Inter',sans-serif!important;transition:all .12s ease!important;box-shadow:0 3px 10px rgba(0,0,0,.3)!important}
+.stButton>button{border-radius:14px!important;border:1px solid rgba(229,154,101,.22)!important;background:rgba(44,52,64,.9)!important;color:#dec599!important;font-weight:700!important;font-family:'Inter',sans-serif!important;transition:all .12s ease!important;box-shadow:0 3px 10px rgba(0,0,0,.3)!important}
 .stButton>button:hover{border-color:rgba(229,154,101,.5)!important}
 .btn-single .stButton>button{border-radius:50px!important;background:linear-gradient(135deg,#e59a65 0%,#b06a3b 100%)!important;color:#fff!important;font-size:.92rem!important;font-weight:800!important;padding:13px 0!important;border:none!important;box-shadow:0 4px 16px rgba(176,106,59,.4)!important}
-.btn-batch .stButton>button{border-radius:50px!important;background:rgba(30,35,42,.9)!important;color:#e59a65!important;font-size:.92rem!important;font-weight:800!important;padding:13px 0!important;border:1px solid rgba(229,154,101,.4)!important}
+.btn-batch .stButton>button{border-radius:50px!important;background:rgba(44,52,64,.9)!important;color:#e59a65!important;font-size:.92rem!important;font-weight:800!important;padding:13px 0!important;border:1px solid rgba(229,154,101,.4)!important}
 .btn-sm .stButton>button{padding:3px 8px!important;font-size:.75rem!important;border-radius:8px!important;min-height:0!important;height:auto!important;font-weight:700!important}
 .back-btn{position:fixed!important;bottom:28px!important;left:20px!important;z-index:9999!important}
 .back-btn .stButton>button{border-radius:50px!important;background:linear-gradient(135deg,#e59a65 0%,#b06a3b 100%)!important;color:#fff!important;font-size:.82rem!important;font-weight:800!important;padding:10px 22px!important;height:auto!important;min-height:0!important;border:none!important;box-shadow:0 4px 20px rgba(176,106,59,.5)!important}
 /* inputs */
-.stTextInput input,.stNumberInput input,.stDateInput input,[data-baseweb="input"] input,[data-baseweb="base-input"] input{color:#dec599!important;background-color:rgba(30,35,42,.9)!important;-webkit-text-fill-color:#dec599!important;caret-color:#e59a65!important;border-radius:12px!important;border:1px solid rgba(229,154,101,.2)!important;font-weight:600!important;font-size:.95rem!important;direction:rtl!important;text-align:right!important}
-.stTextInput div[data-baseweb="input"],.stNumberInput div[data-baseweb="input"],.stDateInput div[data-baseweb="input"],div[data-baseweb="select"]>div{background-color:rgba(30,35,42,.9)!important;border:1px solid rgba(229,154,101,.2)!important;border-radius:12px!important}
+.stTextInput input,.stNumberInput input,.stDateInput input,[data-baseweb="input"] input,[data-baseweb="base-input"] input{color:#dec599!important;background-color:rgba(44,52,64,.9)!important;-webkit-text-fill-color:#dec599!important;caret-color:#e59a65!important;border-radius:12px!important;border:1px solid rgba(229,154,101,.22)!important;font-weight:600!important;font-size:.95rem!important;direction:rtl!important;text-align:right!important}
+.stTextInput div[data-baseweb="input"],.stNumberInput div[data-baseweb="input"],.stDateInput div[data-baseweb="input"],div[data-baseweb="select"]>div{background-color:rgba(44,52,64,.9)!important;border:1px solid rgba(229,154,101,.22)!important;border-radius:12px!important}
 div[data-baseweb="select"] div{color:#dec599!important;font-weight:600!important}
-input::placeholder{color:#5a4030!important;opacity:1!important}
+input::placeholder{color:#7a5a40!important;opacity:1!important}
 div[data-testid="stNumberInput"]:has(input[aria-label*="סכום"]) input{font-size:1.8rem!important;font-weight:900!important;text-align:center!important;letter-spacing:-1px!important;height:64px!important}
-label{color:#8c6a45!important;font-weight:700!important;font-size:10px!important;letter-spacing:.8px!important;text-transform:uppercase!important;text-align:right!important;display:block!important}
+label{color:#a07850!important;font-weight:700!important;font-size:10px!important;letter-spacing:.8px!important;text-transform:uppercase!important;text-align:right!important;display:block!important}
 /* radio basis buttons */
 div[data-testid="stRadio"]>div{gap:8px!important;justify-content:center!important}
-div[data-testid="stRadio"] label{background:rgba(30,35,42,.9)!important;border:1px solid rgba(229,154,101,.2)!important;border-radius:12px!important;padding:9px 22px!important;font-size:.9rem!important;font-weight:800!important;color:#dec599!important;cursor:pointer;text-transform:none!important;letter-spacing:0!important}
+div[data-testid="stRadio"] label{background:rgba(44,52,64,.9)!important;border:1px solid rgba(229,154,101,.22)!important;border-radius:12px!important;padding:9px 22px!important;font-size:.9rem!important;font-weight:800!important;color:#dec599!important;cursor:pointer;text-transform:none!important;letter-spacing:0!important}
 div[data-testid="stRadio"] label:hover{border-color:rgba(229,154,101,.5)!important}
 div[data-testid="stRadio"] input[type="radio"]{display:none!important}
 div[data-testid="stRadio"] div[data-baseweb="radio"]>div:first-child{display:none!important}
 /* tabs */
 .stTabs [data-baseweb="tab-list"]{gap:5px;justify-content:center;background:transparent!important}
-.stTabs [data-baseweb="tab"]{background:rgba(30,35,42,.9)!important;border:1px solid rgba(229,154,101,.15)!important;border-radius:12px!important;padding:9px 20px!important;font-size:.88rem!important;font-weight:700!important;color:#8c6a45!important;min-width:110px;text-align:center}
-.stTabs [data-baseweb="tab"] p,.stTabs [data-baseweb="tab"] span,.stTabs [data-baseweb="tab"] div{color:#8c6a45!important}
+.stTabs [data-baseweb="tab"]{background:rgba(44,52,64,.9)!important;border:1px solid rgba(229,154,101,.15)!important;border-radius:12px!important;padding:9px 20px!important;font-size:.88rem!important;font-weight:700!important;color:#a07850!important;min-width:110px;text-align:center}
+.stTabs [data-baseweb="tab"] p,.stTabs [data-baseweb="tab"] span,.stTabs [data-baseweb="tab"] div{color:#a07850!important}
 .stTabs [aria-selected="true"]{background:linear-gradient(135deg,#e59a65 0%,#b06a3b 100%)!important;border-color:transparent!important}
 .stTabs [aria-selected="true"] p,.stTabs [aria-selected="true"] span,.stTabs [aria-selected="true"] div{color:#fff!important}
 /* expander */
-.streamlit-expanderHeader{background:rgba(30,35,42,.9)!important;border-radius:12px!important;font-weight:700!important;color:#dec599!important;border:1px solid rgba(229,154,101,.15)!important}
-.streamlit-expanderContent{background:rgba(20,25,32,.8)!important;border:none!important}
+.streamlit-expanderHeader{background:rgba(44,52,64,.9)!important;border-radius:12px!important;font-weight:700!important;color:#dec599!important;border:1px solid rgba(229,154,101,.15)!important}
+.streamlit-expanderContent{background:rgba(30,38,48,.85)!important;border:none!important}
 .stCheckbox label{color:#dec599!important;font-weight:700!important;font-size:.88rem!important;text-transform:none!important;letter-spacing:0!important}
-ul[role="listbox"],div[data-baseweb="popover"]{background-color:#0b1a2a!important;border:1px solid rgba(229,154,101,.2)!important;border-radius:14px!important}
+ul[role="listbox"],div[data-baseweb="popover"]{background-color:#142438!important;border:1px solid rgba(229,154,101,.2)!important;border-radius:14px!important}
 ul[role="listbox"] li{color:#dec599!important;font-weight:600!important}
 .stDataFrame,[data-testid="stDataEditor"]{border-radius:14px!important;overflow:hidden!important;border:none!important}
 /* center inline buttons */
@@ -360,13 +347,14 @@ div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:
     min-width: 80px;
 }
 /* dashboard */
-.dash-day-card{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.2);border-radius:20px;padding:14px 16px;margin-bottom:6px;cursor:pointer;transition:border-color .15s}
+.dash-day-card{background:rgba(44,52,64,.88);border:1px solid rgba(229,154,101,.2);border-radius:20px;padding:14px 16px;margin-bottom:6px;cursor:pointer;transition:border-color .15s}
 .dash-day-card:hover{border-color:rgba(229,154,101,.5)}
-.dash-month-card{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.15);border-radius:20px;padding:14px 16px;margin-bottom:5px}
-.dash-bar-bg{background:rgba(255,255,255,.06);border-radius:99px;height:5px;margin-top:8px}
+.dash-month-card{background:rgba(44,52,64,.88);border:1px solid rgba(229,154,101,.15);border-radius:20px;padding:14px 16px;margin-bottom:5px;cursor:pointer;transition:all .15s ease}
+.dash-month-card:hover{border-color:rgba(229,154,101,.4)}
+.dash-bar-bg{background:rgba(255,255,255,.08);border-radius:99px;height:5px;margin-top:8px}
 .dash-bar-fill{background:linear-gradient(90deg,#e59a65,#b06a3b);border-radius:99px;height:5px}
 /* batch table row edit */
-.batch-row{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.15);border-radius:14px;padding:12px 14px;margin-bottom:5px}
+.batch-row{background:rgba(44,52,64,.88);border:1px solid rgba(229,154,101,.15);border-radius:14px;padding:12px 14px;margin-bottom:5px}
 </style>""", unsafe_allow_html=True)
 
     st.components.v1.html("""<script>
@@ -443,156 +431,32 @@ def render_home_screen():
     st.markdown(
         "<div style='height:20px'></div>"
         "<p style='text-align:center;font-size:11px;font-weight:700;letter-spacing:3px;"
-        "color:#8c6a45;text-transform:uppercase;margin-bottom:2px;'>CHECK MANAGEMENT</p>"
+        "color:#a07850;text-transform:uppercase;margin-bottom:2px;'>CHECK MANAGEMENT</p>"
         "<h1><span class='logo-title'>CHECKFLOW</span></h1>",
         unsafe_allow_html=True)
 
-    # 3D animated carousel — 3 round buttons that rotate, glow, float
-    st.markdown("""
-    <style>
-    .carousel-3d {
-        position: relative;
-        height: 200px;
-        margin: 20px 0 10px;
-        perspective: 1200px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 18px;
-    }
-    .orb {
-        width: 130px; height: 130px;
-        border-radius: 50%;
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        cursor: pointer;
-        transform-style: preserve-3d;
-        position: relative;
-        overflow: hidden;
-        transition: transform .35s cubic-bezier(.34,1.56,.64,1);
-    }
-    .orb::before {
-        content: '';
-        position: absolute; inset: 0;
-        border-radius: 50%;
-        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35) 0%, transparent 50%);
-        pointer-events: none;
-    }
-    .orb::after {
-        content: '';
-        position: absolute; inset: -3px;
-        border-radius: 50%;
-        background: conic-gradient(from 0deg, transparent, currentColor, transparent);
-        opacity: 0.4;
-        animation: orbit 3s linear infinite;
-        z-index: -1;
-        filter: blur(8px);
-    }
-    .orb-calc {
-        background: radial-gradient(circle at 35% 30%, #4afc7c 0%, #1a7a3a 40%, #0a3a1a 100%);
-        color: #6dff8a;
-        box-shadow: 0 0 40px rgba(74,252,124,.5), inset 0 -10px 30px rgba(0,0,0,.4), inset 0 4px 10px rgba(255,255,255,.2);
-        animation: float-1 4s ease-in-out infinite, breathe 2.5s ease-in-out infinite;
-    }
-    .orb-mgmt {
-        background: radial-gradient(circle at 35% 30%, #ffb380 0%, #b06a3b 40%, #4a2a14 100%);
-        color: #ffc699;
-        box-shadow: 0 0 40px rgba(229,154,101,.6), inset 0 -10px 30px rgba(0,0,0,.4), inset 0 4px 10px rgba(255,255,255,.25);
-        animation: float-2 4s ease-in-out infinite, breathe 2.5s ease-in-out infinite;
-        animation-delay: -.7s, -.5s;
-        transform: scale(1.15) translateZ(20px);
-        z-index: 2;
-    }
-    .orb-dash {
-        background: radial-gradient(circle at 35% 30%, #80c0ff 0%, #2a5a9a 40%, #0a1a3a 100%);
-        color: #a0d0ff;
-        box-shadow: 0 0 40px rgba(128,192,255,.5), inset 0 -10px 30px rgba(0,0,0,.4), inset 0 4px 10px rgba(255,255,255,.2);
-        animation: float-3 4s ease-in-out infinite, breathe 2.5s ease-in-out infinite;
-        animation-delay: -1.4s, -1s;
-    }
-    .orb:hover {
-        transform: scale(1.25) translateZ(40px) rotateY(15deg) !important;
-        animation-play-state: paused;
-    }
-    .orb-mgmt:hover { transform: scale(1.35) translateZ(40px) rotateY(15deg) !important; }
-    .orb .emoji {
-        font-size: 2.5rem;
-        line-height: 1;
-        margin-bottom: 4px;
-        filter: drop-shadow(0 4px 8px rgba(0,0,0,.5));
-        animation: spin-emoji 6s ease-in-out infinite;
-    }
-    .orb .label {
-        font-size: .68rem;
-        font-weight: 900;
-        letter-spacing: .8px;
-        text-shadow: 0 2px 4px rgba(0,0,0,.6);
-        text-align: center;
-        line-height: 1.2;
-    }
-    @keyframes float-1 {
-        0%,100% { transform: translateY(0) rotate(0deg); }
-        50% { transform: translateY(-12px) rotate(-3deg); }
-    }
-    @keyframes float-2 {
-        0%,100% { transform: translateY(0) scale(1.15) rotate(0deg); }
-        50% { transform: translateY(-18px) scale(1.18) rotate(2deg); }
-    }
-    @keyframes float-3 {
-        0%,100% { transform: translateY(0) rotate(0deg); }
-        50% { transform: translateY(-12px) rotate(3deg); }
-    }
-    @keyframes breathe {
-        0%,100% { filter: brightness(1) saturate(1); }
-        50% { filter: brightness(1.2) saturate(1.3); }
-    }
-    @keyframes orbit {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    @keyframes spin-emoji {
-        0%,100% { transform: rotate(0deg) scale(1); }
-        25% { transform: rotate(-8deg) scale(1.05); }
-        75% { transform: rotate(8deg) scale(1.05); }
-    }
-    .orb.clicked {
-        animation: pop .4s ease-out !important;
-    }
-    @keyframes pop {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.4) rotateY(180deg); }
-        100% { transform: scale(1) rotateY(360deg); }
-    }
-    </style>
-    <div class="carousel-3d">
-        <div class="orb orb-calc">
-            <span class="emoji">🧮</span>
-            <span class="label">מחשבון<br>פריטה</span>
-        </div>
-        <div class="orb orb-mgmt">
-            <span class="emoji">📋</span>
-            <span class="label">ניהול<br>צ'קים</span>
-        </div>
-        <div class="orb orb-dash">
-            <span class="emoji">📊</span>
-            <span class="label">דשבורד<br>תזרים</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
 
-    # כפתורי ניווט אמיתיים בסגנון v3
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        if st.button("🧮\nמחשבון\nפריטה", key="go_calc", use_container_width=True):
-            st.session_state.screen = "calc"; st.rerun()
-    with c2:
-        if st.button("📋\nניהול\nצ׳קים", key="go_mgmt", use_container_width=True):
-            st.session_state.screen = "mgmt"; st.rerun()
-    with c3:
-        if st.button("📊\nדשבורד\nתזרים", key="go_dash", use_container_width=True):
-            st.session_state.screen = "dash"; st.rerun()
+    st.markdown('<div class="nav-calc">', unsafe_allow_html=True)
+    if st.button("💸   מחשבון פריטה", key="go_calc", use_container_width=True):
+        st.session_state.screen = "calc"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="nav-mgmt">', unsafe_allow_html=True)
+    if st.button("💳   ניהול צ׳קים", key="go_mgmt", use_container_width=True):
+        st.session_state.screen = "mgmt"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="nav-dash">', unsafe_allow_html=True)
+    if st.button("📈   דשבורד תזרים", key="go_dash", use_container_width=True):
+        st.session_state.screen = "dash"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
     render_kpi()
 
 
@@ -603,22 +467,36 @@ def render_dashboard():
     st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
     u = current_user()
 
-    # Upcoming 2 days
+    # ── פירעונות 2 ימים קרובים ──
     upcoming_raw = cached_upcoming(u)
     today = date.today()
-    day_labels = {today.isoformat(): "היום", (today+timedelta(days=1)).isoformat(): "מחר",
-                  (today+timedelta(days=2)).isoformat(): "מחרתיים"}
-    day_colors = {today.isoformat(): "rgba(57,255,20,.12)", (today+timedelta(days=1)).isoformat(): "rgba(229,154,101,.12)",
-                  (today+timedelta(days=2)).isoformat(): "rgba(255,45,149,.12)"}
-    border_colors = {today.isoformat(): "rgba(57,255,20,.3)", (today+timedelta(days=1)).isoformat(): "rgba(229,154,101,.3)",
-                     (today+timedelta(days=2)).isoformat(): "rgba(255,45,149,.3)"}
+    day_labels = {today.isoformat(): "היום 🔴", (today+timedelta(days=1)).isoformat(): "מחר 🟡",
+                  (today+timedelta(days=2)).isoformat(): "מחרתיים 🟠"}
+    day_colors = {today.isoformat(): "rgba(255,45,149,.12)", (today+timedelta(days=1)).isoformat(): "rgba(229,154,101,.12)",
+                  (today+timedelta(days=2)).isoformat(): "rgba(255,159,28,.1)"}
+    border_colors = {today.isoformat(): "rgba(255,45,149,.4)", (today+timedelta(days=1)).isoformat(): "rgba(229,154,101,.35)",
+                     (today+timedelta(days=2)).isoformat(): "rgba(255,159,28,.3)"}
 
     if upcoming_raw:
-        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8c6a45;margin-bottom:8px;'>פירעונות קרובים</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#a07850;margin-bottom:8px;'>⏰ פירעונות 48 שעות</div>", unsafe_allow_html=True)
+
+        # התראת "להפקדה"
+        to_deposit = [ch for v in upcoming_raw.values() for ch in v if ch["status"] == "להפקדה"]
+        if to_deposit:
+            dep_total = sum(ch["amount"] for ch in to_deposit)
+            dep_names = "، ".join(set(ch["client_name"] for ch in to_deposit))
+            st.markdown(
+                f"<div class='deposit-alert'>"
+                f"<div style='font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#39FF14;margin-bottom:6px;'>🏦 צ'קים ממתינים להפקדה</div>"
+                f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
+                f"<span style='font-size:.85rem;font-weight:700;color:#dec599;'>{len(to_deposit)} צ'קים | {dep_names}</span>"
+                f"<span style='font-weight:900;font-size:1.1rem;color:#39FF14;direction:ltr;'>{fmt_ils(dep_total)}</span>"
+                f"</div></div>", unsafe_allow_html=True)
+
         for d_str, checks in sorted(upcoming_raw.items()):
             label = day_labels.get(d_str, d_str)
             day_total = sum(ch["amount"] for ch in checks)
-            bg = day_colors.get(d_str, "rgba(30,35,42,.85)")
+            bg = day_colors.get(d_str, "rgba(44,52,64,.88)")
             border = border_colors.get(d_str, "rgba(229,154,101,.2)")
             key = f"day_expand_{d_str}"
             expanded = st.session_state.get(key, False)
@@ -629,7 +507,7 @@ def render_dashboard():
                     f"<div style='background:{bg};border:1px solid {border};border-radius:18px;padding:12px 14px;'>"
                     f"<div style='font-size:14px;font-weight:800;color:#dec599;'>{label}</div>"
                     f"<div style='display:flex;justify-content:space-between;align-items:center;margin-top:4px;'>"
-                    f"<span style='font-size:10px;color:#8c6a45;font-weight:700;'>{len(checks)} צ'קים</span>"
+                    f"<span style='font-size:10px;color:#a07850;font-weight:700;'>{len(checks)} צ'קים</span>"
                     f"<span style='font-weight:900;font-size:1.1rem;color:#e59a65;direction:ltr;'>{fmt_ils(day_total)}</span>"
                     f"</div></div>", unsafe_allow_html=True)
             with db:
@@ -639,37 +517,39 @@ def render_dashboard():
             if expanded:
                 for ch in checks:
                     color = STATUS_COLORS.get(ch["status"], "#888")
+                    dep_icon = " 🏦" if ch["status"] == "להפקדה" else ""
                     st.markdown(
-                        f"<div style='background:rgba(20,25,32,.8);border-radius:12px;padding:10px 14px;"
-                        f"margin-bottom:4px;display:flex;justify-content:space-between;'>"
-                        f"<span style='font-weight:700;color:#dec599;'>{ch['client_name']}</span>"
-                        f"<div><span style='font-weight:900;color:#e59a65;direction:ltr;'>{fmt_ils(ch['amount'])}</span>"
-                        f"<span class='pill' style='background:{color}22;color:{color};border:1px solid {color}66;'>{ch['status']}</span>"
+                        f"<div style='background:rgba(30,38,48,.9);border-radius:12px;padding:10px 14px;"
+                        f"margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;'>"
+                        f"<span style='font-weight:700;color:#dec599;'>{ch['client_name']}{dep_icon}</span>"
+                        f"<div style='text-align:left;'>"
+                        f"<div style='font-weight:900;color:#e59a65;direction:ltr;'>{fmt_ils(ch['amount'])}</div>"
+                        f"<span class='pill' style='background:{color}22;color:{color};border:1px solid {color}55;font-size:10px;'>{ch['status']}</span>"
                         f"</div></div>", unsafe_allow_html=True)
 
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
-    # Status breakdown
+    # ── לפי סטטוס ──
     status_rows = cached_status_breakdown(u)
     if status_rows:
-        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8c6a45;margin-bottom:8px;'>לפי סטטוס</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#a07850;margin-bottom:8px;'>לפי סטטוס</div>", unsafe_allow_html=True)
         status_bg = {"ממתין למזומן":"rgba(255,159,28,.15)","להפקדה":"rgba(57,255,20,.12)","בפריטה":"rgba(255,45,149,.12)"}
         for r in status_rows:
-            bg = status_bg.get(r["status"],"rgba(30,35,42,.85)")
+            bg = status_bg.get(r["status"],"rgba(44,52,64,.88)")
             color = STATUS_COLORS.get(r["status"],"#dec599")
             st.markdown(
                 f"<div style='background:{bg};border:1px solid {color}33;border-radius:16px;"
                 f"padding:12px 16px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;'>"
                 f"<div><span style='font-weight:800;font-size:.9rem;color:#dec599;'>{r['status']}</span>"
-                f"<span style='font-size:10px;color:#8c6a45;font-weight:700;margin-right:8px;'>{r['cnt']} צ'קים</span></div>"
+                f"<span style='font-size:10px;color:#a07850;font-weight:700;margin-right:8px;'>{r['cnt']} צ'קים</span></div>"
                 f"<span style='font-weight:900;font-size:1rem;color:#e59a65;direction:ltr;'>{fmt_ils(r['total'])}</span>"
                 f"</div>", unsafe_allow_html=True)
 
-    # Monthly forecast
+    # ── תחזית חודשית עם פירוט ──
     forecast = cached_forecast(u)
     if forecast:
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8c6a45;margin-bottom:8px;'>תחזית חודשית</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#a07850;margin-bottom:8px;'>תחזית חודשית — לחץ לפירוט</div>", unsafe_allow_html=True)
         max_amount = max(r["total"] for r in forecast) or 1
         month_he = {"January":"ינואר","February":"פברואר","March":"מרץ","April":"אפריל",
                     "May":"מאי","June":"יוני","July":"יולי","August":"אוגוסט",
@@ -677,16 +557,47 @@ def render_dashboard():
         for r in forecast:
             m = r["month"]
             label = m.strftime("%B %Y") if hasattr(m,"strftime") else str(m)[:7]
+            month_str = m.strftime("%Y-%m") if hasattr(m,"strftime") else str(m)[:7]
             for en,he in month_he.items(): label=label.replace(en,he)
             pct = int((r["total"]/max_amount)*100)
-            st.markdown(
-                f"<div class='dash-month-card'>"
-                f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
-                f"<div><div style='font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8c6a45;'>{label}</div>"
-                f"<div style='font-size:10px;color:#5a4030;'>{r['cnt']} צ'קים</div></div>"
-                f"<div style='font-weight:900;font-size:1.2rem;color:#dec599;direction:ltr;'>{fmt_ils(r['total'])}</div></div>"
-                f"<div class='dash-bar-bg'><div class='dash-bar-fill' style='width:{pct}%;'></div></div>"
-                f"</div>", unsafe_allow_html=True)
+            key_m = f"month_expand_{month_str}"
+            expanded_m = st.session_state.get(key_m, False)
+
+            mc1, mc2 = st.columns([5, 1])
+            with mc1:
+                st.markdown(
+                    f"<div class='dash-month-card'>"
+                    f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
+                    f"<div><div style='font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#a07850;'>{label}</div>"
+                    f"<div style='font-size:10px;color:#7a5a40;'>{r['cnt']} צ'קים</div></div>"
+                    f"<div style='font-weight:900;font-size:1.2rem;color:#dec599;direction:ltr;'>{fmt_ils(r['total'])}</div></div>"
+                    f"<div class='dash-bar-bg'><div class='dash-bar-fill' style='width:{pct}%;'></div></div>"
+                    f"</div>", unsafe_allow_html=True)
+            with mc2:
+                st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+                if st.button("▼" if not expanded_m else "▲", key=f"btn_{key_m}", use_container_width=True):
+                    st.session_state[key_m] = not expanded_m; st.rerun()
+
+            if expanded_m:
+                month_checks = cached_month_checks(u, month_str)
+                if month_checks:
+                    # header row
+                    st.markdown(
+                        "<div style='display:grid;grid-template-columns:1fr auto auto auto;gap:6px;"
+                        "padding:6px 14px 4px;font-size:10px;font-weight:700;letter-spacing:.8px;"
+                        "text-transform:uppercase;color:#a07850;border-bottom:1px solid rgba(229,154,101,.1);'>"
+                        "<span>לקוח</span><span>תאריך</span><span>סטטוס</span><span>סכום</span></div>",
+                        unsafe_allow_html=True)
+                    for ch in month_checks:
+                        color = STATUS_COLORS.get(ch["status"], "#888")
+                        st.markdown(
+                            f"<div style='display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;"
+                            f"padding:7px 14px;background:rgba(30,38,48,.8);border-radius:10px;margin-bottom:3px;'>"
+                            f"<span style='font-weight:700;color:#dec599;font-size:.85rem;'>{ch['client_name']}</span>"
+                            f"<span style='font-size:.78rem;color:#a07850;'>{fmt_date(ch['due_date'])}</span>"
+                            f"<span style='font-size:.72rem;font-weight:700;color:{color};'>{ch['status']}</span>"
+                            f"<span style='font-weight:900;color:#e59a65;direction:ltr;font-size:.9rem;'>{fmt_ils(ch['amount'])}</span>"
+                            f"</div>", unsafe_allow_html=True)
 
 
 # ─── Calculator ───
@@ -747,7 +658,6 @@ def render_calculator():
             f"<span style='font-size:1.8rem;font-weight:900;color:#e59a65;letter-spacing:-1px;'>{rate_val:.2f}%</span>"
             f"</div>", unsafe_allow_html=True)
     with r2:
-        st.write(""); st.write("")
         if st.button("✏️ שינוי", use_container_width=True, key="edit_rate"):
             st.session_state.rate_edit_open = not st.session_state.rate_edit_open
     if st.session_state.rate_edit_open:
