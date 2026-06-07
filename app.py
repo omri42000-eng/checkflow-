@@ -352,10 +352,12 @@ div[data-testid="stRadio"] div[data-baseweb="radio"]>div:first-child{display:non
 ul[role="listbox"],div[data-baseweb="popover"]{background-color:#0b1a2a!important;border:1px solid rgba(229,154,101,.2)!important;border-radius:14px!important}
 ul[role="listbox"] li{color:#dec599!important;font-weight:600!important}
 .stDataFrame,[data-testid="stDataEditor"]{border-radius:14px!important;overflow:hidden!important;border:none!important}
-/* center buttons inside columns */
-div[data-testid="column"] .stButton {
-    display: flex !important;
-    justify-content: center !important;
+/* center inline buttons */
+div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton {
+    display: flex; justify-content: center;
+}
+div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:not([style*="width:100"]) {
+    min-width: 80px;
 }
 /* dashboard */
 .dash-day-card{background:rgba(30,35,42,.85);border:1px solid rgba(229,154,101,.2);border-radius:20px;padding:14px 16px;margin-bottom:6px;cursor:pointer;transition:border-color .15s}
@@ -563,49 +565,34 @@ def render_home_screen():
     }
     </style>
     <div class="carousel-3d">
-        <div class="orb orb-calc" onclick="
-            this.classList.add('clicked');
-            const btns = window.parent.document.querySelectorAll('button');
-            for (const b of btns) {
-                if (b.innerText.includes('NAV_CALC')) { setTimeout(()=>b.click(), 350); break; }
-            }
-        ">
+        <div class="orb orb-calc">
             <span class="emoji">🧮</span>
             <span class="label">מחשבון<br>פריטה</span>
         </div>
-        <div class="orb orb-mgmt" onclick="
-            this.classList.add('clicked');
-            const btns = window.parent.document.querySelectorAll('button');
-            for (const b of btns) {
-                if (b.innerText.includes('NAV_MGMT')) { setTimeout(()=>b.click(), 350); break; }
-            }
-        ">
+        <div class="orb orb-mgmt">
             <span class="emoji">📋</span>
             <span class="label">ניהול<br>צ'קים</span>
         </div>
-        <div class="orb orb-dash" onclick="
-            this.classList.add('clicked');
-            const btns = window.parent.document.querySelectorAll('button');
-            for (const b of btns) {
-                if (b.innerText.includes('NAV_DASH')) { setTimeout(()=>b.click(), 350); break; }
-            }
-        ">
+        <div class="orb orb-dash">
             <span class="emoji">📊</span>
             <span class="label">דשבורד<br>תזרים</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Hidden buttons - the JS clicks these
-    st.markdown('<div style="position:absolute;top:-9999px;left:-9999px;opacity:0;pointer-events:none;">', unsafe_allow_html=True)
-    if st.button("NAV_CALC", key="go_calc"):
-        st.session_state.screen = "calc"; st.rerun()
-    if st.button("NAV_MGMT", key="go_mgmt"):
-        st.session_state.screen = "mgmt"; st.rerun()
-    if st.button("NAV_DASH", key="go_dash"):
-        st.session_state.screen = "dash"; st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    # כפתורי ניווט אמיתיים בסגנון v3
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("🧮\nמחשבון\nפריטה", key="go_calc", use_container_width=True):
+            st.session_state.screen = "calc"; st.rerun()
+    with c2:
+        if st.button("📋\nניהול\nצ׳קים", key="go_mgmt", use_container_width=True):
+            st.session_state.screen = "mgmt"; st.rerun()
+    with c3:
+        if st.button("📊\nדשבורד\nתזרים", key="go_dash", use_container_width=True):
+            st.session_state.screen = "dash"; st.rerun()
 
+    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
     render_kpi()
 
 
