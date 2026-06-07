@@ -355,123 +355,20 @@ div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:
 .dash-bar-fill{background:linear-gradient(90deg,#e59a65,#b06a3b);border-radius:99px;height:5px}
 /* batch table row edit */
 .batch-row{background:rgba(44,52,64,.88);border:1px solid rgba(229,154,101,.15);border-radius:14px;padding:12px 14px;margin-bottom:5px}
-/* ══ HOME NAV — FLEX BADGE CARDS (::before = flex item = real badge) ══ */
-/* Base shared styling */
-.nc-calc .stButton>button,
-.nc-mgmt .stButton>button,
-.nc-dash .stButton>button {
-    display: flex !important;
-    align-items: stretch !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    height: 90px !important;
-    border-radius: 26px !important;
-    border: none !important;
-    width: 100% !important;
-    cursor: pointer !important;
-    margin-bottom: 18px !important;
-    transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s !important;
-    white-space: pre-wrap !important;
-    font-weight: 900 !important;
-    font-size: .88rem !important;
-    line-height: 1.35 !important;
-}
-/* Inner text container — right 63% content area */
-.nc-calc .stButton>button > div,
-.nc-mgmt .stButton>button > div,
-.nc-dash .stButton>button > div {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-end !important;
-    justify-content: center !important;
-    padding: 0 20px !important;
-    direction: rtl !important;
-    text-align: right !important;
-    color: #fff !important;
-}
-.nc-calc .stButton>button > div > p,
-.nc-mgmt .stButton>button > div > p,
-.nc-dash .stButton>button > div > p {
-    margin: 0 !important;
-    white-space: pre-wrap !important;
-    color: #fff !important;
-    direction: rtl !important;
-    text-align: right !important;
-}
-/* ── Green: Calculator ── */
-.nc-calc .stButton>button {
-    background: linear-gradient(135deg,#1a4a2a,#0a2814) !important;
-    box-shadow: 0 14px 40px rgba(0,0,0,.55) !important;
-}
-.nc-calc .stButton>button::before {
-    content: '💸' !important;
-    flex: 0 0 37% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 2.5rem !important;
-    text-shadow: 4px 4px 0 rgba(0,0,0,.3) !important;
-    background:
-        radial-gradient(circle at 76% 18%, rgba(255,255,255,.22) 0%, rgba(255,255,255,.22) 26%, transparent 26%),
-        radial-gradient(circle at 14% 78%, rgba(0,0,0,.18) 0%, rgba(0,0,0,.18) 20%, transparent 20%),
-        linear-gradient(155deg, #2bf06e, #0c7c2a) !important;
-    border-left: 1px solid rgba(255,255,255,.08) !important;
-}
-.nc-calc .stButton>button:hover {
-    transform: scale(1.02) translateY(-2px) !important;
-    box-shadow: 0 20px 50px rgba(57,255,20,.15), 0 14px 40px rgba(0,0,0,.6) !important;
-    filter: brightness(1.08) !important;
-}
-/* ── Copper: Management (elevated as primary CTA) ── */
-.nc-mgmt .stButton>button {
-    background: linear-gradient(135deg,#4a2808,#281404) !important;
-    box-shadow: 0 20px 52px rgba(229,154,101,.25), 0 12px 36px rgba(0,0,0,.5) !important;
-    transform: scale(1.04) translateY(-5px) !important;
-}
-.nc-mgmt .stButton>button::before {
-    content: '💳' !important;
-    flex: 0 0 37% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 2.5rem !important;
-    text-shadow: 4px 4px 0 rgba(0,0,0,.3) !important;
-    background:
-        radial-gradient(circle at 76% 18%, rgba(255,255,255,.25) 0%, rgba(255,255,255,.25) 28%, transparent 28%),
-        radial-gradient(circle at 14% 78%, rgba(0,0,0,.18) 0%, rgba(0,0,0,.18) 20%, transparent 20%),
-        linear-gradient(155deg, #ffc080, #a85818) !important;
-    border-left: 1px solid rgba(255,255,255,.1) !important;
-}
-.nc-mgmt .stButton>button:hover {
-    transform: scale(1.07) translateY(-8px) !important;
-    box-shadow: 0 26px 60px rgba(229,154,101,.42) !important;
-    filter: brightness(1.09) !important;
-}
-/* ── Blue: Dashboard ── */
-.nc-dash .stButton>button {
-    background: linear-gradient(135deg,#1a2a4a,#0a1428) !important;
-    box-shadow: 0 14px 40px rgba(0,0,0,.55) !important;
-}
-.nc-dash .stButton>button::before {
-    content: '📈' !important;
-    flex: 0 0 37% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 2.5rem !important;
-    text-shadow: 4px 4px 0 rgba(0,0,0,.3) !important;
-    background:
-        radial-gradient(circle at 76% 18%, rgba(255,255,255,.2) 0%, rgba(255,255,255,.2) 26%, transparent 26%),
-        radial-gradient(circle at 14% 78%, rgba(0,0,0,.18) 0%, rgba(0,0,0,.18) 20%, transparent 20%),
-        linear-gradient(155deg, #70c0ff, #1040a0) !important;
-    border-left: 1px solid rgba(255,255,255,.08) !important;
-}
-.nc-dash .stButton>button:hover {
-    transform: scale(1.02) translateY(-2px) !important;
-    box-shadow: 0 20px 50px rgba(64,144,224,.15), 0 14px 40px rgba(0,0,0,.6) !important;
-    filter: brightness(1.08) !important;
-}
+/* ══ HOME NAV PREMIUM CARDS (Prompt 2: Flat-Volumetric Badge) ══ */
+.hnc{display:flex;direction:ltr!important;height:90px;border-radius:26px;overflow:hidden;box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:4px;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.hnc-badge{width:37%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex-shrink:0}
+.hnc-badge::before{content:'';position:absolute;top:-22px;right:-22px;width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.18)}
+.hnc-badge::after{content:'';position:absolute;bottom:-16px;left:-16px;width:54px;height:54px;border-radius:50%;background:rgba(0,0,0,.18)}
+.hnc-icon{font-size:2.4rem;position:relative;z-index:2;filter:drop-shadow(4px 4px 0px rgba(0,0,0,.35))}
+.hnc-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 20px;direction:rtl!important}
+.hnc-title{font-size:1.02rem;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.hnc-rule{height:2px;border-radius:2px;width:30px;margin:6px 0}
+.hnc-desc{font-size:.71rem;color:rgba(255,255,255,.5);font-weight:500;letter-spacing:.2px}
+/* transparent click overlay — hidden visually, clickable via JS */
+.hnc-over{height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;border:0!important}
+.hnc-over .stButton{height:0!important;overflow:hidden!important;margin:0!important}
+.hnc-over .stButton>button{height:0!important;min-height:0!important;padding:0!important;border:none!important;overflow:hidden!important}
 /* ══ DASHBOARD GLASSMORPHISM TIMELINE (Prompt 1: Dark Glass + Timeline) ══ */
 .db-hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 4px 20px;direction:rtl}
 .db-hdr-left .db-hdr-lbl{font-size:.62rem;font-weight:700;letter-spacing:2.5px;color:#9BA1A6;text-transform:uppercase}
@@ -480,30 +377,25 @@ div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:
 .glass-section{background:rgba(36,42,52,.68);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.08);border-radius:28px;padding:18px 20px;margin-bottom:12px}
 .gs-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9BA1A6;margin-bottom:14px}
 .dep-alert-tl{background:#fff;border-radius:14px;padding:11px 15px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;direction:rtl;box-shadow:0 4px 14px rgba(0,0,0,.3)}
-.tl-day{margin-bottom:16px}
-.tl-day-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;direction:rtl}
-.tl-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.25)}
-.tl-day-lbl{font-weight:900;font-size:.95rem;color:#fff}
-.tl-day-date{font-size:.76rem;color:#9BA1A6;flex:1;letter-spacing:.3px}
-.tl-day-total{font-weight:900;color:#e59a65;direction:ltr;font-size:1rem}
-.tl-rows-wrap{display:flex;gap:14px;padding-right:20px}
-.tl-vert-line{width:3px;flex-shrink:0;border-radius:3px;min-height:44px}
+.tl-day{margin-bottom:14px}
+.tl-day-hdr{display:flex;align-items:center;gap:8px;margin-bottom:9px;direction:rtl}
+.tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.tl-day-lbl{font-weight:800;font-size:.9rem;color:#fff}
+.tl-day-date{font-size:.74rem;color:#9BA1A6;flex:1}
+.tl-day-total{font-weight:900;color:#e59a65;direction:ltr;font-size:.95rem}
+.tl-rows-wrap{display:flex;gap:12px;padding-right:18px}
+.tl-vert-line{width:2px;flex-shrink:0;border-radius:2px;min-height:44px}
 .tl-items{flex:1;display:flex;flex-direction:column;gap:7px}
-.tl-white-card{background:#fff;border-radius:16px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 20px rgba(0,0,0,.32);direction:rtl;cursor:default}
+.tl-white-card{background:#fff;border-radius:16px;padding:11px 15px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 6px 16px rgba(0,0,0,.28);direction:rtl}
 .tl-wc-left{flex:1}
-.tl-wc-client{font-weight:800;font-size:.9rem;color:#111;margin-bottom:2px}
-.tl-wc-status{font-size:.68rem;font-weight:700}
-.tl-wc-right{display:flex;align-items:center;gap:10px;direction:ltr}
-.tl-wc-amount{font-weight:900;font-size:1rem;color:#0a2814;direction:ltr}
-.tl-wc-chevron{font-size:1.4rem;color:#bbb;font-weight:300;line-height:1}
-.tl-dep-badge{background:#0a2814;color:#39FF14;font-size:.6rem;font-weight:800;border-radius:5px;padding:2px 7px;margin-right:6px;vertical-align:middle;letter-spacing:.3px}
-/* Status — circular action nodes */
-.status-node-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid rgba(255,255,255,.06)}
-.status-node-row:last-child{border-bottom:none}
-.status-circ{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:900;color:#fff;flex-shrink:0;letter-spacing:-.5px}
-.status-info{flex:1;direction:rtl}
-.status-name{font-size:.88rem;font-weight:800;color:#fff}
-.status-cnt{font-size:.7rem;color:#9BA1A6;margin-top:2px}
+.tl-wc-client{font-weight:700;font-size:.88rem;color:#111;margin-bottom:2px}
+.tl-wc-status{font-size:.68rem;font-weight:600}
+.tl-wc-right{display:flex;align-items:center;gap:8px;direction:ltr}
+.tl-wc-amount{font-weight:900;font-size:.95rem;color:#1a4a2a;direction:ltr}
+.tl-wc-chevron{font-size:1.3rem;color:#bbb;font-weight:300}
+.tl-dep-badge{background:#1a4a2a;color:#39FF14;font-size:.6rem;font-weight:800;border-radius:5px;padding:1px 7px;margin-right:6px;vertical-align:middle}
+.status-row{border:1px solid;border-radius:16px;padding:12px 15px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;direction:rtl}
+.status-amnt{font-weight:900;font-size:.9rem;direction:ltr;padding:4px 12px;border-radius:10px}
 .month-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:13px 15px;margin-bottom:6px;transition:border-color .15s}
 .month-card:hover{border-color:rgba(229,154,101,.3)}
 .mc-hdr{display:flex;justify-content:space-between;align-items:center;direction:rtl}
@@ -521,6 +413,17 @@ function attachSelectAll(){
     inp.addEventListener('focus',function(){var s=this;setTimeout(function(){s.select();},50);});});
 }
 attachSelectAll();setInterval(attachSelectAll,600);
+
+// Make HTML cards clickable — defined on window.parent so main-doc onclick can call it
+window.parent.clickNav = function(key) {
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+        if (btns[i].textContent.trim() === key) {
+            btns[i].click();
+            return;
+        }
+    }
+};
 </script>""", height=0)
 
 
@@ -590,21 +493,57 @@ def render_home_screen():
         "<p style='text-align:center;font-size:10px;font-weight:700;letter-spacing:4px;"
         "color:#a07850;text-transform:uppercase;margin-bottom:3px;'>CHECK MANAGEMENT SYSTEM</p>"
         "<h1><span class='logo-title'>CHECKFLOW</span></h1>"
-        "<div style='height:30px'></div>",
+        "<div style='height:32px'></div>",
         unsafe_allow_html=True)
 
-    st.markdown('<div class="nc-calc">', unsafe_allow_html=True)
-    if st.button("מחשבון פריטה\nחישוב עמלות פריטה מהיר", key="go_calc", use_container_width=True):
+    # ── Card 1: Calculator (Green) ──
+    st.markdown("""
+    <div class="hnc" onclick="clickNav('calc')" style="cursor:pointer;">
+        <div class="hnc-badge" style="background:linear-gradient(160deg,#2bf06e 0%,#0c7c2a 100%);">
+            <span class="hnc-icon">💸</span>
+        </div>
+        <div class="hnc-body" style="background:linear-gradient(135deg,#1a4a2a 0%,#0a2814 100%);">
+            <div class="hnc-title">מחשבון פריטה</div>
+            <div class="hnc-rule" style="background:#39FF14;"></div>
+            <div class="hnc-desc">חישוב עמלות פריטה מהיר ומדויק</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+    st.markdown('<div class="hnc-over">', unsafe_allow_html=True)
+    if st.button("calc", key="go_calc", use_container_width=True):
         st.session_state.screen = "calc"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="nc-mgmt">', unsafe_allow_html=True)
-    if st.button("ניהול צ׳קים\nלקוחות · סטטוסים · מעקב", key="go_mgmt", use_container_width=True):
+    # ── Card 2: Management (Copper) – slightly elevated ──
+    st.markdown("""
+    <div class="hnc" onclick="clickNav('mgmt')" style="transform:scale(1.04);transform-origin:center;box-shadow:0 20px 52px rgba(0,0,0,.65);cursor:pointer;">
+        <div class="hnc-badge" style="background:linear-gradient(160deg,#ffc080 0%,#a85818 100%);">
+            <span class="hnc-icon">💳</span>
+        </div>
+        <div class="hnc-body" style="background:linear-gradient(135deg,#4a2808 0%,#281404 100%);">
+            <div class="hnc-title">ניהול צ׳קים</div>
+            <div class="hnc-rule" style="background:#e59a65;"></div>
+            <div class="hnc-desc">לקוחות · סטטוסים · מעקב מלא</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+    st.markdown('<div class="hnc-over">', unsafe_allow_html=True)
+    if st.button("mgmt", key="go_mgmt", use_container_width=True):
         st.session_state.screen = "mgmt"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="nc-dash">', unsafe_allow_html=True)
-    if st.button("דשבורד תזרים\nתחזית חודשית · פירעונות", key="go_dash", use_container_width=True):
+    # ── Card 3: Dashboard (Blue) ──
+    st.markdown("""
+    <div class="hnc" onclick="clickNav('dash')" style="cursor:pointer;">
+        <div class="hnc-badge" style="background:linear-gradient(160deg,#70c0ff 0%,#1040a0 100%);">
+            <span class="hnc-icon">📈</span>
+        </div>
+        <div class="hnc-body" style="background:linear-gradient(135deg,#1a2a4a 0%,#0a1428 100%);">
+            <div class="hnc-title">דשבורד תזרים</div>
+            <div class="hnc-rule" style="background:#4090e0;"></div>
+            <div class="hnc-desc">תחזית חודשית · פירעונות</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+    st.markdown('<div class="hnc-over">', unsafe_allow_html=True)
+    if st.button("dash", key="go_dash", use_container_width=True):
         st.session_state.screen = "dash"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -687,24 +626,21 @@ def render_dashboard():
             "<div style='color:#9BA1A6;font-size:.85rem;text-align:center;padding:12px 0;'>אין פירעונות קרובים ✓</div>"
             "</div>", unsafe_allow_html=True)
 
-    # ══ GLASS SECTION 2: Status — circular action nodes ══
+    # ══ GLASS SECTION 2: Status breakdown ══
     status_rows = cached_status_breakdown(u)
     if status_rows:
-        STATUS_CIRC = {"ממתין למזומן":"#FF9500","להפקדה":"#39FF14","בפריטה":"#FF2D95"}
-        STATUS_BG   = {"ממתין למזומן":"rgba(255,149,0,.15)","להפקדה":"rgba(57,255,20,.12)","בפריטה":"rgba(255,45,149,.12)"}
+        status_bg  = {"ממתין למזומן":"rgba(255,159,28,.1)","להפקדה":"rgba(57,255,20,.08)","בפריטה":"rgba(255,45,149,.1)"}
         html = "<div class='glass-section'><div class='gs-label'>פירוט לפי סטטוס</div>"
         for r in status_rows:
-            color  = STATUS_CIRC.get(r["status"], "#e59a65")
-            bg     = STATUS_BG.get(r["status"], "rgba(255,255,255,.04)")
-            html += (f"<div class='status-node-row' style='background:{bg};border-radius:14px;'>"
-                     f"<div class='status-circ' style='background:{color};box-shadow:0 0 16px {color}55;'>"
-                     f"<span style='color:#fff;font-size:.65rem;font-weight:900;'>{r['cnt']}</span>"
+            bg    = status_bg.get(r["status"], "rgba(255,255,255,.04)")
+            color = STATUS_COLORS.get(r["status"], "#dec599")
+            html += (f"<div class='status-row' style='background:{bg};border-color:{color}33;'>"
+                     f"<div>"
+                     f"<div style='font-weight:800;font-size:.9rem;color:#fff;'>{r['status']}</div>"
+                     f"<div style='font-size:.72rem;color:#9BA1A6;margin-top:2px;'>{r['cnt']} צ׳קים</div>"
                      f"</div>"
-                     f"<div class='status-info'>"
-                     f"<div class='status-name'>{r['status']}</div>"
-                     f"<div class='status-cnt'>{r['cnt']} צ׳קים</div>"
-                     f"</div>"
-                     f"<div style='font-weight:900;font-size:1rem;color:{color};direction:ltr;'>{fmt_ils(r['total'])}</div>"
+                     f"<div class='status-amnt' style='background:{color}18;border:1.5px solid {color}55;color:{color};'>"
+                     f"{fmt_ils(r['total'])}</div>"
                      f"</div>")
         html += "</div>"
         st.markdown(html, unsafe_allow_html=True)
