@@ -380,28 +380,22 @@ attachSelectAll();setInterval(attachSelectAll,600);
 # 2. התיקון: עטיפת ה-CSS בתוך מחרוזת פייתון והזרקה שלו דרך st.markdown
 css_code = """
 <style>
+# ודא שחלק זה מחליף את כל קוד ה-CSS הישן שהיה זרוק בקובץ
+st.markdown("""
+<style>
 @keyframes crazyAnim {
     0% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
-    25% { transform: scale(1.15) rotate(-10deg); background: #ff0055; } /* ורוד חריף */
-    50% { transform: scale(0.9) rotate(10deg); background: #00ffaa; box-shadow: 0 0 25px #00ffaa; } /* טורקיז זוהר */
-    75% { transform: scale(1.1) rotate(-5deg); background: #ffff00; } /* צהוב */
+    25% { transform: scale(1.15) rotate(-10deg); background: #ff0055; }
+    50% { transform: scale(0.9) rotate(10deg); background: #00ffaa; box-shadow: 0 0 25px #00ffaa; }
+    75% { transform: scale(1.1) rotate(-5deg); background: #ffff00; }
     100% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
 }
 
-/* החלף את שם המחלקה 'my-big-button' בשם המחלקה של הכפתורים שלך */
 .my-big-button:active {
     animation: crazyAnim 0.4s ease-in-out;
 }
 </style>
-"""
-
-# הזרקת ה-CSS לאפליקציה
-st.markdown(css_code, unsafe_allow_html=True)
-
-/* החלף את שם המחלקה 'my-big-button' בשם המחלקה של הכפתורים שלך */
-.my-big-button:active {
-    animation: crazyAnim 0.4s ease-in-out;
-}
+""", unsafe_allow_html=True)
 
 /* גרום לשורה לא לעטוף שורות חדשות */
 .table-row-class {
