@@ -415,17 +415,6 @@ function attachSelectAll(){
     inp.addEventListener('focus',function(){var s=this;setTimeout(function(){s.select();},50);});});
 }
 attachSelectAll();setInterval(attachSelectAll,600);
-
-// clickNav — defined on parent window so HTML card onclicks can call it
-(function(){
-    var pd = window.parent.document;
-    window.parent.clickNav = function(key){
-        var btns = pd.querySelectorAll('button');
-        for(var i=0;i<btns.length;i++){
-            if(btns[i].textContent.trim()===key){ btns[i].click(); return; }
-        }
-    };
-})();
 </script>""", height=0)
 
 
@@ -490,15 +479,20 @@ def render_kpi():
 
 # ─── Home ───
 def render_home_screen():
-    # Inline CSS: hide all st.button elements on this screen only
+    # Inline CSS: hide nav buttons + define clickNav via img onerror (runs in main page, no iframe)
     st.markdown("""
 <style>
-/* Home screen — hide nav buttons (JS clicks them programmatically) */
 body .stButton>button{
     position:fixed!important;top:-9999px!important;left:-9999px!important;
-    width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;
+    width:1px!important;height:1px!important;opacity:0!important;
 }
 </style>
+<img src="#" onerror="
+window.clickNav=function(k){
+    var b=document.querySelectorAll('button');
+    for(var i=0;i<b.length;i++){if(b[i].textContent.trim()===k){b[i].click();return;}}
+};this.style.display='none';
+" style="display:none" alt="">
 <div style='height:28px'></div>
 <p style='text-align:center;font-size:10px;font-weight:700;letter-spacing:4px;
 color:#a07850;text-transform:uppercase;margin-bottom:3px;'>CHECK MANAGEMENT SYSTEM</p>
