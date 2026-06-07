@@ -355,40 +355,123 @@ div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:
 .dash-bar-fill{background:linear-gradient(90deg,#e59a65,#b06a3b);border-radius:99px;height:5px}
 /* batch table row edit */
 .batch-row{background:rgba(44,52,64,.88);border:1px solid rgba(229,154,101,.15);border-radius:14px;padding:12px 14px;margin-bottom:5px}
-/* ══ HOME NAV — CLICKABLE BUTTON CARDS (badge via ::before) ══ */
-.nc-calc .stButton>button,.nc-mgmt .stButton>button,.nc-dash .stButton>button{
-    position:relative!important;height:90px!important;border-radius:26px!important;
-    overflow:hidden!important;width:100%!important;border:none!important;
-    padding:0 22px 0 39%!important;text-align:right!important;direction:rtl!important;
-    color:#fff!important;font-weight:900!important;font-size:.88rem!important;
-    line-height:1.35!important;white-space:pre-wrap!important;cursor:pointer!important;
-    margin-bottom:18px!important;
-    transition:transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .22s!important;
+/* ══ HOME NAV — FLEX BADGE CARDS (::before = flex item = real badge) ══ */
+/* Base shared styling */
+.nc-calc .stButton>button,
+.nc-mgmt .stButton>button,
+.nc-dash .stButton>button {
+    display: flex !important;
+    align-items: stretch !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    height: 90px !important;
+    border-radius: 26px !important;
+    border: none !important;
+    width: 100% !important;
+    cursor: pointer !important;
+    margin-bottom: 18px !important;
+    transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s !important;
+    white-space: pre-wrap !important;
+    font-weight: 900 !important;
+    font-size: .88rem !important;
+    line-height: 1.35 !important;
+}
+/* Inner text container — right 63% content area */
+.nc-calc .stButton>button > div,
+.nc-mgmt .stButton>button > div,
+.nc-dash .stButton>button > div {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 20px !important;
+    direction: rtl !important;
+    text-align: right !important;
+    color: #fff !important;
+}
+.nc-calc .stButton>button > div > p,
+.nc-mgmt .stButton>button > div > p,
+.nc-dash .stButton>button > div > p {
+    margin: 0 !important;
+    white-space: pre-wrap !important;
+    color: #fff !important;
+    direction: rtl !important;
+    text-align: right !important;
 }
 /* ── Green: Calculator ── */
-.nc-calc .stButton>button{background:linear-gradient(135deg,#1a4a2a,#0a2814)!important;box-shadow:0 14px 40px rgba(0,0,0,.55)!important}
-.nc-calc .stButton>button::before{content:'💸'!important;position:absolute!important;left:0!important;top:0!important;bottom:0!important;width:37%!important;
-    background:radial-gradient(circle at 76% 18%,rgba(255,255,255,.22) 0%,rgba(255,255,255,.22) 25%,transparent 25%),
-    radial-gradient(circle at 14% 78%,rgba(0,0,0,.18) 0%,rgba(0,0,0,.18) 19%,transparent 19%),
-    linear-gradient(155deg,#2bf06e,#0c7c2a)!important;
-    font-size:2.4rem!important;line-height:90px!important;text-align:center!important;z-index:2!important;text-shadow:3px 3px 0 rgba(0,0,0,.28)!important}
-.nc-calc .stButton>button:hover{transform:scale(1.02) translateY(-2px)!important;box-shadow:0 20px 50px rgba(57,255,20,.15),0 14px 40px rgba(0,0,0,.6)!important;filter:brightness(1.07)!important}
-/* ── Copper: Management (elevated as CTA) ── */
-.nc-mgmt .stButton>button{background:linear-gradient(135deg,#4a2808,#281404)!important;box-shadow:0 20px 52px rgba(229,154,101,.22),0 12px 36px rgba(0,0,0,.5)!important;transform:scale(1.04) translateY(-5px)!important}
-.nc-mgmt .stButton>button::before{content:'💳'!important;position:absolute!important;left:0!important;top:0!important;bottom:0!important;width:37%!important;
-    background:radial-gradient(circle at 76% 18%,rgba(255,255,255,.24) 0%,rgba(255,255,255,.24) 27%,transparent 27%),
-    radial-gradient(circle at 14% 78%,rgba(0,0,0,.18) 0%,rgba(0,0,0,.18) 19%,transparent 19%),
-    linear-gradient(155deg,#ffc080,#a85818)!important;
-    font-size:2.4rem!important;line-height:90px!important;text-align:center!important;z-index:2!important;text-shadow:3px 3px 0 rgba(0,0,0,.28)!important}
-.nc-mgmt .stButton>button:hover{transform:scale(1.07) translateY(-8px)!important;box-shadow:0 26px 60px rgba(229,154,101,.4)!important;filter:brightness(1.09)!important}
+.nc-calc .stButton>button {
+    background: linear-gradient(135deg,#1a4a2a,#0a2814) !important;
+    box-shadow: 0 14px 40px rgba(0,0,0,.55) !important;
+}
+.nc-calc .stButton>button::before {
+    content: '💸' !important;
+    flex: 0 0 37% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 2.5rem !important;
+    text-shadow: 4px 4px 0 rgba(0,0,0,.3) !important;
+    background:
+        radial-gradient(circle at 76% 18%, rgba(255,255,255,.22) 0%, rgba(255,255,255,.22) 26%, transparent 26%),
+        radial-gradient(circle at 14% 78%, rgba(0,0,0,.18) 0%, rgba(0,0,0,.18) 20%, transparent 20%),
+        linear-gradient(155deg, #2bf06e, #0c7c2a) !important;
+    border-left: 1px solid rgba(255,255,255,.08) !important;
+}
+.nc-calc .stButton>button:hover {
+    transform: scale(1.02) translateY(-2px) !important;
+    box-shadow: 0 20px 50px rgba(57,255,20,.15), 0 14px 40px rgba(0,0,0,.6) !important;
+    filter: brightness(1.08) !important;
+}
+/* ── Copper: Management (elevated as primary CTA) ── */
+.nc-mgmt .stButton>button {
+    background: linear-gradient(135deg,#4a2808,#281404) !important;
+    box-shadow: 0 20px 52px rgba(229,154,101,.25), 0 12px 36px rgba(0,0,0,.5) !important;
+    transform: scale(1.04) translateY(-5px) !important;
+}
+.nc-mgmt .stButton>button::before {
+    content: '💳' !important;
+    flex: 0 0 37% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 2.5rem !important;
+    text-shadow: 4px 4px 0 rgba(0,0,0,.3) !important;
+    background:
+        radial-gradient(circle at 76% 18%, rgba(255,255,255,.25) 0%, rgba(255,255,255,.25) 28%, transparent 28%),
+        radial-gradient(circle at 14% 78%, rgba(0,0,0,.18) 0%, rgba(0,0,0,.18) 20%, transparent 20%),
+        linear-gradient(155deg, #ffc080, #a85818) !important;
+    border-left: 1px solid rgba(255,255,255,.1) !important;
+}
+.nc-mgmt .stButton>button:hover {
+    transform: scale(1.07) translateY(-8px) !important;
+    box-shadow: 0 26px 60px rgba(229,154,101,.42) !important;
+    filter: brightness(1.09) !important;
+}
 /* ── Blue: Dashboard ── */
-.nc-dash .stButton>button{background:linear-gradient(135deg,#1a2a4a,#0a1428)!important;box-shadow:0 14px 40px rgba(0,0,0,.55)!important}
-.nc-dash .stButton>button::before{content:'📈'!important;position:absolute!important;left:0!important;top:0!important;bottom:0!important;width:37%!important;
-    background:radial-gradient(circle at 76% 18%,rgba(255,255,255,.2) 0%,rgba(255,255,255,.2) 25%,transparent 25%),
-    radial-gradient(circle at 14% 78%,rgba(0,0,0,.18) 0%,rgba(0,0,0,.18) 19%,transparent 19%),
-    linear-gradient(155deg,#70c0ff,#1040a0)!important;
-    font-size:2.4rem!important;line-height:90px!important;text-align:center!important;z-index:2!important;text-shadow:3px 3px 0 rgba(0,0,0,.28)!important}
-.nc-dash .stButton>button:hover{transform:scale(1.02) translateY(-2px)!important;box-shadow:0 20px 50px rgba(64,144,224,.15),0 14px 40px rgba(0,0,0,.6)!important;filter:brightness(1.07)!important}
+.nc-dash .stButton>button {
+    background: linear-gradient(135deg,#1a2a4a,#0a1428) !important;
+    box-shadow: 0 14px 40px rgba(0,0,0,.55) !important;
+}
+.nc-dash .stButton>button::before {
+    content: '📈' !important;
+    flex: 0 0 37% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 2.5rem !important;
+    text-shadow: 4px 4px 0 rgba(0,0,0,.3) !important;
+    background:
+        radial-gradient(circle at 76% 18%, rgba(255,255,255,.2) 0%, rgba(255,255,255,.2) 26%, transparent 26%),
+        radial-gradient(circle at 14% 78%, rgba(0,0,0,.18) 0%, rgba(0,0,0,.18) 20%, transparent 20%),
+        linear-gradient(155deg, #70c0ff, #1040a0) !important;
+    border-left: 1px solid rgba(255,255,255,.08) !important;
+}
+.nc-dash .stButton>button:hover {
+    transform: scale(1.02) translateY(-2px) !important;
+    box-shadow: 0 20px 50px rgba(64,144,224,.15), 0 14px 40px rgba(0,0,0,.6) !important;
+    filter: brightness(1.08) !important;
+}
 /* ══ DASHBOARD GLASSMORPHISM TIMELINE (Prompt 1: Dark Glass + Timeline) ══ */
 .db-hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 4px 20px;direction:rtl}
 .db-hdr-left .db-hdr-lbl{font-size:.62rem;font-weight:700;letter-spacing:2.5px;color:#9BA1A6;text-transform:uppercase}
