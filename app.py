@@ -70,9 +70,13 @@ def init_db():
             client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
             amount REAL NOT NULL, due_date DATE NOT NULL,
             status TEXT NOT NULL, remind_on DATE)""")
-        # Add rate columns if missing (migration)
+        # Add columns if missing (migration)
         cur.execute("""ALTER TABLE clients ADD COLUMN IF NOT EXISTS rate REAL DEFAULT 12.0""")
         cur.execute("""ALTER TABLE clients ADD COLUMN IF NOT EXISTS rate_basis TEXT DEFAULT 'שנתית'""")
+        cur.execute("""ALTER TABLE clients ADD COLUMN IF NOT EXISTS phone TEXT""")
+        cur.execute("""ALTER TABLE clients ADD COLUMN IF NOT EXISTS contact_name TEXT""")
+        cur.execute("""ALTER TABLE clients ADD COLUMN IF NOT EXISTS address TEXT""")
+        cur.execute("""ALTER TABLE clients ADD COLUMN IF NOT EXISTS credit_limit REAL""")
 
 def current_user():
     return st.session_state.get("current_user", "admin")
@@ -183,11 +187,37 @@ def cached_next_active_days(user, n=2):
                 results[dk] = [dict(r) for r in rows]
         return results
 
+@st.cache_data(ttl=30)
+def cached_client_cards(user):
+    """Full client summary for card grid."""
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT cl.id, cl.name, cl.phone, cl.contact_name, cl.address, cl.credit_limit,
+                   COALESCE(SUM(ch.amount),0) AS exposure,
+                   COUNT(ch.id) AS check_count,
+                   MIN(ch.due_date) AS next_check_date
+            FROM clients cl
+            LEFT JOIN checks ch ON ch.client_id=cl.id
+            WHERE cl.username=%s
+            GROUP BY cl.id, cl.name, cl.phone, cl.contact_name, cl.address, cl.credit_limit
+            ORDER BY cl.name
+        """, (user,))
+        return [dict(r) for r in cur.fetchall()]
+
+def update_client_details(client_id, phone, contact_name, address, credit_limit):
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("""UPDATE clients SET phone=%s, contact_name=%s, address=%s, credit_limit=%s
+                       WHERE id=%s""",
+                    (phone or None, contact_name or None, address or None,
+                     float(credit_limit) if credit_limit else None, client_id))
+
 def invalidate_cache():
     cached_totals.clear(); cached_checks.clear(); cached_clients.clear()
     cached_obligo.clear(); cached_upcoming.clear(); cached_forecast.clear()
     cached_status_breakdown.clear(); cached_month_checks.clear()
-    cached_next_active_days.clear()
+    cached_next_active_days.clear(); cached_client_cards.clear()
 
 # ─── write functions ───
 def add_client(name, rate=12.0, rate_basis="שנתית"):
@@ -388,16 +418,19 @@ div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:
 .batch-row{background:rgba(44,52,64,.88);border:1px solid rgba(229,154,101,.15);border-radius:14px;padding:12px 14px;margin-bottom:5px}
 /* make all iframes transparent from parent-page level */
 iframe{background:transparent!important;border:none!important;}
-/* ══ HOME NAV PREMIUM CARDS (Prompt 2: Flat-Volumetric Badge) ══ */
-.hnc{display:flex;direction:ltr!important;height:90px;border-radius:26px;overflow:hidden;box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:4px;cursor:pointer;transition:transform .2s,box-shadow .2s}
+/* ══ HOME NAV PREMIUM CARDS ══ */
+.hnc{display:flex;direction:ltr!important;height:108px;border-radius:28px;overflow:hidden;box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:4px;cursor:pointer;transition:transform .2s,box-shadow .2s;border:1px solid rgba(255,255,255,.09)!important}
 .hnc-badge{width:37%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex-shrink:0}
 .hnc-badge::before{content:'';position:absolute;top:-22px;right:-22px;width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.18)}
 .hnc-badge::after{content:'';position:absolute;bottom:-16px;left:-16px;width:54px;height:54px;border-radius:50%;background:rgba(0,0,0,.18)}
-.hnc-icon{font-size:2.4rem;position:relative;z-index:2;filter:drop-shadow(4px 4px 0px rgba(0,0,0,.35))}
+.hnc-icon{font-size:2.8rem;position:relative;z-index:2;filter:drop-shadow(4px 4px 0px rgba(0,0,0,.35))}
 .hnc-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 20px;direction:rtl!important}
-.hnc-title{font-size:1.02rem;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.1}
-.hnc-rule{height:2px;border-radius:2px;width:30px;margin:6px 0}
-.hnc-desc{font-size:.71rem;color:rgba(255,255,255,.5);font-weight:500;letter-spacing:.2px}
+.hnc-title{font-size:1.08rem;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.hnc-rule{height:2px;border-radius:2px;width:30px;margin:7px 0}
+.hnc-desc{font-size:.74rem;color:rgba(255,255,255,.5);font-weight:500;letter-spacing:.2px}
+/* client mini cards */
+.cmc{background:rgba(44,52,64,.92);border:1px solid rgba(229,154,101,.15);border-radius:18px;padding:11px 13px;margin-bottom:4px;direction:rtl}
+.cmc.sel{border-color:rgba(229,154,101,.5)!important}
 /* transparent click overlay */
 .hnc-over{margin-top:-102px;height:102px;position:relative;z-index:50;margin-bottom:22px}
 .hnc-over .stButton{height:100%!important}
@@ -546,9 +579,9 @@ def render_home_screen():
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:transparent!important;font-family:'Inter',sans-serif;padding:6px 0 0;margin:0;}
-.hnc{display:flex;direction:ltr;height:90px;border-radius:26px;overflow:hidden;
-    box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:18px;cursor:pointer;
-    transition:transform .2s,box-shadow .2s;}
+.hnc{display:flex;direction:ltr;height:108px;border-radius:28px;overflow:hidden;
+    box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:16px;cursor:pointer;
+    border:1px solid rgba(255,255,255,.09);transition:transform .2s,box-shadow .2s;}
 .hnc:hover{filter:brightness(1.08);}
 .hnc-badge{width:37%;display:flex;align-items:center;justify-content:center;
     position:relative;overflow:hidden;flex-shrink:0;}
@@ -614,7 +647,7 @@ function nav(key) {
 </script>
 </body>
 </html>
-""", height=335)
+""", height=385)
 
     # Hide the 3 nav buttons (found+clicked by iframe JS)
     st.markdown("""<style>
@@ -626,6 +659,10 @@ body .stButton>button{position:fixed!important;top:-9999px!important;
     if st.button("dash", key="go_dash"): st.session_state.screen = "dash"; st.rerun()
 
     render_kpi()
+    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title-right'>👥 לקוחות</div>"
+                "<div class='neon-bar-right'></div>", unsafe_allow_html=True)
+    render_client_grid()
 
 
 # ─── Dashboard ───
@@ -1127,43 +1164,137 @@ for(var i=0;i<b.length;i++){{if(b[i].textContent.trim()===k){{b[i].click();retur
                     invalidate_cache(); st.session_state.add_mode=None; st.session_state.batch_df=None; st.rerun()
 
 
+def render_client_mini_card(c, sel_id):
+    u = current_user()
+    is_sel = (sel_id == c["id"])
+    exposure = float(c.get("exposure") or 0)
+    credit   = float(c.get("credit_limit") or 0)
+    cnt      = int(c.get("check_count") or 0)
+
+    obligo_html = ""
+    if credit > 0:
+        ok = exposure <= credit
+        ind_c = "#39FF14" if ok else "#FF3B30"
+        sym   = "✓" if ok else "!"
+        obligo_html = (f"<div style='font-size:.65rem;font-weight:700;color:{ind_c};margin-top:2px;'>"
+                       f"מסגרת {fmt_ils(credit)} "
+                       f"<span style='background:{ind_c}22;padding:1px 5px;border-radius:4px;'>{sym}</span></div>")
+
+    phone_html = (f"<div style='font-size:.65rem;color:#a07850;margin-top:2px;'>📞 {c['phone']}</div>"
+                  if c.get("phone") else "")
+    next_html  = (f"<div style='font-size:.63rem;color:#7a5a40;margin-top:2px;'>הבא: {fmt_date(c['next_check_date'])}</div>"
+                  if c.get("next_check_date") else "")
+
+    sel_class = "sel" if is_sel else ""
+    st.markdown(
+        f"<div class='cmc {sel_class}'>"
+        f"<div style='display:flex;justify-content:space-between;align-items:flex-start;'>"
+        f"<div style='font-weight:800;font-size:.88rem;color:#dec599;line-height:1.2;'>{c['name']}</div>"
+        f"<div style='font-size:.65rem;color:#a07850;'>{cnt} צ׳קים</div></div>"
+        f"<div style='font-weight:900;font-size:1.05rem;color:#e59a65;direction:ltr;margin-top:3px;'>{fmt_ils(exposure)}</div>"
+        f"{obligo_html}{phone_html}{next_html}"
+        f"</div>", unsafe_allow_html=True)
+
+    if st.button("✖ סגור" if is_sel else "✏️ פרטים", key=f"sel_cl_{c['id']}", use_container_width=True):
+        st.session_state.selected_client_id = None if is_sel else c["id"]
+        st.rerun()
+
+
+def render_client_edit(c):
+    u = current_user()
+    st.markdown(f"<div class='section-title-right'>✏️ {c['name']}</div>"
+                f"<div class='neon-bar-right'></div>", unsafe_allow_html=True)
+
+    e1, e2 = st.columns(2)
+    with e1:
+        phone   = st.text_input("📞 טלפון",    value=c.get("phone") or "",        key=f"ep_{c['id']}")
+        address = st.text_input("📍 כתובת",    value=c.get("address") or "",      key=f"ea_{c['id']}")
+    with e2:
+        contact = st.text_input("👤 איש קשר", value=c.get("contact_name") or "", key=f"ec_{c['id']}")
+        credit  = st.number_input("💰 אובליגו (₪)", min_value=0.0, step=1000.0, format="%.0f",
+                                   value=float(c.get("credit_limit") or 0), key=f"ecr_{c['id']}")
+    if phone:
+        st.markdown(f"<a href='tel:{phone}' style='display:block;text-align:center;padding:8px;"
+                    f"background:rgba(57,255,20,.08);border:1px solid rgba(57,255,20,.3);"
+                    f"border-radius:12px;color:#39FF14;font-weight:700;text-decoration:none;margin-bottom:8px;'>"
+                    f"📞 חייג {phone}</a>", unsafe_allow_html=True)
+
+    if st.button("💾 שמור פרטים", use_container_width=True, key=f"save_cl_{c['id']}"):
+        update_client_details(c["id"], phone, contact, address, credit if credit > 0 else None)
+        invalidate_cache(); st.rerun()
+
+    # Checks
+    checks = cached_checks(u, c["id"])
+    if checks:
+        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;"
+                    "text-transform:uppercase;color:#a07850;margin:10px 0 6px;'>צ׳קים</div>",
+                    unsafe_allow_html=True)
+        for ch in checks:
+            color = STATUS_COLORS.get(ch["status"], "#888")
+            remind_str = f" | {fmt_date(ch['remind_on'])}" if ch.get("remind_on") else ""
+            cc1, cc2 = st.columns([4, 3])
+            with cc1:
+                st.markdown(
+                    f"<div style='padding:4px 0;'>"
+                    f"<span style='font-weight:700;direction:ltr;color:#e59a65;'>{fmt_ils(ch['amount'])}</span> "
+                    f"<span style='font-size:.74rem;color:#8c6a45;'>פירעון: {fmt_date(ch['due_date'])}{remind_str}</span>"
+                    f"<span class='pill' style='background:{color}22;color:{color};border:1px solid {color}66;'>{ch['status']}</span>"
+                    f"</div>", unsafe_allow_html=True)
+            with cc2:
+                s1, s2, s3 = st.columns([2, 1, 1])
+                with s1:
+                    new_st = st.selectbox("", STATUSES, index=STATUSES.index(ch["status"]),
+                                          key=f"st_{ch['id']}", label_visibility="collapsed")
+                with s2:
+                    if st.button("✓", key=f"upd_{ch['id']}", use_container_width=True):
+                        update_status(ch["id"], new_st); invalidate_cache(); st.rerun()
+                with s3:
+                    if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
+                        delete_check(ch["id"]); invalidate_cache(); st.rerun()
+
+
+def render_client_grid():
+    u = current_user()
+    clients = cached_client_cards(u)
+    if not clients:
+        return
+    sel_id = st.session_state.get("selected_client_id")
+    per_page = 6
+    page     = st.session_state.get("clients_page", 0)
+    start    = page * per_page
+    page_cl  = clients[start:start+per_page]
+
+    for i in range(0, len(page_cl), 2):
+        ca, cb = st.columns(2)
+        with ca: render_client_mini_card(page_cl[i], sel_id)
+        if i+1 < len(page_cl):
+            with cb: render_client_mini_card(page_cl[i+1], sel_id)
+
+    # Pagination
+    total_pages = max(1, (len(clients) + per_page - 1) // per_page)
+    if total_pages > 1:
+        p1, p2, p3 = st.columns([1, 2, 1])
+        with p1:
+            if page > 0 and st.button("◀", key="cl_prev"):
+                st.session_state.clients_page = page-1; st.rerun()
+        with p2:
+            st.markdown(f"<div style='text-align:center;color:#a07850;font-size:.8rem;padding:6px 0;'>{page+1}/{total_pages}</div>", unsafe_allow_html=True)
+        with p3:
+            if page < total_pages-1 and st.button("▶", key="cl_next"):
+                st.session_state.clients_page = page+1; st.rerun()
+
+    # Edit form for selected client
+    if sel_id:
+        selected = next((c for c in clients if c["id"] == sel_id), None)
+        if selected:
+            st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+            render_client_edit(selected)
+
+
 def render_clients():
     st.markdown('<div class="section-title">הלקוחות שלי</div>', unsafe_allow_html=True)
     st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
-    u = current_user()
-    rows = [r for r in cached_obligo(u) if r["cnt"]>0]
-    if not rows:
-        st.markdown('<div class="glass">אין עדיין צ\'קים ⬆️</div>', unsafe_allow_html=True); return
-
-    for i, r in enumerate(rows):
-        bg, txt = CLIENT_PALETTE[i%len(CLIENT_PALETTE)]
-        st.markdown(f"""<div class="client-card" style="background:rgba(30,35,42,.85);">
-            <div><div class="client-name">{r['name']}</div>
-            <div style="font-size:.78rem;color:#8c6a45;font-weight:600;">{r['cnt']} צ'קים</div></div>
-            <div class="client-obligo">{fmt_ils(r['obligo'])}</div>
-        </div>""", unsafe_allow_html=True)
-        with st.expander("צפייה בצ'קים"):
-            for ch in cached_checks(u, r["id"]):
-                color = STATUS_COLORS.get(ch["status"],"#888")
-                remind_str = f" | תזכורת: {fmt_date(ch['remind_on'])}" if ch["remind_on"] else ""
-                cc1, cc2 = st.columns([4, 3])
-                with cc1:
-                    st.markdown(f"""<div style="padding:5px 0;">
-                        <span style="font-weight:700;direction:ltr;color:#e59a65;">{fmt_ils(ch['amount'])}</span><br>
-                        <span style="font-size:.78rem;color:#8c6a45;">פירעון: {fmt_date(ch['due_date'])}{remind_str}</span>
-                        <span class="pill" style="background:{color}22;color:{color};border:1px solid {color}66;">{ch['status']}</span>
-                    </div>""", unsafe_allow_html=True)
-                with cc2:
-                    sel_col, ok_col, del_col = st.columns([2, 1, 1])
-                    with sel_col:
-                        new_st = st.selectbox("סטטוס", STATUSES, index=STATUSES.index(ch["status"]),
-                                              key=f"st_{ch['id']}", label_visibility="collapsed")
-                    with ok_col:
-                        if st.button("✓", key=f"upd_{ch['id']}", use_container_width=True):
-                            update_status(ch["id"], new_st); invalidate_cache(); st.rerun()
-                    with del_col:
-                        if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
-                            delete_check(ch["id"]); invalidate_cache(); st.rerun()
+    render_client_grid()
 
 
 # ─── Main ───
