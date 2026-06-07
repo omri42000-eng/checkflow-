@@ -355,6 +355,57 @@ div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton>button:
 .dash-bar-fill{background:linear-gradient(90deg,#e59a65,#b06a3b);border-radius:99px;height:5px}
 /* batch table row edit */
 .batch-row{background:rgba(44,52,64,.88);border:1px solid rgba(229,154,101,.15);border-radius:14px;padding:12px 14px;margin-bottom:5px}
+/* ══ HOME NAV PREMIUM CARDS (Prompt 2: Flat-Volumetric Badge) ══ */
+.hnc{display:flex;direction:ltr!important;height:90px;border-radius:26px;overflow:hidden;box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:4px;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.hnc-badge{width:37%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex-shrink:0}
+.hnc-badge::before{content:'';position:absolute;top:-22px;right:-22px;width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.18)}
+.hnc-badge::after{content:'';position:absolute;bottom:-16px;left:-16px;width:54px;height:54px;border-radius:50%;background:rgba(0,0,0,.18)}
+.hnc-icon{font-size:2.4rem;position:relative;z-index:2;filter:drop-shadow(4px 4px 0px rgba(0,0,0,.35))}
+.hnc-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 20px;direction:rtl!important}
+.hnc-title{font-size:1.02rem;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.hnc-rule{height:2px;border-radius:2px;width:30px;margin:6px 0}
+.hnc-desc{font-size:.71rem;color:rgba(255,255,255,.5);font-weight:500;letter-spacing:.2px}
+/* transparent click overlay */
+.hnc-over{margin-top:-102px;height:102px;position:relative;z-index:50;margin-bottom:22px}
+.hnc-over .stButton{height:100%!important}
+.hnc-over .stButton>button{background:transparent!important;color:transparent!important;border:none!important;box-shadow:none!important;width:100%!important;height:102px!important;cursor:pointer!important;border-radius:26px!important;position:relative;outline:none!important;font-size:1px!important}
+.hnc-over .stButton>button::after{content:'';position:absolute;inset:0;border-radius:26px;background:rgba(255,255,255,0);transition:background .2s}
+.hnc-over .stButton>button:hover::after{background:rgba(255,255,255,.07)}
+/* ══ DASHBOARD GLASSMORPHISM TIMELINE (Prompt 1: Dark Glass + Timeline) ══ */
+.db-hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 4px 20px;direction:rtl}
+.db-hdr-left .db-hdr-lbl{font-size:.62rem;font-weight:700;letter-spacing:2.5px;color:#9BA1A6;text-transform:uppercase}
+.db-hdr-left .db-hdr-date{font-size:1.25rem;font-weight:900;color:#fff}
+.db-hdr-cap{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:6px 18px;font-size:.78rem;font-weight:700;color:#dec599}
+.glass-section{background:rgba(36,42,52,.68);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.08);border-radius:28px;padding:18px 20px;margin-bottom:12px}
+.gs-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9BA1A6;margin-bottom:14px}
+.dep-alert-tl{background:#fff;border-radius:14px;padding:11px 15px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;direction:rtl;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.tl-day{margin-bottom:14px}
+.tl-day-hdr{display:flex;align-items:center;gap:8px;margin-bottom:9px;direction:rtl}
+.tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.tl-day-lbl{font-weight:800;font-size:.9rem;color:#fff}
+.tl-day-date{font-size:.74rem;color:#9BA1A6;flex:1}
+.tl-day-total{font-weight:900;color:#e59a65;direction:ltr;font-size:.95rem}
+.tl-rows-wrap{display:flex;gap:12px;padding-right:18px}
+.tl-vert-line{width:2px;flex-shrink:0;border-radius:2px;min-height:44px}
+.tl-items{flex:1;display:flex;flex-direction:column;gap:7px}
+.tl-white-card{background:#fff;border-radius:16px;padding:11px 15px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 6px 16px rgba(0,0,0,.28);direction:rtl}
+.tl-wc-left{flex:1}
+.tl-wc-client{font-weight:700;font-size:.88rem;color:#111;margin-bottom:2px}
+.tl-wc-status{font-size:.68rem;font-weight:600}
+.tl-wc-right{display:flex;align-items:center;gap:8px;direction:ltr}
+.tl-wc-amount{font-weight:900;font-size:.95rem;color:#1a4a2a;direction:ltr}
+.tl-wc-chevron{font-size:1.3rem;color:#bbb;font-weight:300}
+.tl-dep-badge{background:#1a4a2a;color:#39FF14;font-size:.6rem;font-weight:800;border-radius:5px;padding:1px 7px;margin-right:6px;vertical-align:middle}
+.status-row{border:1px solid;border-radius:16px;padding:12px 15px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;direction:rtl}
+.status-amnt{font-weight:900;font-size:.9rem;direction:ltr;padding:4px 12px;border-radius:10px}
+.month-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:13px 15px;margin-bottom:6px;transition:border-color .15s}
+.month-card:hover{border-color:rgba(229,154,101,.3)}
+.mc-hdr{display:flex;justify-content:space-between;align-items:center;direction:rtl}
+.mc-label{font-size:.9rem;font-weight:700;color:#fff}
+.mc-count{font-size:.7rem;color:#9BA1A6;margin-top:2px}
+.mc-amount{font-weight:900;font-size:1.05rem;color:#e59a65;direction:ltr}
+.month-bar-bg{background:rgba(255,255,255,.07);border-radius:99px;height:4px;margin-top:9px}
+.month-bar-fill{background:linear-gradient(90deg,#e59a65,#b06a3b);border-radius:99px;height:4px}
 </style>""", unsafe_allow_html=True)
 
     st.components.v1.html("""<script>
@@ -429,175 +480,215 @@ def render_kpi():
 # ─── Home ───
 def render_home_screen():
     st.markdown(
-        "<div style='height:20px'></div>"
-        "<p style='text-align:center;font-size:11px;font-weight:700;letter-spacing:3px;"
-        "color:#a07850;text-transform:uppercase;margin-bottom:2px;'>CHECK MANAGEMENT</p>"
-        "<h1><span class='logo-title'>CHECKFLOW</span></h1>",
+        "<div style='height:28px'></div>"
+        "<p style='text-align:center;font-size:10px;font-weight:700;letter-spacing:4px;"
+        "color:#a07850;text-transform:uppercase;margin-bottom:3px;'>CHECK MANAGEMENT SYSTEM</p>"
+        "<h1><span class='logo-title'>CHECKFLOW</span></h1>"
+        "<div style='height:32px'></div>",
         unsafe_allow_html=True)
 
-    st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="nav-calc">', unsafe_allow_html=True)
-    if st.button("💸   מחשבון פריטה", key="go_calc", use_container_width=True):
+    # ── Card 1: Calculator (Green) ──
+    st.markdown("""
+    <div class="hnc">
+        <div class="hnc-badge" style="background:linear-gradient(160deg,#2bf06e 0%,#0c7c2a 100%);">
+            <span class="hnc-icon">💸</span>
+        </div>
+        <div class="hnc-body" style="background:linear-gradient(135deg,#1a4a2a 0%,#0a2814 100%);">
+            <div class="hnc-title">מחשבון פריטה</div>
+            <div class="hnc-rule" style="background:#39FF14;"></div>
+            <div class="hnc-desc">חישוב עמלות פריטה מהיר ומדויק</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+    st.markdown('<div class="hnc-over">', unsafe_allow_html=True)
+    if st.button("calc", key="go_calc", use_container_width=True):
         st.session_state.screen = "calc"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="nav-mgmt">', unsafe_allow_html=True)
-    if st.button("💳   ניהול צ׳קים", key="go_mgmt", use_container_width=True):
+    # ── Card 2: Management (Copper) – slightly elevated ──
+    st.markdown("""
+    <div class="hnc" style="transform:scale(1.04);transform-origin:center;box-shadow:0 20px 52px rgba(0,0,0,.65);">
+        <div class="hnc-badge" style="background:linear-gradient(160deg,#ffc080 0%,#a85818 100%);">
+            <span class="hnc-icon">💳</span>
+        </div>
+        <div class="hnc-body" style="background:linear-gradient(135deg,#4a2808 0%,#281404 100%);">
+            <div class="hnc-title">ניהול צ׳קים</div>
+            <div class="hnc-rule" style="background:#e59a65;"></div>
+            <div class="hnc-desc">לקוחות · סטטוסים · מעקב מלא</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+    st.markdown('<div class="hnc-over">', unsafe_allow_html=True)
+    if st.button("mgmt", key="go_mgmt", use_container_width=True):
         st.session_state.screen = "mgmt"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="nav-dash">', unsafe_allow_html=True)
-    if st.button("📈   דשבורד תזרים", key="go_dash", use_container_width=True):
+    # ── Card 3: Dashboard (Blue) ──
+    st.markdown("""
+    <div class="hnc">
+        <div class="hnc-badge" style="background:linear-gradient(160deg,#70c0ff 0%,#1040a0 100%);">
+            <span class="hnc-icon">📈</span>
+        </div>
+        <div class="hnc-body" style="background:linear-gradient(135deg,#1a2a4a 0%,#0a1428 100%);">
+            <div class="hnc-title">דשבורד תזרים</div>
+            <div class="hnc-rule" style="background:#4090e0;"></div>
+            <div class="hnc-desc">תחזית חודשית · פירעונות</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+    st.markdown('<div class="hnc-over">', unsafe_allow_html=True)
+    if st.button("dash", key="go_dash", use_container_width=True):
         st.session_state.screen = "dash"; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
     render_kpi()
 
 
 # ─── Dashboard ───
 def render_dashboard():
     render_back_button()
-    st.markdown('<div class="section-title">📊 דשבורד תזרים</div>', unsafe_allow_html=True)
-    st.markdown('<div class="neon-bar"></div>', unsafe_allow_html=True)
     u = current_user()
-
-    # ── פירעונות 2 ימים קרובים ──
-    upcoming_raw = cached_upcoming(u)
     today = date.today()
-    day_labels = {today.isoformat(): "היום 🔴", (today+timedelta(days=1)).isoformat(): "מחר 🟡",
-                  (today+timedelta(days=2)).isoformat(): "מחרתיים 🟠"}
-    day_colors = {today.isoformat(): "rgba(255,45,149,.12)", (today+timedelta(days=1)).isoformat(): "rgba(229,154,101,.12)",
-                  (today+timedelta(days=2)).isoformat(): "rgba(255,159,28,.1)"}
-    border_colors = {today.isoformat(): "rgba(255,45,149,.4)", (today+timedelta(days=1)).isoformat(): "rgba(229,154,101,.35)",
-                     (today+timedelta(days=2)).isoformat(): "rgba(255,159,28,.3)"}
+
+    # Header (capsule selector style from Prompt 1)
+    st.markdown(
+        f"<div class='db-hdr'>"
+        f"<div class='db-hdr-left'>"
+        f"<div class='db-hdr-lbl'>CHECKFLOW DASHBOARD</div>"
+        f"<div class='db-hdr-date'>{today.strftime('%d.%m.%Y')}</div>"
+        f"</div>"
+        f"<div class='db-hdr-cap'>תזרים מזומנים</div>"
+        f"</div>", unsafe_allow_html=True)
+
+    # ══ GLASS SECTION 1: Timeline ─ upcoming 48 hrs ══
+    upcoming_raw = cached_upcoming(u)
+    DAY_LABELS = {today.isoformat(): "היום", (today+timedelta(days=1)).isoformat(): "מחר",
+                  (today+timedelta(days=2)).isoformat(): "מחרתיים"}
+    DAY_DOTS   = {today.isoformat(): "#FF3B30", (today+timedelta(days=1)).isoformat(): "#FFCC00",
+                  (today+timedelta(days=2)).isoformat(): "#FF9500"}
 
     if upcoming_raw:
-        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#a07850;margin-bottom:8px;'>⏰ פירעונות 48 שעות</div>", unsafe_allow_html=True)
-
-        # התראת "להפקדה"
         to_deposit = [ch for v in upcoming_raw.values() for ch in v if ch["status"] == "להפקדה"]
+        html = '<div class="glass-section"><div class="gs-label">⏰  פירעונות 48 השעות הקרובות</div>'
+
         if to_deposit:
             dep_total = sum(ch["amount"] for ch in to_deposit)
-            dep_names = "، ".join(set(ch["client_name"] for ch in to_deposit))
-            st.markdown(
-                f"<div class='deposit-alert'>"
-                f"<div style='font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#39FF14;margin-bottom:6px;'>🏦 צ'קים ממתינים להפקדה</div>"
-                f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
-                f"<span style='font-size:.85rem;font-weight:700;color:#dec599;'>{len(to_deposit)} צ'קים | {dep_names}</span>"
-                f"<span style='font-weight:900;font-size:1.1rem;color:#39FF14;direction:ltr;'>{fmt_ils(dep_total)}</span>"
-                f"</div></div>", unsafe_allow_html=True)
+            dep_names = "، ".join(dict.fromkeys(ch["client_name"] for ch in to_deposit))
+            html += (f"<div class='dep-alert-tl'>"
+                     f"<span style='font-size:.8rem;font-weight:800;color:#1a4a2a;'>🏦 {len(to_deposit)} צ׳קים להפקדה | {dep_names}</span>"
+                     f"<span style='font-weight:900;font-size:1rem;color:#0a4020;direction:ltr;'>{fmt_ils(dep_total)}</span>"
+                     f"</div>")
 
         for d_str, checks in sorted(upcoming_raw.items()):
-            label = day_labels.get(d_str, d_str)
-            day_total = sum(ch["amount"] for ch in checks)
-            bg = day_colors.get(d_str, "rgba(44,52,64,.88)")
-            border = border_colors.get(d_str, "rgba(229,154,101,.2)")
-            key = f"day_expand_{d_str}"
-            expanded = st.session_state.get(key, False)
+            lbl   = DAY_LABELS.get(d_str, d_str)
+            dot_c = DAY_DOTS.get(d_str, "#e59a65")
+            day_t = sum(ch["amount"] for ch in checks)
+            date_label = d_str[5:].replace("-",".")
 
-            da, db = st.columns([3, 1])
-            with da:
-                st.markdown(
-                    f"<div style='background:{bg};border:1px solid {border};border-radius:18px;padding:12px 14px;'>"
-                    f"<div style='font-size:14px;font-weight:800;color:#dec599;'>{label}</div>"
-                    f"<div style='display:flex;justify-content:space-between;align-items:center;margin-top:4px;'>"
-                    f"<span style='font-size:10px;color:#a07850;font-weight:700;'>{len(checks)} צ'קים</span>"
-                    f"<span style='font-weight:900;font-size:1.1rem;color:#e59a65;direction:ltr;'>{fmt_ils(day_total)}</span>"
-                    f"</div></div>", unsafe_allow_html=True)
-            with db:
-                st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-                if st.button("▼" if not expanded else "▲", key=f"btn_{key}", use_container_width=True):
-                    st.session_state[key] = not expanded; st.rerun()
-            if expanded:
-                for ch in checks:
-                    color = STATUS_COLORS.get(ch["status"], "#888")
-                    dep_icon = " 🏦" if ch["status"] == "להפקדה" else ""
-                    st.markdown(
-                        f"<div style='background:rgba(30,38,48,.9);border-radius:12px;padding:10px 14px;"
-                        f"margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;'>"
-                        f"<span style='font-weight:700;color:#dec599;'>{ch['client_name']}{dep_icon}</span>"
-                        f"<div style='text-align:left;'>"
-                        f"<div style='font-weight:900;color:#e59a65;direction:ltr;'>{fmt_ils(ch['amount'])}</div>"
-                        f"<span class='pill' style='background:{color}22;color:{color};border:1px solid {color}55;font-size:10px;'>{ch['status']}</span>"
-                        f"</div></div>", unsafe_allow_html=True)
+            html += (f"<div class='tl-day'>"
+                     f"<div class='tl-day-hdr'>"
+                     f"<div class='tl-dot' style='background:{dot_c};box-shadow:0 0 8px {dot_c}99;'></div>"
+                     f"<span class='tl-day-lbl'>{lbl}</span>"
+                     f"<span class='tl-day-date'>{date_label}</span>"
+                     f"<span class='tl-day-total'>{fmt_ils(day_t)}</span>"
+                     f"</div>"
+                     f"<div class='tl-rows-wrap'>"
+                     f"<div class='tl-vert-line' style='background:linear-gradient(to bottom,{dot_c}55,transparent);'></div>"
+                     f"<div class='tl-items'>")
 
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+            for ch in checks:
+                s_color = STATUS_COLORS.get(ch["status"], "#888")
+                dep_badge = "<span class='tl-dep-badge'>להפקדה</span>" if ch["status"] == "להפקדה" else ""
+                html += (f"<div class='tl-white-card'>"
+                         f"<div class='tl-wc-left'>"
+                         f"<div class='tl-wc-client'>{dep_badge}{ch['client_name']}</div>"
+                         f"<div class='tl-wc-status' style='color:{s_color};'>{ch['status']}</div>"
+                         f"</div>"
+                         f"<div class='tl-wc-right'>"
+                         f"<span class='tl-wc-amount'>{fmt_ils(ch['amount'])}</span>"
+                         f"<span class='tl-wc-chevron'>›</span>"
+                         f"</div></div>")
 
-    # ── לפי סטטוס ──
+            html += "</div></div></div>"   # tl-items · tl-rows-wrap · tl-day
+
+        html += "</div>"   # glass-section
+        st.markdown(html, unsafe_allow_html=True)
+
+    else:
+        st.markdown(
+            "<div class='glass-section'><div class='gs-label'>⏰  פירעונות 48 שעות</div>"
+            "<div style='color:#9BA1A6;font-size:.85rem;text-align:center;padding:12px 0;'>אין פירעונות קרובים ✓</div>"
+            "</div>", unsafe_allow_html=True)
+
+    # ══ GLASS SECTION 2: Status breakdown ══
     status_rows = cached_status_breakdown(u)
     if status_rows:
-        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#a07850;margin-bottom:8px;'>לפי סטטוס</div>", unsafe_allow_html=True)
-        status_bg = {"ממתין למזומן":"rgba(255,159,28,.15)","להפקדה":"rgba(57,255,20,.12)","בפריטה":"rgba(255,45,149,.12)"}
+        status_bg  = {"ממתין למזומן":"rgba(255,159,28,.1)","להפקדה":"rgba(57,255,20,.08)","בפריטה":"rgba(255,45,149,.1)"}
+        html = "<div class='glass-section'><div class='gs-label'>פירוט לפי סטטוס</div>"
         for r in status_rows:
-            bg = status_bg.get(r["status"],"rgba(44,52,64,.88)")
-            color = STATUS_COLORS.get(r["status"],"#dec599")
-            st.markdown(
-                f"<div style='background:{bg};border:1px solid {color}33;border-radius:16px;"
-                f"padding:12px 16px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;'>"
-                f"<div><span style='font-weight:800;font-size:.9rem;color:#dec599;'>{r['status']}</span>"
-                f"<span style='font-size:10px;color:#a07850;font-weight:700;margin-right:8px;'>{r['cnt']} צ'קים</span></div>"
-                f"<span style='font-weight:900;font-size:1rem;color:#e59a65;direction:ltr;'>{fmt_ils(r['total'])}</span>"
-                f"</div>", unsafe_allow_html=True)
+            bg    = status_bg.get(r["status"], "rgba(255,255,255,.04)")
+            color = STATUS_COLORS.get(r["status"], "#dec599")
+            html += (f"<div class='status-row' style='background:{bg};border-color:{color}33;'>"
+                     f"<div>"
+                     f"<div style='font-weight:800;font-size:.9rem;color:#fff;'>{r['status']}</div>"
+                     f"<div style='font-size:.72rem;color:#9BA1A6;margin-top:2px;'>{r['cnt']} צ׳קים</div>"
+                     f"</div>"
+                     f"<div class='status-amnt' style='background:{color}18;border:1.5px solid {color}55;color:{color};'>"
+                     f"{fmt_ils(r['total'])}</div>"
+                     f"</div>")
+        html += "</div>"
+        st.markdown(html, unsafe_allow_html=True)
 
-    # ── תחזית חודשית עם פירוט ──
+    # ══ GLASS SECTION 3: Monthly forecast ══
     forecast = cached_forecast(u)
     if forecast:
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#a07850;margin-bottom:8px;'>תחזית חודשית — לחץ לפירוט</div>", unsafe_allow_html=True)
         max_amount = max(r["total"] for r in forecast) or 1
         month_he = {"January":"ינואר","February":"פברואר","March":"מרץ","April":"אפריל",
                     "May":"מאי","June":"יוני","July":"יולי","August":"אוגוסט",
                     "September":"ספטמבר","October":"אוקטובר","November":"נובמבר","December":"דצמבר"}
+
+        st.markdown("<div class='glass-section'><div class='gs-label'>תחזית חודשית — לחץ לפירוט</div>",
+                    unsafe_allow_html=True)
+
         for r in forecast:
-            m = r["month"]
-            label = m.strftime("%B %Y") if hasattr(m,"strftime") else str(m)[:7]
+            m         = r["month"]
+            label     = m.strftime("%B %Y") if hasattr(m,"strftime") else str(m)[:7]
             month_str = m.strftime("%Y-%m") if hasattr(m,"strftime") else str(m)[:7]
-            for en,he in month_he.items(): label=label.replace(en,he)
-            pct = int((r["total"]/max_amount)*100)
-            key_m = f"month_expand_{month_str}"
-            expanded_m = st.session_state.get(key_m, False)
+            for en,he in month_he.items(): label = label.replace(en,he)
+            pct     = int((r["total"] / max_amount) * 100)
+            key_m   = f"month_expand_{month_str}"
+            exp_m   = st.session_state.get(key_m, False)
 
             mc1, mc2 = st.columns([5, 1])
             with mc1:
                 st.markdown(
-                    f"<div class='dash-month-card'>"
-                    f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
-                    f"<div><div style='font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#a07850;'>{label}</div>"
-                    f"<div style='font-size:10px;color:#7a5a40;'>{r['cnt']} צ'קים</div></div>"
-                    f"<div style='font-weight:900;font-size:1.2rem;color:#dec599;direction:ltr;'>{fmt_ils(r['total'])}</div></div>"
-                    f"<div class='dash-bar-bg'><div class='dash-bar-fill' style='width:{pct}%;'></div></div>"
+                    f"<div class='month-card'>"
+                    f"<div class='mc-hdr'>"
+                    f"<div><div class='mc-label'>{label}</div><div class='mc-count'>{r['cnt']} צ׳קים</div></div>"
+                    f"<div class='mc-amount'>{fmt_ils(r['total'])}</div>"
+                    f"</div>"
+                    f"<div class='month-bar-bg'><div class='month-bar-fill' style='width:{pct}%;'></div></div>"
                     f"</div>", unsafe_allow_html=True)
             with mc2:
                 st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-                if st.button("▼" if not expanded_m else "▲", key=f"btn_{key_m}", use_container_width=True):
-                    st.session_state[key_m] = not expanded_m; st.rerun()
+                if st.button("▼" if not exp_m else "▲", key=f"btn_{key_m}", use_container_width=True):
+                    st.session_state[key_m] = not exp_m; st.rerun()
 
-            if expanded_m:
+            if exp_m:
                 month_checks = cached_month_checks(u, month_str)
                 if month_checks:
-                    # header row
-                    st.markdown(
-                        "<div style='display:grid;grid-template-columns:1fr auto auto auto;gap:6px;"
-                        "padding:6px 14px 4px;font-size:10px;font-weight:700;letter-spacing:.8px;"
-                        "text-transform:uppercase;color:#a07850;border-bottom:1px solid rgba(229,154,101,.1);'>"
-                        "<span>לקוח</span><span>תאריך</span><span>סטטוס</span><span>סכום</span></div>",
-                        unsafe_allow_html=True)
+                    rows_html = ""
                     for ch in month_checks:
                         color = STATUS_COLORS.get(ch["status"], "#888")
-                        st.markdown(
-                            f"<div style='display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;"
-                            f"padding:7px 14px;background:rgba(30,38,48,.8);border-radius:10px;margin-bottom:3px;'>"
-                            f"<span style='font-weight:700;color:#dec599;font-size:.85rem;'>{ch['client_name']}</span>"
-                            f"<span style='font-size:.78rem;color:#a07850;'>{fmt_date(ch['due_date'])}</span>"
-                            f"<span style='font-size:.72rem;font-weight:700;color:{color};'>{ch['status']}</span>"
-                            f"<span style='font-weight:900;color:#e59a65;direction:ltr;font-size:.9rem;'>{fmt_ils(ch['amount'])}</span>"
-                            f"</div>", unsafe_allow_html=True)
+                        rows_html += (
+                            f"<div style='display:flex;justify-content:space-between;align-items:center;"
+                            f"padding:8px 13px;background:rgba(255,255,255,.04);border-radius:10px;"
+                            f"margin-bottom:3px;direction:rtl;'>"
+                            f"<span style='font-weight:700;color:#fff;font-size:.84rem;flex:1;'>{ch['client_name']}</span>"
+                            f"<span style='font-size:.75rem;color:#9BA1A6;margin:0 10px;'>{fmt_date(ch['due_date'])}</span>"
+                            f"<span style='font-size:.7rem;font-weight:700;color:{color};margin-left:8px;'>{ch['status']}</span>"
+                            f"<span style='font-weight:900;color:#e59a65;direction:ltr;margin-right:6px;'>{fmt_ils(ch['amount'])}</span>"
+                            f"</div>")
+                    st.markdown(rows_html, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ─── Calculator ───
