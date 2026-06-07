@@ -259,17 +259,15 @@ def get_status_breakdown():
 def inject_css():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-    /* ═══════════════════════════════════
-       GLOBAL BASE
-    ═══════════════════════════════════ */
     html, body, [class*="css"] { direction: rtl; }
 
     .stApp {
-        background: #F7F7F9;
+        background: #041424;
+        background-image: linear-gradient(135deg, #041424 0%, #0b243a 50%, #041424 100%);
         font-family: 'Inter', sans-serif;
-        color: #000;
+        color: #dec599;
         min-height: 100vh;
     }
     #MainMenu, header, footer { visibility: hidden; }
@@ -279,560 +277,345 @@ def inject_css():
         max-width: 480px;
     }
 
-    /* ═══════════════════════════════════
-       KPI — PERIWINKLE HERO BLOCK
-    ═══════════════════════════════════ */
+    /* ─── לוגו ─── */
+    .logo-title {
+        font-family: 'Comfortaa', sans-serif;
+        font-weight: 700;
+        font-size: 3rem;
+        letter-spacing: -1px;
+        background: linear-gradient(135deg, #e59a65 0%, #f0c090 40%, #b06a3b 70%, #e59a65 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.7));
+        display: block;
+        text-align: center;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    /* ─── KPI ─── */
     .kpi {
-        background: linear-gradient(135deg, #C4CEFF 0%, #B8B5FF 100%);
-        border-radius: 32px;
-        padding: 36px 28px 28px;
+        background: rgba(30, 35, 42, 0.85);
+        border: 1px solid rgba(229, 154, 101, 0.25);
+        border-radius: 28px;
+        padding: 28px 24px 22px;
         margin-bottom: 6px;
         text-align: center;
-        border: none;
-        position: relative;
-        overflow: hidden;
-    }
-    .kpi::before {
-        content: '';
-        position: absolute;
-        top: -40px; right: -40px;
-        width: 180px; height: 180px;
-        background: rgba(255,255,255,0.18);
-        border-radius: 50%;
-    }
-    .kpi::after {
-        content: '';
-        position: absolute;
-        bottom: -30px; left: -30px;
-        width: 120px; height: 120px;
-        background: rgba(255,255,255,0.12);
-        border-radius: 50%;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(229,154,101,0.15);
     }
     .kpi-label {
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 3px;
-        color: #5A5AA3;
-        text-transform: uppercase;
-        margin-bottom: 10px;
-        position: relative; z-index: 1;
+        font-size: 11px; font-weight: 700; letter-spacing: 2px;
+        color: #e59a65; text-transform: uppercase; margin-bottom: 8px;
     }
     .kpi-value {
         font-family: 'Inter', sans-serif;
-        font-size: 3.6rem;
-        font-weight: 900;
-        line-height: 0.95;
-        color: #000;
-        display: block;
-        letter-spacing: -3px;
-        direction: ltr;
-        position: relative; z-index: 1;
+        font-size: 3rem; font-weight: 900; line-height: 1;
+        background: linear-gradient(135deg, #f0c090 0%, #e59a65 50%, #dec599 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: block; letter-spacing: -2px; direction: ltr;
     }
-    .kpi-sub {
-        font-size: 13px;
-        color: #6B6BA8;
-        margin-top: 12px;
-        font-weight: 600;
-        position: relative; z-index: 1;
+    .kpi-sub { font-size: 13px; color: #8c6a45; margin-top: 10px; font-weight: 500; }
+
+    /* ─── glass card ─── */
+    .glass {
+        background: rgba(30, 35, 42, 0.7);
+        border: 1px solid rgba(229,154,101,0.15);
+        border-radius: 24px;
+        padding: 20px 22px;
+        margin-bottom: 5px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
 
-    /* ═══════════════════════════════════
-       PILL / STATUS TAG
-    ═══════════════════════════════════ */
+    /* ─── pill ─── */
     .pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 3px 12px;
-        border-radius: 999px;
-        font-size: 10px;
-        font-weight: 800;
-        margin-inline-start: 6px;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
+        display: inline-block; padding: 2px 10px; border-radius: 999px;
+        font-size: 11px; font-weight: 700; margin-inline-start: 6px;
     }
 
-    /* ═══════════════════════════════════
-       SECTION TITLES — EDITORIAL
-    ═══════════════════════════════════ */
+    /* ─── section titles ─── */
     .section-title {
-        font-size: 26px;
-        font-weight: 900;
-        letter-spacing: -1px;
-        color: #000;
-        margin: 28px 0 6px;
-        text-align: right;
-        line-height: 1;
+        font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
+        color: #e59a65; margin: 20px 0 5px; text-align: right;
     }
     .section-title-right {
-        font-size: 26px;
-        font-weight: 900;
-        letter-spacing: -1px;
-        color: #000;
-        margin: 16px 0 6px;
-        text-align: right;
-        line-height: 1;
+        font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
+        color: #e59a65; margin: 10px 0 5px; text-align: right;
     }
-    .neon-bar, .neon-bar-right {
-        height: 4px; width: 40px; border-radius: 4px;
-        background: #000; margin-bottom: 18px;
+    .neon-bar {
+        height: 2px; width: 36px; border-radius: 3px;
+        background: linear-gradient(90deg, #e59a65, #b06a3b);
+        margin: 0 auto 16px;
     }
-    .neon-bar  { margin-right: auto; margin-left: auto; }
-    .neon-bar-right { margin-right: 0; margin-left: auto; }
-
-    /* ═══════════════════════════════════
-       GLASS / WHITE CARD
-    ═══════════════════════════════════ */
-    .glass {
-        background: #fff;
-        border-radius: 28px;
-        padding: 22px 24px;
-        margin-bottom: 6px;
-        border: none;
+    .neon-bar-right {
+        height: 2px; width: 36px; border-radius: 3px;
+        background: linear-gradient(90deg, #e59a65, #b06a3b);
+        margin: 0 0 16px auto;
     }
 
-    /* ═══════════════════════════════════
-       CLIENT CARDS — PASTEL DECK
-    ═══════════════════════════════════ */
+    /* ─── client card ─── */
     .client-card {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-radius: 24px;
-        padding: 20px 22px;
-        margin-bottom: 6px;
-        border: none;
-        transition: transform .12s ease;
+        display: flex; justify-content: space-between; align-items: center;
+        background: rgba(30,35,42,0.85);
+        border: 1px solid rgba(229,154,101,0.2);
+        border-radius: 22px; padding: 16px 18px; margin-bottom: 5px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
-    .client-card:active { transform: scale(0.98); }
-    .client-name {
-        font-weight: 900;
-        font-size: 1.05rem;
-        color: #000;
-        letter-spacing: -0.3px;
-    }
+    .client-name { font-weight: 800; font-size: 1rem; color: #dec599; }
     .client-obligo {
-        font-weight: 900;
-        font-size: 1.2rem;
-        color: #000;
-        direction: ltr;
-        letter-spacing: -0.8px;
+        font-weight: 900; font-size: 1.15rem;
+        background: linear-gradient(135deg, #e59a65, #dec599);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        direction: ltr; letter-spacing: -0.5px;
     }
 
-    /* ═══════════════════════════════════
-       CALCULATOR OUTPUT
-    ═══════════════════════════════════ */
-    .calc-out {
-        border-radius: 28px;
-        padding: 24px;
-        margin-top: 6px;
-        text-align: center;
-        border: none;
-        position: relative;
-        overflow: hidden;
+    /* ─── calc output ─── */
+    .calc-out { border-radius: 24px; padding: 20px 22px; margin-top: 5px; text-align: center; }
+    .calc-out.fee {
+        background: rgba(140,42,80,0.25);
+        border: 1px solid rgba(255,45,149,0.2);
     }
-    .calc-out::before {
-        content: '';
-        position: absolute;
-        top: -20px; left: -20px;
-        width: 100px; height: 100px;
-        background: rgba(255,255,255,0.25);
-        border-radius: 50%;
+    .calc-out.net {
+        background: rgba(42,122,74,0.25);
+        border: 1px solid rgba(57,255,20,0.2);
+        margin-top: 5px;
     }
-    .calc-out.fee { background: #FFD6E8; }
-    .calc-out.net { background: #D6F5E0; margin-top: 6px; }
     .calc-out .lbl {
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: #8A8A93;
-        margin-bottom: 10px;
-        position: relative; z-index: 1;
+        font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+        text-transform: uppercase; color: #8c6a45; margin-bottom: 6px;
     }
     .calc-out .big {
-        font-family: 'Inter', sans-serif;
-        font-size: 3rem;
-        font-weight: 900;
-        direction: ltr;
-        line-height: 1;
-        letter-spacing: -2px;
-        color: #000;
-        position: relative; z-index: 1;
+        font-family: 'Inter', sans-serif; font-size: 2.6rem;
+        font-weight: 900; direction: ltr; line-height: 1.1;
+        letter-spacing: -1.5px; color: #dec599;
     }
 
-    /* ═══════════════════════════════════
-       REMINDER CARD — BUTTER YELLOW
-    ═══════════════════════════════════ */
+    /* ─── reminder card ─── */
     .reminder-card {
-        background: linear-gradient(135deg, #FFF3C8 0%, #FFE8A3 100%);
-        border-radius: 24px;
-        padding: 20px 22px;
-        margin-bottom: 6px;
-        cursor: pointer;
-        border: none;
-        position: relative;
-        overflow: hidden;
-    }
-    .reminder-card::after {
-        content: '⏰';
-        position: absolute;
-        top: 12px; left: 16px;
-        font-size: 2.5rem;
-        opacity: 0.15;
+        background: rgba(139,106,0,0.2);
+        border: 1px solid rgba(229,154,101,0.25);
+        border-radius: 22px; padding: 16px 18px; margin-bottom: 6px;
     }
     .reminder-title {
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: #8A6A00;
-        margin-bottom: 12px;
+        font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+        text-transform: uppercase; color: #e59a65; margin-bottom: 8px;
     }
     .reminder-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 7px 0;
-        border-bottom: 1px solid rgba(0,0,0,0.07);
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 5px 0; border-bottom: 1px solid rgba(229,154,101,0.1);
     }
     .reminder-row:last-child { border-bottom: none; }
 
-    /* ═══════════════════════════════════
-       DASHBOARD STAT CARDS
-    ═══════════════════════════════════ */
-    .stat-card {
-        border-radius: 24px;
-        padding: 20px 18px;
-        text-align: center;
-        border: none;
-        position: relative;
-        overflow: hidden;
-    }
-    .stat-label {
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: #8A8A93;
-        margin-bottom: 8px;
-    }
-    .stat-value {
-        font-size: 1.9rem;
-        font-weight: 900;
-        letter-spacing: -1.5px;
-        color: #000;
-        line-height: 1;
-    }
-
-    /* ═══════════════════════════════════
-       BUTTONS — GENERAL
-    ═══════════════════════════════════ */
+    /* ─── buttons general ─── */
     .stButton > button {
         border-radius: 16px !important;
-        border: none !important;
-        background: #EBEBEB !important;
-        color: #000 !important;
+        border: 1px solid rgba(229,154,101,0.2) !important;
+        background: rgba(30,35,42,0.9) !important;
+        color: #dec599 !important;
         font-weight: 700 !important;
         font-family: 'Inter', sans-serif !important;
-        font-size: 0.9rem !important;
         transition: all .15s ease !important;
-        letter-spacing: -0.1px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
     }
     .stButton > button:hover {
-        opacity: 0.80 !important;
-        transform: translateY(-1px) !important;
+        border-color: rgba(229,154,101,0.5) !important;
+        box-shadow: 0 4px 20px rgba(229,154,101,0.15) !important;
     }
-    .stButton > button:active { transform: scale(0.97) !important; }
 
-    /* HOME NAV — BIG PASTEL BLOCKS */
+    /* home nav buttons */
     .home-nav-btn .stButton > button {
-        border-radius: 28px !important;
-        font-size: 1.25rem !important;
+        border-radius: 24px !important;
+        font-size: 1.15rem !important;
         font-weight: 900 !important;
-        min-height: 100px !important;
+        min-height: 90px !important;
         height: auto !important;
-        padding: 28px 24px !important;
-        letter-spacing: -0.5px !important;
-        border: none !important;
-        color: #000 !important;
+        padding: 26px 24px !important;
+        letter-spacing: -0.3px !important;
     }
     .home-nav-green .stButton > button {
-        background: #D6F5E0 !important;
-        color: #000 !important;
+        background: linear-gradient(180deg, #1a3a2a 0%, #0f2318 100%) !important;
+        border-color: rgba(57,255,20,0.2) !important;
+        color: #6ddf8a !important;
     }
     .home-nav-pink .stButton > button {
-        background: #E8E4FF !important;
-        color: #000 !important;
+        background: linear-gradient(180deg, #2a1a3a 0%, #180f23 100%) !important;
+        border-color: rgba(229,154,101,0.3) !important;
+        color: #c4a0e0 !important;
     }
     .home-nav-blue .stButton > button {
-        background: #C8E8FF !important;
-        color: #000 !important;
+        background: linear-gradient(180deg, #1a2a3a 0%, #0f1823 100%) !important;
+        border-color: rgba(100,160,229,0.3) !important;
+        color: #90bfdf !important;
     }
 
-    /* ADD CHECK PILL BUTTONS */
+    /* add check buttons */
     .btn-single .stButton > button {
         border-radius: 50px !important;
-        background: #000 !important;
+        background: linear-gradient(135deg, #e59a65 0%, #b06a3b 100%) !important;
         color: #fff !important;
-        font-size: 0.95rem !important;
+        font-size: 0.92rem !important;
         font-weight: 800 !important;
-        padding: 14px 0 !important;
+        padding: 13px 0 !important;
         border: none !important;
-        letter-spacing: -0.2px !important;
+        box-shadow: 0 4px 16px rgba(176,106,59,0.4) !important;
     }
     .btn-batch .stButton > button {
         border-radius: 50px !important;
-        background: #E8E4FF !important;
-        color: #000 !important;
-        font-size: 0.95rem !important;
+        background: rgba(30,35,42,0.9) !important;
+        color: #e59a65 !important;
+        font-size: 0.92rem !important;
         font-weight: 800 !important;
-        padding: 14px 0 !important;
-        border: none !important;
+        padding: 13px 0 !important;
+        border: 1px solid rgba(229,154,101,0.4) !important;
     }
-    .btn-single .stButton > button:hover,
-    .btn-batch  .stButton > button:hover { opacity: 0.82 !important; }
 
-    /* SMALL ICON BUTTONS */
+    /* small buttons */
     .btn-sm .stButton > button {
-        padding: 5px 12px !important;
-        font-size: 0.78rem !important;
-        border-radius: 12px !important;
+        padding: 3px 8px !important;
+        font-size: 0.75rem !important;
+        border-radius: 8px !important;
         min-height: 0 !important;
         height: auto !important;
-        font-weight: 800 !important;
-        background: #EBEBEB !important;
+        font-weight: 700 !important;
     }
 
-    /* FLOATING BACK BUTTON */
-    .back-btn {
-        position: fixed !important;
-        bottom: 30px !important;
-        left: 20px !important;
-        z-index: 9999 !important;
-    }
+    /* back button */
+    .back-btn { position: fixed !important; bottom: 28px !important; left: 20px !important; z-index: 9999 !important; }
     .back-btn .stButton > button {
         border-radius: 50px !important;
-        background: #000 !important;
+        background: linear-gradient(135deg, #e59a65 0%, #b06a3b 100%) !important;
         color: #fff !important;
         font-size: 0.82rem !important;
-        font-weight: 900 !important;
-        padding: 12px 24px !important;
+        font-weight: 800 !important;
+        padding: 10px 22px !important;
         height: auto !important;
         min-height: 0 !important;
         border: none !important;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.20) !important;
-        letter-spacing: -0.2px !important;
+        box-shadow: 0 4px 20px rgba(176,106,59,0.5) !important;
     }
 
-    /* ═══════════════════════════════════
-       INPUTS & SELECTS
-    ═══════════════════════════════════ */
-    .stTextInput input,
-    .stNumberInput input,
-    .stDateInput input,
-    [data-baseweb="input"] input,
-    [data-baseweb="base-input"] input {
-        color: #000 !important;
-        background-color: #EBEBEB !important;
-        -webkit-text-fill-color: #000 !important;
-        caret-color: #000 !important;
+    /* inputs */
+    .stTextInput input, .stNumberInput input, .stDateInput input,
+    [data-baseweb="input"] input, [data-baseweb="base-input"] input {
+        color: #dec599 !important;
+        background-color: rgba(30,35,42,0.9) !important;
+        -webkit-text-fill-color: #dec599 !important;
+        caret-color: #e59a65 !important;
         border-radius: 14px !important;
-        border: none !important;
-        font-weight: 700 !important;
+        border: 1px solid rgba(229,154,101,0.2) !important;
+        font-weight: 600 !important;
         font-size: 1rem !important;
         direction: rtl !important;
         text-align: right !important;
-        transition: background .12s ease !important;
     }
-    .stTextInput input:focus,
-    .stNumberInput input:focus {
-        background-color: #E0E0E8 !important;
-        outline: none !important;
-    }
-    .stTextInput div[data-baseweb="input"],
-    .stNumberInput div[data-baseweb="input"],
-    .stDateInput div[data-baseweb="input"],
-    div[data-baseweb="select"] > div {
-        background-color: #EBEBEB !important;
-        border: none !important;
+    .stTextInput div[data-baseweb="input"], .stNumberInput div[data-baseweb="input"],
+    .stDateInput div[data-baseweb="input"], div[data-baseweb="select"] > div {
+        background-color: rgba(30,35,42,0.9) !important;
+        border: 1px solid rgba(229,154,101,0.2) !important;
         border-radius: 14px !important;
     }
+    div[data-baseweb="select"] div { color: #dec599 !important; font-weight: 600 !important; }
+    input::placeholder { color: #5a4030 !important; opacity: 1 !important; }
 
-    /* BIG AMOUNT FIELD */
     div[data-testid="stNumberInput"]:has(input[aria-label*="סכום"]) input {
-        font-size: 1.9rem !important;
-        font-weight: 900 !important;
-        text-align: center !important;
-        letter-spacing: -1.5px !important;
-        height: 68px !important;
-        background: linear-gradient(135deg, #E8E4FF, #EBEBEB) !important;
+        font-size: 1.8rem !important; font-weight: 900 !important;
+        text-align: center !important; letter-spacing: -1px !important; height: 64px !important;
     }
-
-    div[data-baseweb="select"] div { color: #000 !important; font-weight: 700 !important; }
-    input::placeholder { color: #B0B0BA !important; opacity: 1 !important; }
-    ul[role="listbox"], div[data-baseweb="popover"] {
-        background-color: #fff !important;
-        border-radius: 20px !important;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.12) !important;
-    }
-    ul[role="listbox"] li {
-        color: #000 !important;
-        font-weight: 700 !important;
-        border-radius: 12px !important;
-        margin: 2px 4px !important;
-    }
-    ul[role="listbox"] li:hover { background: #F0F0F5 !important; }
 
     label {
-        color: #8A8A93 !important;
-        font-weight: 700 !important;
-        font-size: 10px !important;
-        letter-spacing: 1px !important;
-        text-transform: uppercase !important;
-        text-align: right !important;
-        display: block !important;
+        color: #8c6a45 !important; font-weight: 700 !important;
+        font-size: 11px !important; letter-spacing: 0.8px !important;
+        text-transform: uppercase !important; text-align: right !important; display: block !important;
     }
 
-    /* ═══════════════════════════════════
-       RADIO BUTTONS
-    ═══════════════════════════════════ */
+    /* radio */
     div[data-testid="stRadio"] > div { gap: 8px !important; justify-content: center !important; }
     div[data-testid="stRadio"] label {
-        background: #EBEBEB !important;
-        border: none !important;
-        border-radius: 14px !important;
-        padding: 10px 28px !important;
-        font-size: 0.95rem !important;
-        font-weight: 800 !important;
-        color: #000 !important;
-        cursor: pointer;
-        transition: all .12s ease;
-        text-transform: none !important;
-        letter-spacing: 0 !important;
+        background: rgba(30,35,42,0.9) !important;
+        border: 1px solid rgba(229,154,101,0.2) !important;
+        border-radius: 14px !important; padding: 10px 28px !important;
+        font-size: 0.95rem !important; font-weight: 800 !important;
+        color: #dec599 !important; cursor: pointer;
+        text-transform: none !important; letter-spacing: 0 !important;
     }
-    div[data-testid="stRadio"] label:hover {
-        background: #E8E4FF !important;
-        transform: translateY(-1px);
-    }
+    div[data-testid="stRadio"] label:hover { border-color: rgba(229,154,101,0.5) !important; }
     div[data-testid="stRadio"] input[type="radio"] { display: none !important; }
     div[data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child { display: none !important; }
 
-    /* ═══════════════════════════════════
-       TABS
-    ═══════════════════════════════════ */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 5px; justify-content: center;
-        background: transparent !important;
-        padding: 4px !important;
-    }
+    /* tabs */
+    .stTabs [data-baseweb="tab-list"] { gap: 5px; justify-content: center; background: transparent !important; }
     .stTabs [data-baseweb="tab"] {
-        background: #EBEBEB !important;
-        border-radius: 14px !important;
-        padding: 10px 22px !important;
-        border: none !important;
-        font-size: 0.88rem !important;
-        font-weight: 700 !important;
-        color: #8A8A93 !important;
-        min-width: 110px; text-align: center;
-        text-transform: none !important;
-        letter-spacing: 0 !important;
-        transition: all .12s ease !important;
+        background: rgba(30,35,42,0.9) !important;
+        border: 1px solid rgba(229,154,101,0.15) !important;
+        border-radius: 14px !important; padding: 10px 22px !important;
+        font-size: 0.9rem !important; font-weight: 700 !important;
+        color: #8c6a45 !important; min-width: 120px; text-align: center;
     }
-    .stTabs [data-baseweb="tab"] p,
-    .stTabs [data-baseweb="tab"] span,
-    .stTabs [data-baseweb="tab"] div { color: #8A8A93 !important; }
+    .stTabs [data-baseweb="tab"] p, .stTabs [data-baseweb="tab"] span,
+    .stTabs [data-baseweb="tab"] div { color: #8c6a45 !important; }
     .stTabs [aria-selected="true"] {
-        background: #000 !important;
-        color: #fff !important;
-        transform: none !important;
+        background: linear-gradient(135deg, #e59a65 0%, #b06a3b 100%) !important;
+        border-color: transparent !important;
     }
-    .stTabs [aria-selected="true"] p,
-    .stTabs [aria-selected="true"] span,
+    .stTabs [aria-selected="true"] p, .stTabs [aria-selected="true"] span,
     .stTabs [aria-selected="true"] div { color: #fff !important; }
 
-    /* ═══════════════════════════════════
-       EXPANDER
-    ═══════════════════════════════════ */
+    /* expander */
     .streamlit-expanderHeader {
-        background: #EBEBEB !important;
-        border-radius: 16px !important;
-        font-weight: 800 !important;
-        color: #000 !important;
-        border: none !important;
-        padding: 14px 18px !important;
-        letter-spacing: -0.2px !important;
+        background: rgba(30,35,42,0.9) !important;
+        border-radius: 14px !important; font-weight: 700 !important;
+        color: #dec599 !important; border: 1px solid rgba(229,154,101,0.15) !important;
     }
     .streamlit-expanderContent {
-        background: #F7F7F9 !important;
-        border: none !important;
-        border-radius: 0 0 16px 16px !important;
-        padding: 8px 4px !important;
+        background: rgba(20,25,32,0.8) !important; border: none !important;
     }
 
-    /* ═══════════════════════════════════
-       CHECKBOX & SELECT
-    ═══════════════════════════════════ */
+    /* checkbox */
     .stCheckbox label {
-        color: #000 !important;
-        font-weight: 800 !important;
-        font-size: 0.9rem !important;
-        text-transform: none !important;
-        letter-spacing: 0 !important;
+        color: #dec599 !important; font-weight: 700 !important;
+        font-size: 0.9rem !important; text-transform: none !important; letter-spacing: 0 !important;
     }
 
-    /* ═══════════════════════════════════
-       DATA EDITOR / TABLE
-    ═══════════════════════════════════ */
+    /* select dropdown */
+    ul[role="listbox"], div[data-baseweb="popover"] {
+        background-color: #0b1a2a !important;
+        border: 1px solid rgba(229,154,101,0.2) !important;
+        border-radius: 16px !important;
+    }
+    ul[role="listbox"] li { color: #dec599 !important; font-weight: 600 !important; }
+
+    /* data editor */
     .stDataFrame, [data-testid="stDataEditor"] {
-        border-radius: 20px !important;
-        overflow: hidden !important;
-        border: none !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
+        border-radius: 16px !important; overflow: hidden !important; border: none !important;
     }
 
-    /* ═══════════════════════════════════
-       SCROLLBAR
-    ═══════════════════════════════════ */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #D0D0D8; border-radius: 4px; }
-
-    /* ═══════════════════════════════════
-       SUCCESS / ERROR MESSAGES
-    ═══════════════════════════════════ */
-    .stSuccess {
-        background: #D6F5E0 !important;
-        border-radius: 16px !important;
-        border: none !important;
-        color: #000 !important;
-        font-weight: 700 !important;
+    /* dashboard cards */
+    .forecast-card {
+        background: rgba(30,35,42,0.85);
+        border: 1px solid rgba(229,154,101,0.15);
+        border-radius: 22px; padding: 16px 18px; margin-bottom: 5px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
-    .stError {
-        background: #FFD6E8 !important;
-        border-radius: 16px !important;
-        border: none !important;
-        color: #000 !important;
-        font-weight: 700 !important;
-    }
-    [data-testid="stNotification"] {
-        border-radius: 16px !important;
-        border: none !important;
-    }
-
+    .forecast-month { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #8c6a45; margin-bottom: 4px; }
+    .forecast-amount { font-size: 1.4rem; font-weight: 900; color: #dec599; direction: ltr; }
+    .forecast-bar-bg { background: rgba(255,255,255,0.06); border-radius: 99px; height: 5px; margin-top: 8px; }
+    .forecast-bar-fill { background: linear-gradient(90deg, #e59a65, #b06a3b); border-radius: 99px; height: 5px; }
     </style>
     """, unsafe_allow_html=True)
 
     st.components.v1.html("""
     <script>
-    /* ── Auto-select number inputs on focus ── */
     function attachSelectAll() {
         var inputs = window.parent.document.querySelectorAll('input[type="number"]');
         inputs.forEach(function(inp) {
             if (inp._sa) return;
             inp._sa = true;
             inp.addEventListener('focus', function() {
-                var s = this;
-                setTimeout(function(){ s.select(); }, 50);
+                var s = this; setTimeout(function(){ s.select(); }, 50);
             });
         });
     }
@@ -840,6 +623,7 @@ def inject_css():
     setInterval(attachSelectAll, 600);
     </script>
     """, height=0)
+
 
 def fmt_ils(x):
     return f"₪{x:,.0f}"
@@ -920,10 +704,8 @@ def render_auth_screen():
     st.markdown(
         "<div style='height:40px'></div>"
         "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
-        "color:#8A8A93;text-transform:uppercase;margin-bottom:4px;letter-spacing:3px;'>CHECK MANAGEMENT</p>"
-        "<h1 style='text-align:center;font-family:Inter,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;color:#000;line-height:1;margin-bottom:4px;'>"
-        "CHECKFLOW</h1>"
+        "color:#8c6a45;text-transform:uppercase;margin-bottom:4px;letter-spacing:3px;'>CHECK MANAGEMENT</p>"
+        "<h1><span class='logo-title'>CHECKFLOW</span></h1>"
         "<p style='text-align:center;color:rgba(255,255,255,0.7);font-size:0.9rem;"
         "font-weight:500;margin-bottom:28px;'>ניהול צ׳קים ופריטה</p>",
         unsafe_allow_html=True,
@@ -992,10 +774,8 @@ def render_home_screen():
     st.markdown(
         "<div style='height:40px'></div>"
         "<p style='text-align:center;font-size:12px;font-weight:700;letter-spacing:3px;"
-        "color:#8A8A93;text-transform:uppercase;margin-bottom:4px;letter-spacing:3px;'>CHECK MANAGEMENT</p>"
-        "<h1 style='text-align:center;font-family:Inter,sans-serif;font-weight:900;"
-        "font-size:3rem;letter-spacing:-2px;color:#000;line-height:1;margin-bottom:4px;'>"
-        "CHECKFLOW</h1>"
+        "color:#8c6a45;text-transform:uppercase;margin-bottom:4px;letter-spacing:3px;'>CHECK MANAGEMENT</p>"
+        "<h1><span class='logo-title'>CHECKFLOW</span></h1>"
         "<p style='text-align:center;color:#8A8A93;font-size:0.9rem;margin-bottom:28px;"
         "font-weight:500;'>ניהול צ׳קים ופריטה</p>",
         unsafe_allow_html=True,
