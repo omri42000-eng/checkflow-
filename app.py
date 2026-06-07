@@ -543,7 +543,7 @@ def render_home_screen():
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:transparent!important;font-family:'Inter',sans-serif;padding:8px 0 0;}
+html,body{background:#0d2240;background-image:linear-gradient(135deg,#0d2240 0%,#163652 50%,#0d2240 100%);background-attachment:fixed;font-family:'Inter',sans-serif;padding:8px 0 0;margin:0;}
 .hnc{display:flex;direction:ltr;height:90px;border-radius:26px;overflow:hidden;
     box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:18px;cursor:pointer;
     transition:transform .2s,box-shadow .2s;}
