@@ -479,70 +479,103 @@ def render_kpi():
 
 # ─── Home ───
 def render_home_screen():
-    # Inline CSS: hide nav buttons + define clickNav via img onerror (runs in main page, no iframe)
-    st.markdown("""
+    # Title (main page)
+    st.markdown(
+        "<div style='height:28px'></div>"
+        "<p style='text-align:center;font-size:10px;font-weight:700;letter-spacing:4px;"
+        "color:#a07850;text-transform:uppercase;margin-bottom:3px;'>CHECK MANAGEMENT SYSTEM</p>"
+        "<h1><span class='logo-title'>CHECKFLOW</span></h1>",
+        unsafe_allow_html=True)
+
+    # ── Cards inside iframe — onclick works here (no CSP restriction inside iframe) ──
+    st.components.v1.html("""
+<!DOCTYPE html>
+<html>
+<head>
 <style>
-body .stButton>button{
-    position:fixed!important;top:-9999px!important;left:-9999px!important;
-    width:1px!important;height:1px!important;opacity:0!important;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d2240;font-family:'Inter',sans-serif;padding:12px 0 8px;}
+.hnc{display:flex;direction:ltr;height:90px;border-radius:26px;overflow:hidden;
+    box-shadow:0 16px 44px rgba(0,0,0,.6);margin-bottom:18px;cursor:pointer;
+    transition:transform .2s,box-shadow .2s;}
+.hnc:hover{filter:brightness(1.08);}
+.hnc-badge{width:37%;display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:hidden;flex-shrink:0;}
+.hnc-badge::before{content:'';position:absolute;top:-22px;right:-22px;
+    width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.18)}
+.hnc-badge::after{content:'';position:absolute;bottom:-16px;left:-16px;
+    width:54px;height:54px;border-radius:50%;background:rgba(0,0,0,.18)}
+.hnc-icon{font-size:2.4rem;position:relative;z-index:2;filter:drop-shadow(4px 4px 0px rgba(0,0,0,.35))}
+.hnc-body{flex:1;display:flex;flex-direction:column;justify-content:center;
+    padding:0 20px;direction:rtl;}
+.hnc-title{font-size:1.02rem;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.1}
+.hnc-rule{height:2px;border-radius:2px;width:30px;margin:6px 0}
+.hnc-desc{font-size:.71rem;color:rgba(255,255,255,.5);font-weight:500;letter-spacing:.2px}
+.hnc-mgmt{transform:scale(1.04) translateY(-4px);transform-origin:center;
+    box-shadow:0 20px 52px rgba(0,0,0,.65)!important;}
 </style>
-<img src="#" onerror="
-window.clickNav=function(k){
-    var b=document.querySelectorAll('button');
-    for(var i=0;i<b.length;i++){if(b[i].textContent.trim()===k){b[i].click();return;}}
-};this.style.display='none';
-" style="display:none" alt="">
-<div style='height:28px'></div>
-<p style='text-align:center;font-size:10px;font-weight:700;letter-spacing:4px;
-color:#a07850;text-transform:uppercase;margin-bottom:3px;'>CHECK MANAGEMENT SYSTEM</p>
-<h1><span class='logo-title'>CHECKFLOW</span></h1>
-<div style='height:32px'></div>""", unsafe_allow_html=True)
+</head>
+<body>
 
-    # ── Card 1: Calculator (Green) ──
-    st.markdown("""
-    <div class="hnc" onclick="clickNav('calc')" style="cursor:pointer;">
-        <div class="hnc-badge" style="background:linear-gradient(160deg,#2bf06e 0%,#0c7c2a 100%);">
-            <span class="hnc-icon">💸</span>
-        </div>
-        <div class="hnc-body" style="background:linear-gradient(135deg,#1a4a2a 0%,#0a2814 100%);">
-            <div class="hnc-title">מחשבון פריטה</div>
-            <div class="hnc-rule" style="background:#39FF14;"></div>
-            <div class="hnc-desc">חישוב עמלות פריטה מהיר ומדויק</div>
-        </div>
-    </div>""", unsafe_allow_html=True)
-    if st.button("calc", key="go_calc", use_container_width=True):
-        st.session_state.screen = "calc"; st.rerun()
+<div class="hnc" onclick="nav('calc')">
+  <div class="hnc-badge" style="background:linear-gradient(160deg,#2bf06e 0%,#0c7c2a 100%)">
+    <span class="hnc-icon">💸</span>
+  </div>
+  <div class="hnc-body" style="background:linear-gradient(135deg,#1a4a2a 0%,#0a2814 100%)">
+    <div class="hnc-title">מחשבון פריטה</div>
+    <div class="hnc-rule" style="background:#39FF14"></div>
+    <div class="hnc-desc">חישוב עמלות פריטה מהיר ומדויק</div>
+  </div>
+</div>
 
-    # ── Card 2: Management (Copper) ──
-    st.markdown("""
-    <div class="hnc" onclick="clickNav('mgmt')" style="transform:scale(1.04);transform-origin:center;box-shadow:0 20px 52px rgba(0,0,0,.65);cursor:pointer;">
-        <div class="hnc-badge" style="background:linear-gradient(160deg,#ffc080 0%,#a85818 100%);">
-            <span class="hnc-icon">💳</span>
-        </div>
-        <div class="hnc-body" style="background:linear-gradient(135deg,#4a2808 0%,#281404 100%);">
-            <div class="hnc-title">ניהול צ׳קים</div>
-            <div class="hnc-rule" style="background:#e59a65;"></div>
-            <div class="hnc-desc">לקוחות · סטטוסים · מעקב מלא</div>
-        </div>
-    </div>""", unsafe_allow_html=True)
-    if st.button("mgmt", key="go_mgmt", use_container_width=True):
-        st.session_state.screen = "mgmt"; st.rerun()
+<div class="hnc hnc-mgmt" onclick="nav('mgmt')">
+  <div class="hnc-badge" style="background:linear-gradient(160deg,#ffc080 0%,#a85818 100%)">
+    <span class="hnc-icon">💳</span>
+  </div>
+  <div class="hnc-body" style="background:linear-gradient(135deg,#4a2808 0%,#281404 100%)">
+    <div class="hnc-title">ניהול צ׳קים</div>
+    <div class="hnc-rule" style="background:#e59a65"></div>
+    <div class="hnc-desc">לקוחות · סטטוסים · מעקב מלא</div>
+  </div>
+</div>
 
-    # ── Card 3: Dashboard (Blue) ──
-    st.markdown("""
-    <div class="hnc" onclick="clickNav('dash')" style="cursor:pointer;">
-        <div class="hnc-badge" style="background:linear-gradient(160deg,#70c0ff 0%,#1040a0 100%);">
-            <span class="hnc-icon">📈</span>
-        </div>
-        <div class="hnc-body" style="background:linear-gradient(135deg,#1a2a4a 0%,#0a1428 100%);">
-            <div class="hnc-title">דשבורד תזרים</div>
-            <div class="hnc-rule" style="background:#4090e0;"></div>
-            <div class="hnc-desc">תחזית חודשית · פירעונות</div>
-        </div>
-    </div>""", unsafe_allow_html=True)
-    if st.button("dash", key="go_dash", use_container_width=True):
-        st.session_state.screen = "dash"; st.rerun()
+<div class="hnc" onclick="nav('dash')">
+  <div class="hnc-badge" style="background:linear-gradient(160deg,#70c0ff 0%,#1040a0 100%)">
+    <span class="hnc-icon">📈</span>
+  </div>
+  <div class="hnc-body" style="background:linear-gradient(135deg,#1a2a4a 0%,#0a1428 100%)">
+    <div class="hnc-title">דשבורד תזרים</div>
+    <div class="hnc-rule" style="background:#4090e0"></div>
+    <div class="hnc-desc">תחזית חודשית · פירעונות</div>
+  </div>
+</div>
+
+<script>
+function nav(key) {
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+        if (btns[i].textContent.trim() === key) {
+            btns[i].click();
+            return;
+        }
+    }
+}
+</script>
+</body>
+</html>
+""", height=335)
+
+    # Hidden nav buttons in main page — found and clicked by iframe JS above
+    st.markdown("""<style>
+.nav-hidden .stButton>button{position:fixed!important;top:-9999px!important;
+    left:-9999px!important;width:1px!important;height:1px!important;opacity:0!important}
+</style>""", unsafe_allow_html=True)
+    st.markdown('<div class="nav-hidden">', unsafe_allow_html=True)
+    if st.button("calc", key="go_calc"): st.session_state.screen = "calc"; st.rerun()
+    if st.button("mgmt", key="go_mgmt"): st.session_state.screen = "mgmt"; st.rerun()
+    if st.button("dash", key="go_dash"): st.session_state.screen = "dash"; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
     render_kpi()
 
