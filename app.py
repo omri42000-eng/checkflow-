@@ -400,6 +400,9 @@ div[data-testid="stRadio"] label:has(input:checked){
     box-shadow:0 0 16px rgba(229,154,101,.5)!important;
     border-color:transparent!important;
 }
+/* prevent columns from wrapping on narrow mobile screens */
+div[data-testid="stHorizontalBlock"]{flex-wrap:nowrap!important;}
+div[data-testid="column"]{min-width:0!important;overflow:hidden!important;}
 /* center inline buttons */
 div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton {
     display: flex; justify-content: center;
@@ -1243,7 +1246,7 @@ def render_client_edit(c):
             edit_key = f"check_edit_{ch['id']}"
             is_editing_check = st.session_state.get(edit_key, False)
 
-            c_info, c_ok, c_del = st.columns([4, 1, 1])
+            c_info, c_ok, c_del = st.columns([3, 1, 1])
             with c_info:
                 st.markdown(
                     f"<div style='padding:8px 0;'>"
