@@ -1240,25 +1240,38 @@ def render_client_edit(c):
         for ch in checks:
             color = STATUS_COLORS.get(ch["status"], "#888")
             remind_str = f" | {fmt_date(ch['remind_on'])}" if ch.get("remind_on") else ""
-            cc1, cc2 = st.columns([4, 3])
-            with cc1:
+            edit_key = f"check_edit_{ch['id']}"
+            is_editing_check = st.session_state.get(edit_key, False)
+
+            c_info, c_ok, c_del = st.columns([4, 1, 1])
+            with c_info:
                 st.markdown(
-                    f"<div style='padding:4px 0;'>"
-                    f"<span style='font-weight:700;direction:ltr;color:#e59a65;'>{fmt_ils(ch['amount'])}</span> "
-                    f"<span style='font-size:.74rem;color:#8c6a45;'>פירעון: {fmt_date(ch['due_date'])}{remind_str}</span>"
-                    f"<span class='pill' style='background:{color}22;color:{color};border:1px solid {color}66;'>{ch['status']}</span>"
+                    f"<div style='padding:8px 0;'>"
+                    f"<span style='font-weight:800;color:#e59a65;direction:ltr;'>{fmt_ils(ch['amount'])}</span> "
+                    f"<span style='font-size:.72rem;color:#8c6a45;'>{fmt_date(ch['due_date'])}{remind_str}</span>"
+                    f"<span class='pill' style='background:{color}22;color:{color};"
+                    f"border:1px solid {color}66;margin-right:6px;'>{ch['status']}</span>"
                     f"</div>", unsafe_allow_html=True)
-            with cc2:
-                s1, s2, s3 = st.columns([2, 1, 1])
-                with s1:
+            with c_ok:
+                if st.button("✓" if not is_editing_check else "✖",
+                             key=f"upd_{ch['id']}", use_container_width=True):
+                    st.session_state[edit_key] = not is_editing_check; st.rerun()
+            with c_del:
+                if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
+                    delete_check(ch["id"]); invalidate_cache(); st.rerun()
+
+            # Inline status picker (appears only when ✓ pressed)
+            if is_editing_check:
+                sp1, sp2 = st.columns([3, 1])
+                with sp1:
                     new_st = st.selectbox("", STATUSES, index=STATUSES.index(ch["status"]),
                                           key=f"st_{ch['id']}", label_visibility="collapsed")
-                with s2:
-                    if st.button("✓", key=f"upd_{ch['id']}", use_container_width=True):
-                        update_status(ch["id"], new_st); invalidate_cache(); st.rerun()
-                with s3:
-                    if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
-                        delete_check(ch["id"]); invalidate_cache(); st.rerun()
+                with sp2:
+                    if st.button("💾", key=f"save_{ch['id']}", use_container_width=True):
+                        update_status(ch["id"], new_st)
+                        st.session_state[edit_key] = False
+                        invalidate_cache(); st.rerun()
+                st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
 
 def render_client_grid():
