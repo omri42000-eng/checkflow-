@@ -400,9 +400,6 @@ div[data-testid="stRadio"] label:has(input:checked){
     box-shadow:0 0 16px rgba(229,154,101,.5)!important;
     border-color:transparent!important;
 }
-/* prevent columns from wrapping on narrow mobile screens */
-div[data-testid="stHorizontalBlock"]{flex-wrap:nowrap!important;}
-div[data-testid="column"]{min-width:0!important;overflow:hidden!important;}
 /* center inline buttons */
 div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton {
     display: flex; justify-content: center;
@@ -1238,7 +1235,7 @@ def render_client_edit(c):
     checks = cached_checks(u, c["id"])
     if checks:
         st.markdown("<div style='font-size:10px;font-weight:700;letter-spacing:1.5px;"
-                    "text-transform:uppercase;color:#a07850;margin:10px 0 6px;'>צ׳קים</div>",
+                    "text-transform:uppercase;color:#a07850;margin:10px 0 4px;'>צ׳קים</div>",
                     unsafe_allow_html=True)
         for ch in checks:
             color = STATUS_COLORS.get(ch["status"], "#888")
@@ -1246,24 +1243,28 @@ def render_client_edit(c):
             edit_key = f"check_edit_{ch['id']}"
             is_editing_check = st.session_state.get(edit_key, False)
 
-            c_info, c_ok, c_del = st.columns([3, 1, 1])
-            with c_info:
-                st.markdown(
-                    f"<div style='padding:8px 0;'>"
-                    f"<span style='font-weight:800;color:#e59a65;direction:ltr;'>{fmt_ils(ch['amount'])}</span> "
-                    f"<span style='font-size:.72rem;color:#8c6a45;'>{fmt_date(ch['due_date'])}{remind_str}</span>"
-                    f"<span class='pill' style='background:{color}22;color:{color};"
-                    f"border:1px solid {color}66;margin-right:6px;'>{ch['status']}</span>"
-                    f"</div>", unsafe_allow_html=True)
-            with c_ok:
-                if st.button("✓" if not is_editing_check else "✖",
+            # Full-width info row (amount right-aligned, date + status)
+            st.markdown(
+                f"<div style='display:flex;justify-content:flex-end;align-items:center;"
+                f"gap:8px;padding:6px 10px;background:rgba(44,52,64,.75);"
+                f"border-radius:10px;margin-bottom:2px;direction:rtl;'>"
+                f"<span style='font-weight:900;color:#e59a65;font-size:.95rem;'>{fmt_ils(ch['amount'])}</span>"
+                f"<span style='font-size:.72rem;color:#8c6a45;'>{fmt_date(ch['due_date'])}{remind_str}</span>"
+                f"<span style='font-size:.62rem;font-weight:700;background:{color}22;"
+                f"color:{color};border:1px solid {color}55;padding:1px 7px;border-radius:20px;'>{ch['status']}</span>"
+                f"</div>", unsafe_allow_html=True)
+
+            # Two tiny buttons on the same row
+            b1, b2 = st.columns(2)
+            with b1:
+                if st.button("✓ אישור" if not is_editing_check else "✖ סגור",
                              key=f"upd_{ch['id']}", use_container_width=True):
                     st.session_state[edit_key] = not is_editing_check; st.rerun()
-            with c_del:
-                if st.button("🗑", key=f"del_{ch['id']}", use_container_width=True):
+            with b2:
+                if st.button("🗑 מחק", key=f"del_{ch['id']}", use_container_width=True):
                     delete_check(ch["id"]); invalidate_cache(); st.rerun()
 
-            # Inline status picker (appears only when ✓ pressed)
+            # Status picker (inline, only when ✓ pressed)
             if is_editing_check:
                 sp1, sp2 = st.columns([3, 1])
                 with sp1:
@@ -1274,7 +1275,8 @@ def render_client_edit(c):
                         update_status(ch["id"], new_st)
                         st.session_state[edit_key] = False
                         invalidate_cache(); st.rerun()
-                st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+
+            st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
 
 def render_client_grid():
